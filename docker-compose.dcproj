@@ -1,21 +1,19 @@
-﻿<Project Sdk="Microsoft.VisualStudio.DockerCompose/1.0.0">
-  <!--
-    Proyecto de Docker Compose para que el entorno aparezca en la solución de
-    Visual Studio y se pueda arrancar y depurar con F5, como en el resto de
-    proyectos. Fuera de Visual Studio no hace falta: basta con docker compose.
-  -->
-  <PropertyGroup>
-    <DockerTargetOS>Linux</DockerTargetOS>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" Sdk="Microsoft.Docker.Sdk">
+  <PropertyGroup Label="Globals">
     <ProjectVersion>2.1</ProjectVersion>
+    <DockerTargetOS>Linux</DockerTargetOS>
+    <DockerPublishLocally>False</DockerPublishLocally>
+    <ProjectGuid>edbe2d3c-33b7-413b-8c60-0ae174214244</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
     <DockerServiceName>web</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="docker-compose.yml" />
     <None Include="docker-compose.override.yml">
       <DependentUpon>docker-compose.yml</DependentUpon>
     </None>
+    <None Include="docker-compose.yml" />
     <None Include=".dockerignore" />
     <None Include=".env.example" />
   </ItemGroup>
