@@ -26,7 +26,7 @@ ningún secreto almacenado en el repositorio.
 
 | Identidad | Permisos | Se ejecuta |
 | --- | --- | --- |
-| `legacy-lens-infra` | Contributor en la suscripción, *RBAC Administrator* limitado al grupo de recursos de la aplicación, *Storage Blob Data Contributor* sobre el estado | Solo al cambiar `infra/` |
+| `legacy-lens-infra` | Contributor en la suscripción, *RBAC Administrator* limitado al grupo de recursos de la aplicación, *Storage Blob Data Contributor* sobre el estado | Solo al cambiar `Deploy/infra/` |
 | `legacy-lens-deploy` | Contributor limitado al grupo de recursos de la aplicación | En cada *commit* que toque el código |
 
 **Estado remoto en Azure Storage.** El método de autenticación contra la cuenta **no se fija
@@ -70,7 +70,7 @@ como comentario. El `apply` usa **el fichero de plan guardado**, no uno nuevo.
 **En contra, dicho claramente:**
 
 - **La identidad de infraestructura es potente.** Contributor en la suscripción y, dentro de
-  un grupo de recursos, capacidad de conceder roles. Está acotada a los eventos de `infra/`
+  un grupo de recursos, capacidad de conceder roles. Está acotada a los eventos de `Deploy/infra/`
   y a la rama `main`, pero sigue siendo un permiso que hay que revisar en una organización.
 
   El permiso de RBAC hace falta porque Terraform crea las dos asignaciones de rol de la

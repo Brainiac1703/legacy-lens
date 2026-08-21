@@ -171,10 +171,12 @@ el plan aparece y descargar el documento.
 
 ### 3.3 Persistencia y escalado de verdad
 
-- PostgreSQL en lugar de SQLite: hoy los análisis se pierden al reiniciar el contenedor.
+- ~~Base de datos servidor en lugar de SQLite~~ **entregado**: Azure SQL Database serverless,
+  con las migraciones aplicadas por el pipeline antes de publicar la revisión nueva.
 - Afinidad de sesión con el provider `azapi`, requisito para pasar de una réplica con
   Blazor Server.
-- Estado de Terraform en un backend remoto con bloqueo.
+- ~~Estado de Terraform en un backend remoto con bloqueo~~ **entregado**: Azure Storage con
+  versionado y retención de borrados.
 
 ---
 

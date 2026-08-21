@@ -4,12 +4,21 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+# Con gestión centralizada de versiones, el restore no funciona sin estos dos
+# ficheros: Directory.Packages.props es donde están todas las versiones, y
+# NuGet.config restringe los orígenes a nuget.org para que la restauración dentro
+# del contenedor sea igual que la de cualquier máquina.
+COPY Directory.Packages.props NuGet.config ./
+
 # Los csproj se copian antes que el código para que la capa de restauración se
-# reutilice mientras no cambien las dependencias.
-COPY src/LegacyLens.Domain/LegacyLens.Domain.csproj    src/LegacyLens.Domain/
-COPY src/LegacyLens.Analysis/LegacyLens.Analysis.csproj src/LegacyLens.Analysis/
-COPY src/LegacyLens.Ai/LegacyLens.Ai.csproj            src/LegacyLens.Ai/
-COPY src/LegacyLens.Web/LegacyLens.Web.csproj          src/LegacyLens.Web/
+# reutilice mientras no cambien las dependencias. Tienen que estar los seis: el
+# csproj de Web referencia a los demás, y el restore falla si alguno no existe.
+COPY src/LegacyLens.Domain/LegacyLens.Domain.csproj                 src/LegacyLens.Domain/
+COPY src/LegacyLens.Application/LegacyLens.Application.csproj       src/LegacyLens.Application/
+COPY src/LegacyLens.Persistence.EF/LegacyLens.Persistence.EF.csproj src/LegacyLens.Persistence.EF/
+COPY src/LegacyLens.Analysis/LegacyLens.Analysis.csproj             src/LegacyLens.Analysis/
+COPY src/LegacyLens.Ai/LegacyLens.Ai.csproj                         src/LegacyLens.Ai/
+COPY src/LegacyLens.Web/LegacyLens.Web.csproj                       src/LegacyLens.Web/
 
 RUN dotnet restore src/LegacyLens.Web/LegacyLens.Web.csproj
 
@@ -18,10 +27,19 @@ RUN dotnet restore src/LegacyLens.Web/LegacyLens.Web.csproj
 COPY src/ src/
 COPY samples/ samples/
 
+# Sin --no-restore, y no es un descuido.
+#
+# El restore de arriba se ejecuta con solo los csproj presentes, que es lo que
+# permite reutilizar la capa. Publicar después con --no-restore reutiliza ese
+# resultado incompleto y el publish sale **sin wwwroot/_framework**, es decir sin
+# blazor.web.js. La aplicación arranca, responde 200 y parece correcta, pero
+# ningún botón funciona porque no hay runtime de Blazor en el navegador.
+#
+# Dejando que publish haga su propio restore, los paquetes ya están en la caché
+# del contenedor, así que cuesta segundos y la capa de restore sigue sirviendo.
 RUN dotnet publish src/LegacyLens.Web/LegacyLens.Web.csproj \
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 # ---------------------------------------------------------------------------
 # Ejecución
@@ -35,13 +53,9 @@ EXPOSE 8080
 
 COPY --from=build /app/publish .
 
-# SQLite necesita escribir en su directorio, y el proceso no corre como root.
-#
-# /data existe y pertenece al usuario de la aplicación para que, al montar ahí un
-# volumen con docker compose, Docker herede esa propiedad al inicializarlo. Sin
-# esto el volumen se crearía como root y el proceso no podría escribir.
-RUN mkdir -p /app/Data /data \
-    && chown -R $APP_UID /app/Data /data
+# El proceso no corre como root. Ya no hace falta preparar ningún directorio
+# escribible: los datos viven en SQL Server, no en un fichero dentro de la
+# imagen.
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "LegacyLens.Web.dll"]

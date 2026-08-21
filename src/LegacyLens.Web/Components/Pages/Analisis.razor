@@ -1,22 +1,23 @@
 @page "/analisis"
 @using System.Security.Claims
-@using LegacyLens.Web.Data
-@using LegacyLens.Web.Services
+@using LegacyLens.Application.Abstractions
+@using LegacyLens.Application.Analyses
+@using MediatR
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @rendermode InteractiveServer
 
-@inject AnalysisStore Store
+@inject ISender Sender
 
 <PageTitle>Mis análisis | Legacy Lens</PageTitle>
 
 <h1>Mis análisis</h1>
 
-@if (analyses is null)
+@if (analisis is null)
 {
     <p class="text-secondary">Cargando...</p>
 }
-else if (analyses.Count == 0)
+else if (analisis.Count == 0)
 {
     <p class="text-secondary">
         Todavía no has analizado ningún script.
@@ -36,7 +37,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in analyses)
+            @foreach (var item in analisis)
             {
                 <tr>
                     <td><code>@item.FileName</code></td>
@@ -66,7 +67,9 @@ else
 }
 
 @code {
-    private List<StoredAnalysis>? analyses;
+    // AnalysisSummary es un modelo de lectura de la capa de aplicación, no la
+    // entidad de persistencia: la página ya no sabe cómo se guardan los datos.
+    private IReadOnlyList<AnalysisSummary>? analisis;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
@@ -81,6 +84,6 @@ else
             userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
-        analyses = await Store.ListAsync(userId);
+        analisis = await Sender.Send(new ListAnalysesQuery(userId ?? string.Empty));
     }
 }

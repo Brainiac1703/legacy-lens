@@ -72,7 +72,7 @@ az storage container create `
     --auth-mode login `
     --output none
 
-$backendPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'infra/backend.hcl'
+$backendPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'Deploy/infra/backend.hcl'
 
 @"
 resource_group_name  = "$ResourceGroup"
@@ -85,7 +85,7 @@ Write-Host ''
 Write-Host "Escrito $backendPath" -ForegroundColor Green
 Write-Host ''
 Write-Host 'Siguiente paso: migrar el estado local al remoto.' -ForegroundColor Yellow
-Write-Host '  cd infra'
+Write-Host '  cd Deploy/infra'
 Write-Host '  terraform init -migrate-state -backend-config=backend.hcl'
 Write-Host ''
 Write-Host 'Y para el pipeline, anota estos valores:' -ForegroundColor Yellow

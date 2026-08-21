@@ -71,7 +71,8 @@ OpenAI no está configurado o falla, el análisis estático se entrega igual.
 | Análisis | `Microsoft.SqlServer.TransactSql.ScriptDom` 180.x | Parser oficial de T-SQL de Microsoft |
 | IA | `Microsoft.Extensions.AI` sobre Azure OpenAI | Abstracción de proveedor y salida estructurada |
 | Modelos | `gpt-4.1-mini` y `gpt-4o` | Dos modelos con papeles distintos, ver abajo |
-| Datos | SQLite con EF Core | Sin infraestructura de datos que aprovisionar |
+| Datos | Azure SQL Database *serverless* con EF Core | Autopausa: el uso es a ráfagas |
+| Aplicación | MediatR 12.5.0 y FluentValidation | CQRS con behaviours de log y validación |
 | Autenticación | ASP.NET Core Identity | Requisito de usuario de prueba del TFM |
 | Grafos | Mermaid | El grafo es texto: comparable, exportable, versionable |
 | Contenedor | Docker multi-stage, imagen no-root | |
@@ -139,14 +140,14 @@ Aprovisiona Azure OpenAI y configura el endpoint. Sin clave se usa la identidad 
 sesión de `az login`:
 
 ```bash
-cd infra
+cd Deploy/infra
 cp terraform.tfvars.example terraform.tfvars   # y pon tu subscription_id
 terraform init
 terraform apply
 
 cd ..
 dotnet user-secrets --project src/LegacyLens.Web \
-  set "Ai:Endpoint" "$(cd infra && terraform output -raw openai_endpoint)"
+  set "Ai:Endpoint" "$(cd Deploy/infra && terraform output -raw openai_endpoint)"
 dotnet run --project src/LegacyLens.Web
 ```
 
@@ -164,7 +165,7 @@ Mide la calidad de la parte no determinista contra un conjunto dorado de reglas 
 y compara modelos:
 
 ```bash
-export Ai__Endpoint=$(cd infra && terraform output -raw openai_endpoint)
+export Ai__Endpoint=$(cd Deploy/infra && terraform output -raw openai_endpoint)
 dotnet run --project tools/LegacyLens.Evals -- \
   --models gpt-4.1-mini,gpt-4o \
   --out docs/evals/informe.md
@@ -211,7 +212,7 @@ Studio operan sobre el mismo proyecto.
 ### Desplegar a mano
 
 ```bash
-cd infra
+cd Deploy/infra
 terraform apply -var deploy_app=true
 cd ..
 ./scripts/deploy.ps1
@@ -227,42 +228,41 @@ falta autenticarse contra el registro ni subir la imagen desde casa.
 ```
 legacy-lens/
 ├── src/
-│   ├── LegacyLens.Domain/        Modelos. Sin dependencias externas.
-│   │   ├── SqlObjects.cs         SqlObject, Dependency
-│   │   ├── Metrics.cs            CodeMetrics, RiskScore, RiskFactor
-│   │   └── Documentation.cs      ObjectDocumentation, MigrationPlan, AnalysisResult
+│   ├── LegacyLens.Domain/         Entidades y value objects. Sin dependencias.
 │   │
-│   ├── LegacyLens.Analysis/      Análisis estático. Determinista y testeable.
-│   │   ├── TSqlAnalyzer.cs       Punto de entrada: script → AnalysisResult
-│   │   ├── ObjectAnalysisVisitor.cs  Recorrido del AST
-│   │   ├── NameResolver.cs       Normalización de nombres
-│   │   └── RiskScorer.cs         Pesos explícitos con justificación
+│   ├── LegacyLens.Application/    Casos de uso. Depende solo de Domain.
+│   │   ├── Abstractions/          Los puertos: repositorio, analizador, IA
+│   │   ├── Analyses/              Comandos, queries, handlers y validadores
+│   │   ├── Common/Behaviours/     Log y validación en la pipeline de MediatR
+│   │   ├── Documentation/         Exportador a Markdown y grafos Mermaid
+│   │   └── Costing/               Precios y consumo por modelo
 │   │
-│   ├── LegacyLens.Ai/            Interpretación. La única parte no determinista.
-│   │   ├── AiOptions.cs          Configuración y contador de consumo
-│   │   ├── Prompts.cs            Construcción de prompts con hechos verificados
-│   │   └── AiEnrichmentService.cs  Paralelismo, caché y tolerancia a fallos
+│   ├── LegacyLens.Persistence.EF/ Adaptador de datos. Implementa el repositorio.
+│   │   ├── LegacyLensDbContext.cs Contexto único: identidades y análisis
+│   │   ├── Entities/              Lo que se guarda, no lo que se razona
+│   │   ├── Configurations/        IEntityTypeConfiguration por entidad
+│   │   ├── Migrations/            Historial de esquema
+│   │   └── Repositories/          Aquí vive la serialización a JSON
 │   │
-│   └── LegacyLens.Web/           Blazor Web App
-│       ├── Components/Pages/     Home, Analizar, Analisis, AnalisisDetalle
-│       ├── Services/             Workflow, almacén, exportador, grafos Mermaid
-│       └── Data/                 Identity, almacén de análisis, sembrado
+│   ├── LegacyLens.Analysis/       Adaptador de parseo. Implementa ITSqlAnalyzer.
+│   ├── LegacyLens.Ai/             Adaptador de IA. Implementa IAiEnrichmentService.
+│   └── LegacyLens.Web/            Presentación. Solo ISender y composición de DI.
 │
-├── tests/
-│   └── LegacyLens.Analysis.Tests/  15 tests sobre el analizador
+├── tests/LegacyLens.Analysis.Tests/  15 tests sobre el analizador
+├── tools/LegacyLens.Evals/          Arnés de evaluación del modelo
 │
-├── samples/legacy-erp.sql        Base de datos de ejemplo (sintética)
-├── infra/                        Terraform: Azure OpenAI, ACR, Container Apps
-├── scripts/deploy.ps1            Despliegue
-├── .github/workflows/ci.yml      Integración continua
+├── Deploy/
+│   ├── infra/                     Terraform
+│   ├── actions/                   Composite actions del pipeline
+│   └── sql/                       Scripts del plano de datos de Azure SQL
+│
+├── docker-compose.yml            App + SQL Server con su base y el ERP de ejemplo
+├── Directory.Packages.props      Versiones de paquetes, centralizadas
+├── NuGet.config                  Solo nuget.org, con asignación de origen
 ├── AGENTS.md                     Instrucciones para agentes de IA
-├── tools/LegacyLens.Evals/       Arnés de evaluación del modelo
-├── docker-compose.yml           Entorno de desarrollo: app + SQL Server con el ejemplo
-├── docker-compose.override.yml  Ajustes que solo aplican en local
-├── docker-compose.dcproj        Para que aparezca en la solución de Visual Studio
 └── docs/
-    ├── adr/                      Registros de decisiones de arquitectura
-    ├── evals/informe.md          Resultado de la evaluación, con la salida generada
+    ├── adr/                      Siete decisiones de arquitectura razonadas
+    ├── evals/informe.md          Resultado de la evaluación del modelo
     ├── seguridad.md              Revisión contra OWASP Top 10 2025
     ├── hoja-de-ruta.md           Alcance, fases siguientes y descartes
     ├── trazabilidad-temario.md   Dónde se demuestra cada módulo del máster
@@ -270,9 +270,20 @@ legacy-lens/
     └── slides.md                 Presentación (formato Marp)
 ```
 
-La dirección de las dependencias es estricta: `Domain` no conoce a nadie, `Analysis` y `Ai`
-solo conocen `Domain`, y `Web` los orquesta. `Analysis` **no** depende de `Ai`, que es lo
-que permite que el análisis estático funcione por sí solo.
+**La dirección de las dependencias es estricta y apunta siempre hacia dentro.** `Domain` no
+conoce a nadie. `Application` solo conoce `Domain` y declara los puertos que necesita.
+`Persistence.EF`, `Analysis` y `Ai` son adaptadores: implementan esos puertos, y ninguno
+conoce a los otros. `Web` no hace más que componer.
+
+Dos consecuencias concretas de esa disciplina:
+
+- `Analysis` **no** depende de `Ai`, que es lo que permite que el análisis estático funcione
+  por sí solo cuando no hay IA configurada.
+- La presentación no conoce el esquema de la base de datos. El listado recibe un modelo de
+  lectura, no la entidad de Entity Framework.
+
+El razonamiento completo, con las alternativas descartadas, está en el
+[ADR 0007](docs/adr/0007-capas-cqrs-y-repositorios.md).
 
 ---
 
@@ -375,9 +386,10 @@ primera carga en aplicaciones con mucho tráfico, un problema que esta no tiene.
 `Server`, los componentes llaman directamente al analizador, y el circuito de SignalR
 proporciona **el progreso del análisis en tiempo real sin escribir nada**.
 
-**Dos contextos de EF Core.** Identity trae su juego de migraciones con la plantilla y
-conviene no tocarlo. El almacén de análisis es una única tabla de solo-añadir sin evolución
-de esquema que versionar, así que usa un contexto aparte con `EnsureCreated`.
+**Un único contexto de EF Core.** Al principio hubo dos, por herencia de la plantilla: uno
+para Identity con migraciones y otro para los análisis con `EnsureCreated`. Con una base de
+datos servidor detrás, dos historiales de esquema son dos cosas que aplicar y mantener en
+orden en cada despliegue, sin ninguna ventaja.
 
 **El resultado del análisis se guarda serializado como JSON**, no con una tabla por
 entidad. Se escribe una vez y se lee entero, nunca se consulta por partes ni se actualiza
@@ -401,9 +413,8 @@ hace comparable entre ejecuciones y exportable dentro del propio Markdown.
   Container Apps. Con una réplica no aplica, pero es lo primero que habría que resolver —
   con el provider `azapi` — antes de escalar horizontalmente, porque el circuito de Blazor
   Server tiene estado.
-- **SQLite en almacenamiento efímero.** Al reiniciarse el contenedor se pierden los
-  análisis guardados. Es aceptable para una demo; en producción iría a PostgreSQL o al
-  almacenamiento persistente de Container Apps.
+- **Una sola réplica.** El circuito de Blazor Server tiene estado, y escalar
+  horizontalmente exige afinidad de sesión, que el provider de `azurerm` no expone todavía.
 - **El estado de Terraform es local.** No hay backend remoto configurado, así que el
   `terraform.tfstate` vive en la máquina de quien aplica y está excluido del repositorio.
   Para un proyecto de una sola persona es suficiente; en equipo haría falta un backend en
@@ -475,7 +486,7 @@ presenta un token firmado que Azure valida contra este repositorio y esta rama.
 
 | Pipeline | Se dispara con | Qué hace |
 | --- | --- | --- |
-| `infra.yml` | Cambios en `infra/` | En un *pull request* planifica y **publica el plan como comentario**. Al integrar, aplica **el plan guardado**, no uno nuevo. |
+| `infra.yml` | Cambios en `Deploy/infra/` | En un *pull request* planifica y **publica el plan como comentario**. Al integrar, aplica **el plan guardado**, no uno nuevo. |
 | `deploy.yml` | Cambios en `src/` o el `Dockerfile` | Verifica con los tests, construye la imagen con `az acr build`, publica la revisión y **comprueba que la aplicación responde 200** antes de darlo por bueno. |
 
 Hay **dos identidades con permisos distintos**, y es deliberado: la de despliegue —la que se
@@ -491,8 +502,8 @@ declaradas, está en el [ADR 0006](docs/adr/0006-cicd-con-oidc-y-dos-identidades
 ./scripts/bootstrap-tfstate.ps1
 
 # 2. Configurar el backend y migrar el estado local al remoto.
-cp infra/backend.hcl.example infra/backend.hcl   # y rellenar
-cd infra; terraform init -migrate-state -backend-config=backend.hcl; cd ..
+cp Deploy/infra/backend.hcl.example Deploy/infra/backend.hcl   # y rellenar
+cd Deploy/infra; terraform init -migrate-state -backend-config=backend.hcl; cd ..
 
 # 3. Identidades y credenciales federadas para GitHub.
 ./scripts/bootstrap-github-oidc.ps1 -Repository Brainiac1703/legacy-lens

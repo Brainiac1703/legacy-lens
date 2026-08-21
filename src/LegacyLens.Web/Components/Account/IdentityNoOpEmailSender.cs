@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using LegacyLens.Web.Data;
+using LegacyLens.Persistence.EF.Entities;
 
 namespace LegacyLens.Web.Components.Account;
 

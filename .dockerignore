@@ -8,7 +8,7 @@
 .gitignore
 docs
 tests
-infra
+Deploy
 **/*.db
 **/*.db-shm
 **/*.db-wal

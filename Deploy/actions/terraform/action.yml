@@ -1,0 +1,37 @@
+name: Preparar Terraform
+description: >-
+  Instala Terraform e inicializa el backend remoto. Vive en Deploy/actions y no
+  en .github porque las composite actions sí pueden estar en cualquier ruta, al
+  contrario que los workflows. Lo usan los trabajos de plan y de apply, que
+  necesitan exactamente la misma inicialización.
+
+inputs:
+  storage-account:
+    description: Cuenta de almacenamiento del estado
+    required: true
+  container:
+    description: Contenedor del estado
+    required: true
+  key:
+    description: Ruta del blob de estado
+    required: true
+  version:
+    description: Versión de Terraform
+    required: false
+    default: 1.7.5
+
+runs:
+  using: composite
+  steps:
+    - uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.version }}
+
+    - name: Inicializar el backend
+      shell: bash
+      working-directory: Deploy/infra
+      run: |
+        terraform init \
+          -backend-config="storage_account_name=${{ inputs.storage-account }}" \
+          -backend-config="container_name=${{ inputs.container }}" \
+          -backend-config="key=${{ inputs.key }}"

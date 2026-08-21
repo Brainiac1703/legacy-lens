@@ -1,16 +1,16 @@
 @page "/analizar"
 @using System.Security.Claims
-@using LegacyLens.Ai
-@using LegacyLens.Domain
-@using LegacyLens.Web.Services
+@using LegacyLens.Application.Abstractions
+@using LegacyLens.Application.Analyses
+@using LegacyLens.Application.Common
+@using MediatR
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @rendermode InteractiveServer
 
-@inject AnalysisWorkflow Workflow
-@inject AiEnrichmentService Ai
+@inject ISender Sender
+@inject IAiEnrichmentService Ai
 @inject NavigationManager Navigation
-@inject IWebHostEnvironment Environment
 @inject ILogger<Analizar> Logger
 
 <PageTitle>Analizar script | Legacy Lens</PageTitle>
@@ -32,7 +32,7 @@
     </div>
 }
 
-@if (state is null)
+@if (estado is null)
 {
     <div class="card mb-4">
         <div class="card-body">
@@ -52,30 +52,30 @@
                 sistema heredado: cursores, SQL dinámico, escrituras sin transacción y
                 procedimientos encadenados.
             </p>
-            <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@running">
+            <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@ejecutando">
                 Analizar el ejemplo
             </button>
         </div>
     </div>
 }
 
-@if (state is not null)
+@if (estado is not null)
 {
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">@FileNameInProgress</h5>
-            <p class="mb-2">@state.Message</p>
+            <h5 class="card-title">@ficheroEnCurso</h5>
+            <p class="mb-2">@estado.Message</p>
 
-            @if (state.Total > 0)
+            @if (estado.Total > 0)
             {
-                <div class="progress mb-2" role="progressbar" aria-valuenow="@state.Percentage"
+                <div class="progress mb-2" role="progressbar" aria-valuenow="@estado.Percentage"
                      aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar" style="width: @(state.Percentage)%">
-                        @state.Completed / @state.Total
+                    <div class="progress-bar" style="width: @(estado.Percentage)%">
+                        @estado.Completed / @estado.Total
                     </div>
                 </div>
             }
-            else if (state.Phase != AnalysisPhase.Done)
+            else if (estado.Phase != AnalysisPhase.Done)
             {
                 <div class="progress mb-2">
                     <div class="progress-bar progress-bar-striped progress-bar-animated"
@@ -84,21 +84,26 @@
             }
 
             <ul class="list-unstyled small text-secondary mb-0">
-                <li>@Marker(AnalysisPhase.Parsing) Análisis estático del script</li>
-                <li>@Marker(AnalysisPhase.Documenting) Documentación de cada objeto</li>
-                <li>@Marker(AnalysisPhase.Planning) Plan de migración</li>
-                <li>@Marker(AnalysisPhase.Saving) Guardado</li>
+                <li>@Marca(AnalysisPhase.Parsing) Análisis estático del script</li>
+                <li>@Marca(AnalysisPhase.Documenting) Documentación de cada objeto</li>
+                <li>@Marca(AnalysisPhase.Planning) Plan de migración</li>
+                <li>@Marca(AnalysisPhase.Saving) Guardado</li>
             </ul>
         </div>
     </div>
 }
 
-@if (error is not null)
+@if (errores.Count > 0)
 {
     <div class="alert alert-danger mt-3">
         <strong>No se pudo completar el análisis.</strong>
-        <div class="small mt-1">@error</div>
-        <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="Reset">Volver a intentarlo</button>
+        <ul class="small mt-1 mb-2">
+            @foreach (var error in errores)
+            {
+                <li>@error</li>
+            }
+        </ul>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="Reiniciar">Volver a intentarlo</button>
     </div>
 }
 
@@ -106,10 +111,10 @@
     private const int MaxFileSizeMb = 8;
     private const long MaxFileSize = MaxFileSizeMb * 1024L * 1024L;
 
-    private AnalysisProgressState? state;
-    private string? error;
-    private bool running;
-    private string FileNameInProgress = string.Empty;
+    private AnalysisProgress? estado;
+    private readonly List<string> errores = [];
+    private bool ejecutando;
+    private string ficheroEnCurso = string.Empty;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
@@ -120,7 +125,7 @@
 
         if (file.Size > MaxFileSize)
         {
-            error = $"El fichero pesa {file.Size / 1024 / 1024} MB y el límite son {MaxFileSizeMb} MB.";
+            errores.Add($"El fichero pesa {file.Size / 1024 / 1024} MB y el límite son {MaxFileSizeMb} MB.");
             return;
         }
 
@@ -130,12 +135,12 @@
             using var reader = new StreamReader(stream);
             var script = await reader.ReadToEndAsync();
 
-            await RunAsync(script, file.Name);
+            await EjecutarAsync(script, file.Name);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error leyendo el fichero subido");
-            error = "No se pudo leer el fichero.";
+            errores.Add("No se pudo leer el fichero.");
         }
     }
 
@@ -145,58 +150,67 @@
 
         if (!File.Exists(path))
         {
-            error = "No se encontró el script de ejemplo en el despliegue.";
+            errores.Add("No se encontró el script de ejemplo en el despliegue.");
             return;
         }
 
-        await RunAsync(await File.ReadAllTextAsync(path), "legacy-erp.sql");
+        await EjecutarAsync(await File.ReadAllTextAsync(path), "legacy-erp.sql");
     }
 
-    private async Task RunAsync(string script, string fileName)
+    /// <summary>
+    /// Consume el flujo del caso de uso.
+    ///
+    /// El componente ya no orquesta nada: manda una petición y recorre lo que
+    /// emite. Toda la coordinación entre parser, IA y persistencia vive en el
+    /// handler, que es donde se puede probar sin un navegador delante.
+    /// </summary>
+    private async Task EjecutarAsync(string script, string fileName)
     {
-        if (running) return;
+        if (ejecutando) return;
 
-        running = true;
-        error = null;
-        FileNameInProgress = fileName;
+        ejecutando = true;
+        errores.Clear();
+        ficheroEnCurso = fileName;
 
         try
         {
-            var userId = await CurrentUserIdAsync();
+            var userId = await UsuarioActualAsync();
+            var peticion = new AnalyzeScriptRequest(script, fileName, userId ?? string.Empty);
 
-            var result = await Workflow.RunAsync(
-                script,
-                fileName,
-                userId,
-                // El callback llega desde hilos del pool, así que hay que volver
-                // al contexto del circuito antes de tocar la interfaz.
-                async progress =>
-                {
-                    state = progress;
-                    await InvokeAsync(StateHasChanged);
-                });
+            await foreach (var paso in Sender.CreateStream(peticion))
+            {
+                estado = paso;
+                StateHasChanged();
 
-            Navigation.NavigateTo($"/analisis/{result.Id}");
+                if (paso.Phase == AnalysisPhase.Done && paso.AnalysisId is { } id)
+                    Navigation.NavigateTo($"/analisis/{id}");
+            }
+        }
+        catch (ValidationException ex)
+        {
+            // Los mensajes vienen del validador, así que se pueden mostrar tal cual.
+            errores.AddRange(ex.Errors.SelectMany(e => e.Value));
+            estado = null;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Fallo el análisis de {Fichero}", fileName);
-            error = ex.Message;
-            state = null;
+            Logger.LogError(ex, "Falló el análisis de {Fichero}", fileName);
+            errores.Add(ex.Message);
+            estado = null;
         }
         finally
         {
-            running = false;
+            ejecutando = false;
         }
     }
 
-    private void Reset()
+    private void Reiniciar()
     {
-        error = null;
-        state = null;
+        errores.Clear();
+        estado = null;
     }
 
-    private async Task<string?> CurrentUserIdAsync()
+    private async Task<string?> UsuarioActualAsync()
     {
         if (AuthenticationState is null) return null;
 
@@ -204,10 +218,10 @@
         return authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
-    private string Marker(AnalysisPhase phase)
+    private string Marca(AnalysisPhase phase)
     {
-        if (state is null) return "○";
-        if (state.Phase > phase || state.Phase == AnalysisPhase.Done) return "✓";
-        return state.Phase == phase ? "▸" : "○";
+        if (estado is null) return "○";
+        if (estado.Phase > phase || estado.Phase == AnalysisPhase.Done) return "✓";
+        return estado.Phase == phase ? "▸" : "○";
     }
 }

@@ -150,7 +150,7 @@ Abre la estructura del repositorio.
 > está configurado, el análisis estático se sigue entregando y la aplicación sigue siendo
 > útil.»
 
-Abre `infra/`.
+Abre `Deploy/infra/`.
 
 > «La infraestructura es Terraform: Azure OpenAI con sus dos despliegues de modelo, el
 > registro de contenedores y el Container App. Y no hay ni un secreto: la aplicación llama a

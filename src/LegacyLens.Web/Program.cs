@@ -1,19 +1,38 @@
 using LegacyLens.Ai;
 using LegacyLens.Analysis;
+using LegacyLens.Application;
+using LegacyLens.Application.Analyses;
+using LegacyLens.Persistence.EF;
+using LegacyLens.Persistence.EF.Entities;
 using LegacyLens.Web.Components;
 using LegacyLens.Web.Components.Account;
-using LegacyLens.Web.Data;
-using LegacyLens.Web.Services;
+using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// ---------------------------------------------------------------------------
+// Capas de la aplicación.
+//
+// Cada capa se registra a sí misma y la presentación solo las compone. Este
+// bloque es la única parte del proyecto web que conoce la existencia de las
+// demás: nada de aquí abajo sabe que hay Blazor delante.
+// ---------------------------------------------------------------------------
+
+builder.Services.AddApplication(builder.Configuration);
+builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddAnalysis();
+builder.Services.AddAi(builder.Configuration);
+
+// ---------------------------------------------------------------------------
+// Identidad y presentación
+// ---------------------------------------------------------------------------
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
@@ -26,48 +45,22 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Falta la cadena de conexión 'DefaultConnection'.");
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
-
-// Contexto separado para los análisis: ver AnalysisDbContext.
-builder.Services.AddDbContext<AnalysisDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("AnalysisConnection")
-        ?? "Data Source=analyses.db"));
-
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
-        options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
+
+        // Desde la capa de persistencia, porque la versión del esquema también
+        // la necesita la factoría de tiempo de diseño. Tenerla en dos sitios ya
+        // generó una migración sin la tabla de passkeys.
+        options.Stores.SchemaVersion = IdentityDefaults.SchemaVersion;
     })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddEntityFrameworkStores<LegacyLensDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
-
-// ---------------------------------------------------------------------------
-// Legacy Lens
-// ---------------------------------------------------------------------------
-
-builder.Services.Configure<AiOptions>(builder.Configuration.GetSection(AiOptions.SectionName));
-
-// El analizador no tiene estado: una instancia basta para todo el proceso.
-builder.Services.AddSingleton<TSqlAnalyzer>();
-
-// Singleton para que la caché de documentación y el recuento de tokens
-// sobrevivan entre análisis.
-builder.Services.AddSingleton<AiUsage>();
-builder.Services.AddSingleton<AiEnrichmentService>();
-
-builder.Services.AddSingleton<CostEstimator>();
-
-builder.Services.AddScoped<AnalysisStore>();
-builder.Services.AddScoped<AnalysisWorkflow>();
 
 // Container Apps termina el TLS en su proxy y reenvía en claro al contenedor.
 // Sin esto, la redirección a HTTPS entraría en bucle.
@@ -109,28 +102,33 @@ app.MapAdditionalIdentityEndpoints();
 // Descarga del paquete de documentación. Va como endpoint y no por interop con
 // JavaScript porque así el navegador gestiona la descarga como cualquier otra y
 // el fichero no tiene que pasar por el circuito de SignalR.
+//
+// El endpoint no construye el documento: solo traduce HTTP a una consulta y la
+// respuesta a un fichero. Generar el informe es trabajo de la capa de
+// aplicación, y así el mismo documento saldría igual desde una API o una CLI.
 app.MapGet("/analisis/{id:guid}/markdown", async (
         Guid id,
         ClaimsPrincipal user,
-        AnalysisStore store,
+        ISender sender,
         CancellationToken ct) =>
     {
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var result = await store.GetAsync(id, userId, ct);
+        if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-        if (result is null) return Results.NotFound();
+        var export = await sender.Send(new ExportAnalysisMarkdownQuery(id, userId), ct);
 
-        var markdown = MarkdownExporter.Export(result);
-        var fileName = $"{Path.GetFileNameWithoutExtension(result.SourceFileName)}-legacy-lens.md";
-
-        return Results.File(
-            System.Text.Encoding.UTF8.GetBytes(markdown),
-            "text/markdown; charset=utf-8",
-            fileName);
+        return export is null
+            ? Results.NotFound()
+            : Results.File(
+                System.Text.Encoding.UTF8.GetBytes(export.Content),
+                "text/markdown; charset=utf-8",
+                export.FileName);
     })
     .RequireAuthorization();
 
-await DemoDataSeeder.SeedAsync(app.Services, app.Configuration,
+await DemoDataSeeder.MigrateAndSeedAsync(
+    app.Services,
+    app.Configuration,
     app.Services.GetRequiredService<ILogger<Program>>());
 
 app.Run();

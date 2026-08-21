@@ -36,7 +36,7 @@ recordar: es que no existe el secreto.
 **A favor:**
 
 - No hay ningún secreto que almacenar, rotar ni que se pueda filtrar.
-- El permiso es explícito y auditable: está en `infra/app.tf`, revisable en un *pull
+- El permiso es explícito y auditable: está en `Deploy/infra/app.tf`, revisable en un *pull
   request*.
 - El mismo código funciona en local y en producción sin ramas de configuración: en local usa
   la identidad del desarrollador, que además hereda sus propios permisos.
