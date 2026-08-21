@@ -12,6 +12,29 @@ jobs:
     name: Compilar y probar
     runs-on: ubuntu-latest
 
+    # SQL Server efímero para la comprobación de humo de la imagen. La
+    # aplicación aplica migraciones al arrancar, así que sin una base de datos
+    # real no llega ni a servir la primera página: probarla contra un servidor
+    # inexistente no comprueba nada.
+    #
+    # La contraseña está en claro a propósito: es un contenedor que vive lo que
+    # dura el trabajo, sin datos y sin puerto expuesto fuera del ejecutor.
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'Integracion.2026!'
+          MSSQL_PID: Developer
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "timeout 2 bash -c '</dev/tcp/localhost/1433'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 15
+          --health-start-period 20s
+
     steps:
       - uses: actions/checkout@v4
 
@@ -39,28 +62,44 @@ jobs:
       # y parece correcta, pero no tiene runtime en el navegador y ningún botón
       # funciona. Pasó de verdad, por publicar con --no-restore, y tardó en
       # detectarse porque todas las comprobaciones anteriores daban verde.
-      - name: Comprobar que la imagen sirve el runtime de Blazor
+      - name: Comprobar que la imagen arranca, migra y sirve Blazor
         run: |
-          docker run -d --name humo -p 8080:8080 \
-            -e 'ConnectionStrings__DefaultConnection=Server=nohay;Database=x;Encrypt=False' \
+          # --network host para que el contenedor alcance el servicio de SQL
+          # Server en localhost del ejecutor.
+          docker run -d --name humo --network host \
+            -e 'ASPNETCORE_HTTP_PORTS=8080' \
+            -e 'ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=LegacyLensCi;User Id=sa;Password=Integracion.2026!;TrustServerCertificate=True;Encrypt=True' \
             legacylens:ci
 
-          # Se espera a que el servidor acepte conexiones. La base de datos no
-          # existe a propósito: aquí solo se comprueba que los activos estáticos
-          # del framework están en la imagen.
-          for intento in $(seq 1 30); do
-            if curl -sf -o /dev/null http://localhost:8080/_framework/blazor.web.js; then
-              echo "blazor.web.js servido correctamente."
-              docker rm -f humo
-              exit 0
+          for intento in $(seq 1 40); do
+            if curl -sf -o /dev/null http://localhost:8080/; then
+              echo "La aplicación responde tras $intento intento(s)."
+              break
             fi
-            sleep 2
+            if [ "$intento" -eq 40 ]; then
+              echo '::error::La imagen no llegó a servir la página de inicio.'
+              docker logs humo | tail -40
+              docker rm -f humo
+              exit 1
+            fi
+            sleep 3
           done
 
-          echo '::error::La imagen no sirve _framework/blazor.web.js: el publish no incluyó los activos del framework.'
-          docker logs humo | tail -30
+          # Que responda no basta. A una aplicación de Blazor Server sin
+          # wwwroot/_framework le falta el runtime del navegador: sirve el HTML,
+          # parece correcta y ningún botón funciona. Pasó de verdad, por publicar
+          # con --no-restore, y ninguna comprobación anterior lo detectó.
+          if ! curl -sf -o /dev/null http://localhost:8080/_framework/blazor.web.js; then
+            echo '::error::La imagen no sirve _framework/blazor.web.js: el publish no incluyó los activos del framework.'
+            docker logs humo | tail -40
+            docker rm -f humo
+            exit 1
+          fi
+
+          # Si ha respondido es que las migraciones se aplicaron: la aplicación
+          # las ejecuta antes de empezar a servir.
+          echo 'Arranque, migración y runtime de Blazor verificados.'
           docker rm -f humo
-          exit 1
 
   terraform:
     name: Validar infraestructura
