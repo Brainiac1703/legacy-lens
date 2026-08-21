@@ -1,4 +1,4 @@
-namespace LegacyLens.Web.Data;
+namespace LegacyLens.Persistence.EF.Entities;
 
 /// <summary>
 /// Un análisis guardado.

@@ -4,6 +4,7 @@ using System.Text;
 using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
+using LegacyLens.Application.Abstractions;
 using LegacyLens.Domain;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
@@ -11,22 +12,26 @@ using Microsoft.Extensions.Options;
 
 namespace LegacyLens.Ai;
 
-/// <summary>Avance de la fase de IA, para poder mostrarlo en vivo en la interfaz.</summary>
-public sealed record AiProgress(int Completed, int Total, string CurrentObject);
-
 /// <summary>
 /// Enriquece un análisis estático con la interpretación del modelo de lenguaje.
 ///
 /// Es la única parte no determinista del sistema, y está deliberadamente
 /// aislada: si falla o no está configurada, el análisis estático sigue siendo
-/// válido y la aplicación sigue siendo útil.
+/// válido y la aplicación sigue siendo útil. Esa separación es la que permite
+/// que la capa de aplicación dependa de un interface y no de este código.
 /// </summary>
-public sealed class AiEnrichmentService
+public sealed class AiEnrichmentService : IAiEnrichmentService
 {
     private readonly AiOptions _options;
-    private readonly AiUsage _usage;
     private readonly ILogger<AiEnrichmentService> _logger;
     private readonly AzureOpenAIClient? _client;
+
+    /// <summary>
+    /// Separador que no puede aparecer en un nombre de despliegue de Azure OpenAI.
+    /// Sin él, un modelo llamado "a" con cuerpo "bc" y otro llamado "ab" con cuerpo
+    /// "c" producirían la misma entrada al hash y compartirían entrada de caché.
+    /// </summary>
+    private const string CacheKeySeparator = "::";
 
     /// <summary>
     /// Caché por contenido: si el mismo objeto se vuelve a analizar, no se
@@ -36,11 +41,9 @@ public sealed class AiEnrichmentService
 
     public AiEnrichmentService(
         IOptions<AiOptions> options,
-        AiUsage usage,
         ILogger<AiEnrichmentService> logger)
     {
         _options = options.Value;
-        _usage = usage;
         _logger = logger;
 
         if (_options.IsConfigured)
@@ -66,14 +69,10 @@ public sealed class AiEnrichmentService
 
     public bool IsAvailable => _client is not null;
 
-    /// <summary>
-    /// Documenta todos los objetos programables en paralelo, con el límite de
-    /// concurrencia configurado para no agotar la cuota del despliegue.
-    /// </summary>
     public async Task DocumentAllAsync(
         AnalysisResult result,
         IProgress<AiProgress>? progress = null,
-        AiRunUsage? runUsage = null,
+        IModelUsageCollector? usage = null,
         CancellationToken cancellationToken = default)
     {
         if (_client is null) return;
@@ -95,7 +94,7 @@ public sealed class AiEnrichmentService
             {
                 try
                 {
-                    obj.Documentation = await DocumentObjectAsync(chat, obj, result, runUsage, token);
+                    obj.Documentation = await DocumentObjectAsync(chat, obj, result, usage, token);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -115,7 +114,7 @@ public sealed class AiEnrichmentService
         IChatClient chat,
         SqlObject obj,
         AnalysisResult result,
-        AiRunUsage? runUsage,
+        IModelUsageCollector? usage,
         CancellationToken cancellationToken)
     {
         var model = _options.DocumentationDeployment;
@@ -137,7 +136,7 @@ public sealed class AiEnrichmentService
             messages,
             cancellationToken: cancellationToken);
 
-        RecordUsage(response.Usage, model, runUsage);
+        RecordUsage(response.Usage, model, usage);
 
         var dto = response.Result;
         var documentation = new ObjectDocumentation(
@@ -151,13 +150,9 @@ public sealed class AiEnrichmentService
         return documentation;
     }
 
-    /// <summary>
-    /// Genera el plan de migración. Una sola llamada, con el modelo más capaz,
-    /// porque es la única decisión que necesita ver el grafo entero a la vez.
-    /// </summary>
     public async Task<MigrationPlan?> BuildPlanAsync(
         AnalysisResult result,
-        AiRunUsage? runUsage = null,
+        IModelUsageCollector? usage = null,
         CancellationToken cancellationToken = default)
     {
         if (_client is null) return null;
@@ -178,7 +173,7 @@ public sealed class AiEnrichmentService
                 messages,
                 cancellationToken: cancellationToken);
 
-            RecordUsage(response.Usage, model, runUsage);
+            RecordUsage(response.Usage, model, usage);
 
             var dto = response.Result;
 
@@ -197,23 +192,12 @@ public sealed class AiEnrichmentService
         }
     }
 
-    private void RecordUsage(UsageDetails? usage, string model, AiRunUsage? runUsage)
+    private static void RecordUsage(UsageDetails? usage, string model, IModelUsageCollector? collector)
     {
-        if (usage is null) return;
+        if (usage is null || collector is null) return;
 
-        var input = usage.InputTokenCount ?? 0;
-        var output = usage.OutputTokenCount ?? 0;
-
-        // El acumulado del proceso y el de este análisis se llevan por separado:
-        // varios análisis pueden estar en curso a la vez.
-        _usage.Add(model, input, output);
-        runUsage?.Add(model, input, output);
+        collector.Add(model, usage.InputTokenCount ?? 0, usage.OutputTokenCount ?? 0);
     }
-
-    // Separador que no puede aparecer en un nombre de despliegue de Azure OpenAI.
-    // Sin él, un modelo llamado "a" con cuerpo "bc" y otro llamado "ab" con cuerpo
-    // "c" producirían la misma entrada al hash y compartirían entrada de caché.
-    private const string CacheKeySeparator = "::";
 
     private static string CacheKey(string model, string body)
     {

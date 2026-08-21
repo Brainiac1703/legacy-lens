@@ -1,24 +1,39 @@
+using LegacyLens.Persistence.EF.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace LegacyLens.Web.Data;
+namespace LegacyLens.Persistence.EF;
 
 /// <summary>
-/// Prepara la base de datos y siembra el usuario de prueba.
+/// Aplica las migraciones pendientes y siembra el usuario de prueba.
 ///
-/// El TFM exige entregar unas credenciales de acceso, así que el usuario se
-/// crea con el correo ya confirmado: la plantilla exige confirmación para
-/// iniciar sesión y sin este paso las credenciales publicadas no servirían.
+/// El usuario se crea con el correo ya confirmado: la plantilla exige
+/// confirmación para iniciar sesión y sin este paso las credenciales publicadas
+/// en el README no servirían.
+///
+/// Sobre aplicar migraciones al arrancar: se mantiene porque hace que levantar
+/// el proyecto en local o en un contenedor no requiera ningún paso previo. En el
+/// despliegue real, el pipeline las aplica antes de publicar la nueva revisión,
+/// así que cuando la aplicación arranca ya no queda nada por aplicar y esto es
+/// una comprobación inocua. El orden importa: primero el esquema, después el
+/// código que lo usa.
 /// </summary>
 public static class DemoDataSeeder
 {
-    public static async Task SeedAsync(IServiceProvider services, IConfiguration configuration, ILogger logger)
+    public static async Task MigrateAndSeedAsync(
+        IServiceProvider services,
+        IConfiguration configuration,
+        ILogger logger,
+        CancellationToken cancellationToken = default)
     {
         using var scope = services.CreateScope();
         var sp = scope.ServiceProvider;
 
-        await sp.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
-        await sp.GetRequiredService<AnalysisDbContext>().Database.EnsureCreatedAsync();
+        await sp.GetRequiredService<LegacyLensDbContext>()
+            .Database.MigrateAsync(cancellationToken);
 
         var email = configuration["Demo:Email"];
         var password = configuration["Demo:Password"];

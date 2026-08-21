@@ -21,18 +21,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.8" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LegacyLens.Domain\LegacyLens.Domain.csproj" />
     <ProjectReference Include="..\LegacyLens.Analysis\LegacyLens.Analysis.csproj" />
     <ProjectReference Include="..\LegacyLens.Ai\LegacyLens.Ai.csproj" />
+    <ProjectReference Include="..\LegacyLens.Application\LegacyLens.Application.csproj" />
+    <ProjectReference Include="..\LegacyLens.Persistence.EF\LegacyLens.Persistence.EF.csproj" />
   </ItemGroup>
 
 </Project>

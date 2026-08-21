@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using LegacyLens.Web.Components.Account.Pages;
 using LegacyLens.Web.Components.Account.Pages.Manage;
-using LegacyLens.Web.Data;
+using LegacyLens.Persistence.EF.Entities;
 
 namespace Microsoft.AspNetCore.Routing;
 

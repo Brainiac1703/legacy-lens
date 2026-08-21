@@ -1,4 +1,5 @@
 using System.Text;
+using LegacyLens.Application.Abstractions;
 using LegacyLens.Domain;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
@@ -11,7 +12,7 @@ namespace LegacyLens.Analysis;
 /// real del SQL, no de una interpretación. Es la base de hechos verificados
 /// sobre la que después trabaja el modelo de lenguaje.
 /// </summary>
-public sealed class TSqlAnalyzer
+public sealed class TSqlAnalyzer : ITSqlAnalyzer
 {
     /// <summary>Analiza un script completo y devuelve el inventario con su grafo.</summary>
     public AnalysisResult Analyze(string script, string sourceFileName)

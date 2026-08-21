@@ -1,7 +1,7 @@
 using System.Text;
 using LegacyLens.Domain;
 
-namespace LegacyLens.Web.Services;
+namespace LegacyLens.Application.Documentation;
 
 /// <summary>
 /// Genera el paquete de documentación en Markdown.

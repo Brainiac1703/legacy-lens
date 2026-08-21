@@ -2,6 +2,8 @@ using System.Diagnostics;
 using LegacyLens.Ai;
 using LegacyLens.Analysis;
 using LegacyLens.Domain;
+using LegacyLens.Application.Abstractions;
+using LegacyLens.Application.Costing;
 using LegacyLens.Evals;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,8 +56,7 @@ foreach (var model in models)
     // El modelo de documentación se sobrescribe por ejecución para poder comparar.
     services.PostConfigure<AiOptions>(o => o.DocumentationDeployment = model);
 
-    services.AddSingleton<AiUsage>();
-    services.AddSingleton<AiEnrichmentService>();
+    services.AddSingleton<IAiEnrichmentService, AiEnrichmentService>();
 
     await using var provider = services.BuildServiceProvider();
 
@@ -69,8 +70,11 @@ foreach (var model in models)
         return 1;
     }
 
-    var ai = provider.GetRequiredService<AiEnrichmentService>();
-    var usage = provider.GetRequiredService<AiUsage>();
+    var ai = provider.GetRequiredService<IAiEnrichmentService>();
+
+    // El consumo se acumula por ejecucion, no en un singleton global: cada
+    // modelo evaluado tiene que dar su propia cifra.
+    var usage = new ModelUsageCollector();
 
     var analysis = new TSqlAnalyzer().Analyze(script, Path.GetFileName(scriptPath));
 
@@ -86,17 +90,25 @@ foreach (var model in models)
     var progress = new Progress<AiProgress>(p =>
         Console.Write($"\r  documentando {p.Completed}/{p.Total}...   "));
 
-    await ai.DocumentAllAsync(analysis, progress);
+    await ai.DocumentAllAsync(analysis, progress, usage);
     Console.Write("\r  generando el plan...                \r");
 
-    analysis.Plan = await ai.BuildPlanAsync(analysis);
+    analysis.Plan = await ai.BuildPlanAsync(analysis, usage);
     stopwatch.Stop();
 
     Console.WriteLine("  completado.                          ");
     Console.WriteLine();
 
+    var consumo = usage.Snapshot();
+    analysis.Usage.AddRange(consumo);
+
     var result = Evaluator.Evaluate(
-        analysis, model, usage.InputTokens, usage.OutputTokens, usage.Calls, stopwatch.Elapsed);
+        analysis,
+        model,
+        consumo.Sum(u => u.InputTokens),
+        consumo.Sum(u => u.OutputTokens),
+        consumo.Sum(u => u.Calls),
+        stopwatch.Elapsed);
 
     results.Add(result);
     runs.Add((result, analysis));

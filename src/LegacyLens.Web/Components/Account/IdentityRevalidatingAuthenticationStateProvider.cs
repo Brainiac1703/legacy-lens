@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using LegacyLens.Web.Data;
+using LegacyLens.Persistence.EF.Entities;
 
 namespace LegacyLens.Web.Components.Account;
 

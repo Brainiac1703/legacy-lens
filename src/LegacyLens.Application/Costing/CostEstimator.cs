@@ -1,8 +1,7 @@
-using LegacyLens.Ai;
 using LegacyLens.Domain;
 using Microsoft.Extensions.Options;
 
-namespace LegacyLens.Web.Services;
+namespace LegacyLens.Application.Costing;
 
 /// <summary>Estimación de coste de un modelo concreto.</summary>
 public sealed record ModelCost(ModelUsage Usage, decimal? EstimatedUsd);
@@ -10,22 +9,22 @@ public sealed record ModelCost(ModelUsage Usage, decimal? EstimatedUsd);
 /// <summary>
 /// Traduce tokens a dinero.
 ///
-/// Vive en la capa de presentación y no en el dominio a propósito: los precios no son un
+/// Vive en la capa de aplicación y no en el dominio a propósito: los precios no son un
 /// hecho del análisis, cambian con el tiempo y dependen de la región y del tipo de
 /// despliegue. Un análisis guardado hace seis meses no debe llevar dentro el precio de
-/// entonces.
+/// entonces, y por eso el dominio guarda tokens y no importes.
 ///
 /// Si un modelo no tiene precio configurado, se devuelve el consumo sin importe. Es
 /// preferible mostrar tokens sin coste que inventarse una cifra.
 /// </summary>
-public sealed class CostEstimator(IOptions<AiOptions> options)
+public sealed class CostEstimator(IOptions<PricingOptions> options)
 {
-    private readonly AiOptions _options = options.Value;
+    private readonly PricingOptions _options = options.Value;
 
     public IReadOnlyList<ModelCost> Breakdown(AnalysisResult result) =>
         [.. result.Usage.Select(usage => new ModelCost(
             usage,
-            _options.Pricing.TryGetValue(usage.Model, out var pricing)
+            _options.Models.TryGetValue(usage.Model, out var pricing)
                 ? pricing.Estimate(usage.InputTokens, usage.OutputTokens)
                 : null))];
 

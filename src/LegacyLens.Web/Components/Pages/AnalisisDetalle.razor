@@ -1,12 +1,15 @@
 @page "/analisis/{Id:guid}"
 @using System.Security.Claims
+@using LegacyLens.Application.Analyses
+@using LegacyLens.Application.Costing
+@using LegacyLens.Application.Documentation
 @using LegacyLens.Domain
-@using LegacyLens.Web.Services
+@using MediatR
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @rendermode InteractiveServer
 
-@inject AnalysisStore Store
+@inject ISender Sender
 @inject CostEstimator Costs
 @inject IJSRuntime JS
 
@@ -323,7 +326,7 @@ else
             userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
-        result = await Store.GetAsync(Id, userId);
+        result = await Sender.Send(new GetAnalysisQuery(Id, userId ?? string.Empty));
         loading = false;
     }
 

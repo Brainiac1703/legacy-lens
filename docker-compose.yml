@@ -5,14 +5,20 @@ name: legacy-lens
 #
 #   docker compose up --build
 #   -> aplicación en http://localhost:8081
-#   -> SQL Server en localhost:1433 con la base de datos LegacyERP cargada
+#   -> SQL Server en localhost:14330 con LegacyLens (datos de la app) y LegacyERP
 #
-# Nota importante sobre el diseño: la aplicación NO se conecta a SQL Server, y
-# no debe hacerlo nunca. El SQL que analiza se parsea, jamás se ejecuta (ver
-# docs/seguridad.md, A05). El servidor está aquí como fuente de la que generar
-# scripts reales con Generate Scripts y probar el flujo completo sin depender de
-# ningún servidor de la empresa. Por eso 'web' no declara depends_on sobre él:
-# sería una dependencia falsa.
+# El servidor de SQL cumple dos papeles distintos que conviene no confundir:
+#
+#   1. Aloja la base de datos propia de la aplicación (LegacyLens): usuarios y
+#      análisis guardados. De ahí el depends_on: es una dependencia real.
+#
+#   2. Aloja la base de datos LegacyERP, que es el sistema heredado de ejemplo
+#      del que generar scripts con Generate Scripts.
+#
+# Lo que sigue siendo cierto, y es la garantía de seguridad del producto, es que
+# la aplicación NUNCA ejecuta el SQL que analiza: lo parsea. Conectarse a su
+# propia base de datos y ejecutar el código de un cliente son cosas distintas
+# (ver docs/seguridad.md, A05).
 # ---------------------------------------------------------------------------
 
 services:
@@ -31,16 +37,18 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: '8080'
 
-      # Las bases de datos van al volumen, no a la capa del contenedor: así los
-      # análisis y los usuarios sobreviven a un docker compose down.
-      ConnectionStrings__DefaultConnection: 'DataSource=/data/app.db;Cache=Shared'
-      ConnectionStrings__AnalysisConnection: 'DataSource=/data/analyses.db;Cache=Shared'
+      # La aplicación se conecta a su propia base de datos en el mismo servidor.
+      # Las migraciones se aplican al arrancar, así que la base se crea sola.
+      ConnectionStrings__DefaultConnection: >-
+        Server=sqlserver,1433;Database=LegacyLens;User Id=sa;
+        Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=True
 
       # Sin endpoint la aplicación arranca igual y entrega el análisis estático.
       Ai__Endpoint: '${Ai__Endpoint:-}'
       Ai__ApiKey: '${Ai__ApiKey:-}'
-    volumes:
-      - app-data:/data
+    depends_on:
+      sqlserver:
+        condition: service_healthy
     healthcheck:
       test: ['CMD-SHELL', "timeout 2 bash -c '</dev/tcp/localhost/8080' || exit 1"]
       interval: 15s
@@ -124,5 +132,6 @@ services:
     restart: 'no'
 
 volumes:
-  app-data:
+  # Los datos de la aplicacion viven ahora en la base de datos de SQL Server,
+  # asi que ya no hace falta un volumen propio para ella.
   mssql-data:
