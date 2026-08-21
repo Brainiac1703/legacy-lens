@@ -4,7 +4,7 @@ name: legacy-lens
 # Entorno de desarrollo completo en contenedores.
 #
 #   docker compose up --build
-#   -> aplicación en http://localhost:8080
+#   -> aplicación en http://localhost:8081
 #   -> SQL Server en localhost:1433 con la base de datos LegacyERP cargada
 #
 # Nota importante sobre el diseño: la aplicación NO se conecta a SQL Server, y
@@ -22,7 +22,11 @@ services:
       dockerfile: Dockerfile
     image: legacy-lens:dev
     ports:
-      - '${WEB_PORT:-8080}:8080'
+      # Solo cambia el puerto publicado en el anfitrión. El interno sigue siendo
+      # el 8080, que es el que espera el ingress de Container Apps y el que
+      # declara el Dockerfile: tocarlo obligaría a cambiar también la
+      # infraestructura sin ninguna ganancia.
+      - '${WEB_PORT:-8081}:8080'
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: '8080'

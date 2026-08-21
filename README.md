@@ -183,7 +183,7 @@ cp .env.example .env       # y pon MSSQL_SA_PASSWORD y, si quieres IA, Ai__Endpo
 docker compose up --build
 ```
 
-- Aplicación: http://localhost:8080
+- Aplicación: http://localhost:8081
 - SQL Server: `localhost,14330` con usuario `sa` y la base de datos `LegacyERP`
 
 El puerto de SQL Server **no es el 1433** a propósito, para no chocar con una instancia
