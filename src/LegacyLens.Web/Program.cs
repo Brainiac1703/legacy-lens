@@ -50,7 +50,11 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
-        options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
+
+        // Desde la capa de persistencia, porque la versión del esquema también
+        // la necesita la factoría de tiempo de diseño. Tenerla en dos sitios ya
+        // generó una migración sin la tabla de passkeys.
+        options.Stores.SchemaVersion = IdentityDefaults.SchemaVersion;
     })
     .AddEntityFrameworkStores<LegacyLensDbContext>()
     .AddSignInManager()

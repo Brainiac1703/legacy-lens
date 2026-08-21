@@ -29,10 +29,13 @@ fuente de la base de datos de alguien, así que una fuga entre usuarios sería g
 
 **Qué se ha hecho:**
 
-- `AnalysisStore.GetAsync` recibe el identificador del usuario y **devuelve `null` si el
-  análisis pertenece a otro**. La comprobación está en la capa de acceso a datos, no en la
-  interfaz, así que no se puede saltar llamando al endpoint directamente.
-- `ListAsync` filtra por propietario en la consulta.
+- El propietario forma parte de la **firma** de `IAnalysisRepository`: no existe una forma
+  de pedir un análisis sin decir de quién es. No es una comprobación que se pueda olvidar,
+  es un parámetro obligatorio.
+- El filtro va en el `WHERE` de la consulta, no en una comparación posterior en memoria: la
+  fila de otro usuario nunca sale del servidor.
+- `GetAsync` devuelve `null` tanto si no existe como si es de otro, a propósito: distinguir
+  los dos casos revelaría qué identificadores existen.
 - Las páginas llevan `[Authorize]`, y el endpoint de descarga `.RequireAuthorization()`.
 - Los identificadores son `Guid`, no enteros secuenciales: no se pueden enumerar.
 
@@ -83,9 +86,13 @@ nadie.
   No se ha reimplementado nada de esto a mano, que es la decisión correcta.
 - `terraform.tfvars` está excluido del repositorio, y el estado de Terraform también.
 
-**Nota honesta:** la base de datos SQLite no está cifrada en reposo. Contiene código fuente
-de scripts analizados, así que en un despliegue con datos de clientes reales habría que
-cifrarla o mover el almacén a un servicio gestionado con cifrado. Está anotado en la fase 3.
+**Cifrado en reposo:** resuelto al pasar a Azure SQL Database, que aplica *Transparent Data
+Encryption* de forma predeterminada. Antes el almacén era un fichero SQLite sin cifrar, y eso
+importaba porque contiene el código fuente de los scripts analizados.
+
+El servidor se crea además con **autenticación exclusivamente por Entra**
+(`azuread_authentication_only`), así que no existe ninguna contraseña de base de datos que
+guardar, ni siquiera para el administrador.
 
 ## A05 · Injection
 

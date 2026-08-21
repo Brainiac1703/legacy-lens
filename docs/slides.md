@@ -123,13 +123,15 @@ Un límite del análisis estático que hay que **señalar, no disimular**.
 ## Arquitectura
 
 ```
-LegacyLens.Domain      Modelos. No conoce a nadie.
-LegacyLens.Analysis    ScriptDom. Determinista y testeable.
-LegacyLens.Ai          Interpretación. La única parte no determinista.
-LegacyLens.Web         Blazor Web App (InteractiveServer)
+Domain          entidades. No conoce a nadie.
+Application     casos de uso, puertos y behaviours (CQRS con MediatR)
+Persistence.EF  ─┐
+Analysis         ├─ adaptadores: implementan los puertos
+Ai              ─┘
+Web             presentación. Solo ISender.
 ```
 
-**`Analysis` no depende de `Ai`.**
+Las dependencias apuntan **siempre hacia dentro**. Y `Analysis` no depende de `Ai`.
 
 Si Azure OpenAI falla o no está configurado, el análisis estático se entrega igual y la
 aplicación sigue siendo útil.
@@ -257,7 +259,7 @@ elección de los dos modelos.
 - **El SQL dinámico es un límite infranqueable** del análisis estático
 - **Afinidad de sesión**: `azurerm` no expone `stickySessions`; con una réplica no aplica,
   pero hay que resolverlo antes de escalar
-- **SQLite efímero**: los análisis se pierden al reiniciar el contenedor
+- **Una réplica**: el circuito de Blazor Server tiene estado y escalar exige afinidad de sesión
 - **La documentación generada hay que revisarla**: es interpretación fundamentada, no
   verdad demostrada
 

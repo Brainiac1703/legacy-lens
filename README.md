@@ -71,7 +71,8 @@ OpenAI no está configurado o falla, el análisis estático se entrega igual.
 | Análisis | `Microsoft.SqlServer.TransactSql.ScriptDom` 180.x | Parser oficial de T-SQL de Microsoft |
 | IA | `Microsoft.Extensions.AI` sobre Azure OpenAI | Abstracción de proveedor y salida estructurada |
 | Modelos | `gpt-4.1-mini` y `gpt-4o` | Dos modelos con papeles distintos, ver abajo |
-| Datos | SQLite con EF Core | Sin infraestructura de datos que aprovisionar |
+| Datos | Azure SQL Database *serverless* con EF Core | Autopausa: el uso es a ráfagas |
+| Aplicación | MediatR 12.5.0 y FluentValidation | CQRS con behaviours de log y validación |
 | Autenticación | ASP.NET Core Identity | Requisito de usuario de prueba del TFM |
 | Grafos | Mermaid | El grafo es texto: comparable, exportable, versionable |
 | Contenedor | Docker multi-stage, imagen no-root | |
@@ -385,9 +386,10 @@ primera carga en aplicaciones con mucho tráfico, un problema que esta no tiene.
 `Server`, los componentes llaman directamente al analizador, y el circuito de SignalR
 proporciona **el progreso del análisis en tiempo real sin escribir nada**.
 
-**Dos contextos de EF Core.** Identity trae su juego de migraciones con la plantilla y
-conviene no tocarlo. El almacén de análisis es una única tabla de solo-añadir sin evolución
-de esquema que versionar, así que usa un contexto aparte con `EnsureCreated`.
+**Un único contexto de EF Core.** Al principio hubo dos, por herencia de la plantilla: uno
+para Identity con migraciones y otro para los análisis con `EnsureCreated`. Con una base de
+datos servidor detrás, dos historiales de esquema son dos cosas que aplicar y mantener en
+orden en cada despliegue, sin ninguna ventaja.
 
 **El resultado del análisis se guarda serializado como JSON**, no con una tabla por
 entidad. Se escribe una vez y se lee entero, nunca se consulta por partes ni se actualiza
@@ -411,9 +413,8 @@ hace comparable entre ejecuciones y exportable dentro del propio Markdown.
   Container Apps. Con una réplica no aplica, pero es lo primero que habría que resolver —
   con el provider `azapi` — antes de escalar horizontalmente, porque el circuito de Blazor
   Server tiene estado.
-- **SQLite en almacenamiento efímero.** Al reiniciarse el contenedor se pierden los
-  análisis guardados. Es aceptable para una demo; en producción iría a PostgreSQL o al
-  almacenamiento persistente de Container Apps.
+- **Una sola réplica.** El circuito de Blazor Server tiene estado, y escalar
+  horizontalmente exige afinidad de sesión, que el provider de `azurerm` no expone todavía.
 - **El estado de Terraform es local.** No hay backend remoto configurado, así que el
   `terraform.tfstate` vive en la máquina de quien aplica y está excluido del repositorio.
   Para un proyecto de una sola persona es suficiente; en equipo haría falta un backend en
