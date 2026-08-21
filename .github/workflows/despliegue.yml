@@ -177,7 +177,7 @@ jobs:
           container: ${{ vars.TFSTATE_CONTAINER }}
           key: ${{ vars.TFSTATE_KEY }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: tfplan
           path: Deploy/infra
