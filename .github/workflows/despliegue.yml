@@ -1,0 +1,376 @@
+name: Despliegue
+
+# ---------------------------------------------------------------------------
+# Camino único a producción, en el orden en que las cosas pueden romperse:
+#
+#   1. Compilar y probar        si los tests fallan, no se toca nada
+#   2. Planificar               qué cambiaría en la infraestructura
+#   3. Revisar y aprobar        parada manual del entorno 'produccion'
+#   4. Aplicar infraestructura  el plan aprobado, no uno nuevo
+#   5. Actualizar la base de datos
+#   6. Desplegar la web         y comprobar que responde
+#
+# El orden entre 5 y 6 no es negociable: el esquema tiene que estar listo antes
+# de que arranque el código que lo usa. Al revés, la revisión nueva fallaría al
+# consultar columnas que todavía no existen.
+#
+# Sustituye a los antiguos infra.yml y deploy.yml, que podían pisarse entre sí.
+# ci.yml sigue validando los pull request y seguridad.yml el análisis.
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      solo_infraestructura:
+        description: 'Parar después de aplicar la infraestructura'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GRUPO_RECURSOS: rg-legacylens-tfm
+  CONTAINER_APP: ca-legacylens-tfm
+  REPOSITORIO_IMAGEN: legacy-lens
+
+jobs:
+  # -------------------------------------------------------------------------
+  # 1. Compilar y probar
+  # -------------------------------------------------------------------------
+  compilar:
+    name: Compilar y probar
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar
+        run: dotnet restore LegacyLens.slnx
+
+      - name: Compilar la solución
+        run: dotnet build LegacyLens.slnx --no-restore --configuration Release
+
+      # Los tests cubren el analizador, que es la parte determinista. La parte no
+      # determinista se mide con el arnés de evaluación, que no corre aquí porque
+      # consume cuota del modelo en cada commit.
+      - name: Ejecutar los tests
+        run: dotnet test LegacyLens.slnx --no-build --configuration Release
+
+  # -------------------------------------------------------------------------
+  # 2. Planificar la infraestructura
+  # -------------------------------------------------------------------------
+  planificar:
+    name: Planificar infraestructura
+    needs: compilar
+    runs-on: ubuntu-latest
+
+    # Sin las variables de arranque el pipeline no puede funcionar. Se omite en
+    # lugar de fallar, para no dejar un aspa roja permanente en el repositorio.
+    if: vars.TFSTATE_STORAGE_ACCOUNT != '' && vars.AZURE_INFRA_CLIENT_ID != ''
+
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_CLIENT_ID: ${{ vars.AZURE_INFRA_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_ACCESS_KEY: ${{ secrets.TFSTATE_ACCESS_KEY }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_deploy_app: 'true'
+      TF_IN_AUTOMATION: 'true'
+
+    outputs:
+      hay_cambios: ${{ steps.plan.outputs.hay_cambios }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./Deploy/actions/terraform
+        with:
+          storage-account: ${{ vars.TFSTATE_STORAGE_ACCOUNT }}
+          container: ${{ vars.TFSTATE_CONTAINER }}
+          key: ${{ vars.TFSTATE_KEY }}
+
+      - name: Comprobar formato y validar
+        working-directory: Deploy/infra
+        run: |
+          terraform fmt -check -recursive
+          terraform validate
+
+      - name: Planificar
+        id: plan
+        working-directory: Deploy/infra
+        run: |
+          set +e
+          terraform plan -no-color -input=false -out=tfplan -detailed-exitcode | tee plan.txt
+          código=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$código" -eq 1 ]; then exit 1; fi
+
+          echo "hay_cambios=$([ "$código" -eq 2 ] && echo si || echo no)" >> "$GITHUB_OUTPUT"
+
+          {
+            echo '### Plan de infraestructura'
+            echo ''
+            [ "$código" -eq 2 ] && echo 'Hay cambios pendientes de aplicar.' || echo 'Sin cambios.'
+            echo ''
+            echo '<details><summary>Ver el plan</summary>'
+            echo ''
+            echo '```hcl'
+            tail -c 50000 plan.txt
+            echo '```'
+            echo ''
+            echo '</details>'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # El plan se guarda para aplicar exactamente lo que se revisó, sin ventana
+      # para que algo cambie entre la aprobación y el apply.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: Deploy/infra/tfplan
+          retention-days: 5
+
+  # -------------------------------------------------------------------------
+  # 3 y 4. Revisar, aprobar y aplicar
+  # -------------------------------------------------------------------------
+  aplicar-infraestructura:
+    name: Aplicar infraestructura
+    needs: planificar
+    runs-on: ubuntu-latest
+
+    # La parada de revisión: si el entorno 'produccion' tiene revisores
+    # requeridos, GitHub espera aquí una aprobación manual antes de continuar.
+    # Es el equivalente a las aprobaciones de release de Azure DevOps.
+    environment: produccion
+
+    env:
+      ARM_USE_OIDC: 'true'
+      ARM_CLIENT_ID: ${{ vars.AZURE_INFRA_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      ARM_ACCESS_KEY: ${{ secrets.TFSTATE_ACCESS_KEY }}
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_deploy_app: 'true'
+      TF_IN_AUTOMATION: 'true'
+
+    outputs:
+      sql_server: ${{ steps.salidas.outputs.sql_server }}
+      sql_database: ${{ steps.salidas.outputs.sql_database }}
+      app_url: ${{ steps.salidas.outputs.app_url }}
+      registro: ${{ steps.salidas.outputs.registro }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./Deploy/actions/terraform
+        with:
+          storage-account: ${{ vars.TFSTATE_STORAGE_ACCOUNT }}
+          container: ${{ vars.TFSTATE_CONTAINER }}
+          key: ${{ vars.TFSTATE_KEY }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: Deploy/infra
+
+      - name: Aplicar el plan aprobado
+        working-directory: Deploy/infra
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Recoger las salidas
+        id: salidas
+        working-directory: Deploy/infra
+        run: |
+          {
+            echo "sql_server=$(terraform output -raw sql_server_fqdn)"
+            echo "sql_database=$(terraform output -raw sql_database_name)"
+            echo "app_url=$(terraform output -raw app_url)"
+            echo "registro=$(terraform output -raw container_registry)"
+          } >> "$GITHUB_OUTPUT"
+
+  # -------------------------------------------------------------------------
+  # 5. Actualizar la base de datos
+  # -------------------------------------------------------------------------
+  actualizar-base-de-datos:
+    name: Actualizar base de datos
+    needs: aplicar-infraestructura
+    if: inputs.solo_infraestructura != true
+    runs-on: ubuntu-latest
+    environment: produccion
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # Se autentica con la identidad de infraestructura porque es la que
+      # Terraform ha dejado como administradora de Entra del servidor SQL. La
+      # identidad de despliegue no puede aplicar migraciones, y es deliberado.
+      - name: Autenticarse en Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_INFRA_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # El ejecutor de GitHub tiene IP pública variable, así que hay que abrirle
+      # el cortafuegos justo para esta ejecución y cerrarlo después.
+      - name: Abrir el cortafuegos para el ejecutor
+        id: cortafuegos
+        run: |
+          ip=$(curl -s --max-time 10 https://api.ipify.org)
+          regla="pipeline-${{ github.run_id }}"
+
+          echo "regla=$regla" >> "$GITHUB_OUTPUT"
+
+          az sql server firewall-rule create \
+            --resource-group "$GRUPO_RECURSOS" \
+            --server "$(echo '${{ needs.aplicar-infraestructura.outputs.sql_server }}' | cut -d. -f1)" \
+            --name "$regla" \
+            --start-ip-address "$ip" \
+            --end-ip-address "$ip" \
+            --output none
+
+          echo "Cortafuegos abierto para $ip"
+
+      - name: Instalar la herramienta de EF
+        run: dotnet tool install --global dotnet-ef
+
+      # Authentication=Active Directory Default hace que el cliente pida un token
+      # con la sesión de az que acabamos de abrir. Ninguna contraseña.
+      - name: Aplicar migraciones
+        env:
+          ConnectionStrings__DefaultConnection: >-
+            Server=tcp:${{ needs.aplicar-infraestructura.outputs.sql_server }},1433;
+            Database=${{ needs.aplicar-infraestructura.outputs.sql_database }};
+            Authentication=Active Directory Default;Encrypt=True;Connection Timeout=60;
+        run: |
+          dotnet ef database update \
+            --project src/LegacyLens.Persistence.EF \
+            --startup-project src/LegacyLens.Web \
+            --no-build --configuration Release || \
+          dotnet ef database update \
+            --project src/LegacyLens.Persistence.EF \
+            --startup-project src/LegacyLens.Web
+
+      # Version fijada: 'latest' haria que el pipeline cambiara de herramienta
+      # sin que nadie lo decidiera.
+      - name: Instalar sqlcmd
+        run: |
+          curl -fsSL \
+            https://github.com/microsoft/go-sqlcmd/releases/download/v1.10.0/sqlcmd-linux-amd64.tar.bz2 \
+            | tar -xj -C /usr/local/bin sqlcmd
+          sqlcmd --version
+
+      # Terraform no puede hacer esto: conceder acceso dentro de Azure SQL es
+      # una operación del plano de datos. Ver el comentario del script.
+      - name: Dar de alta la identidad de la aplicación
+        run: |
+          sqlcmd \
+            --server '${{ needs.aplicar-infraestructura.outputs.sql_server }}' \
+            --database '${{ needs.aplicar-infraestructura.outputs.sql_database }}' \
+            --authentication-method ActiveDirectoryDefault \
+            --variable APP_IDENTITY="$CONTAINER_APP" \
+            --input-file Deploy/sql/conceder-acceso-identidad.sql \
+            --exit-on-error
+
+      # En always() para que el cortafuegos se cierre también si la migración
+      # falla: dejarlo abierto sería peor que el fallo original.
+      - name: Cerrar el cortafuegos
+        if: always() && steps.cortafuegos.outputs.regla != ''
+        run: |
+          az sql server firewall-rule delete \
+            --resource-group "$GRUPO_RECURSOS" \
+            --server "$(echo '${{ needs.aplicar-infraestructura.outputs.sql_server }}' | cut -d. -f1)" \
+            --name "${{ steps.cortafuegos.outputs.regla }}" \
+            --output none || echo "La regla ya no existía."
+
+  # -------------------------------------------------------------------------
+  # 6. Desplegar la web
+  # -------------------------------------------------------------------------
+  desplegar-web:
+    name: Desplegar la web
+    needs: [aplicar-infraestructura, actualizar-base-de-datos]
+    runs-on: ubuntu-latest
+    environment: produccion
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Autenticarse en Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # az acr build construye dentro de Azure: el ejecutor no necesita
+      # credenciales del registro ni subir capas por la red, y el registro sigue
+      # con las credenciales de administrador desactivadas.
+      - name: Construir la imagen en Azure
+        id: imagen
+        run: |
+          registro='${{ needs.aplicar-infraestructura.outputs.registro }}'
+          etiqueta="${GITHUB_SHA::12}"
+
+          az acr build \
+            --registry "$(echo "$registro" | cut -d. -f1)" \
+            --image "$REPOSITORIO_IMAGEN:$etiqueta" \
+            --image "$REPOSITORIO_IMAGEN:latest" \
+            --file Dockerfile \
+            .
+
+          echo "referencia=$registro/$REPOSITORIO_IMAGEN:$etiqueta" >> "$GITHUB_OUTPUT"
+
+      - name: Publicar la revisión
+        run: |
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$GRUPO_RECURSOS" \
+            --image '${{ steps.imagen.outputs.referencia }}' \
+            --output none
+
+      # No basta con que az devuelva éxito: la revisión puede fallar al arrancar,
+      # por ejemplo si no puede conectarse a la base de datos.
+      - name: Comprobar que responde
+        run: |
+          url='${{ needs.aplicar-infraestructura.outputs.app_url }}'
+
+          for intento in $(seq 1 20); do
+            código=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
+
+            if [ "$código" = '200' ]; then
+              echo "La aplicación responde 200 en el intento $intento."
+              exit 0
+            fi
+
+            echo "Intento $intento: $código. Esperando..."
+            sleep 15
+          done
+
+          echo "::error::La aplicación no respondió 200 tras 20 intentos."
+          exit 1
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo '### Despliegue completado'
+            echo ''
+            echo '| | |'
+            echo '| --- | --- |'
+            echo "| URL | ${{ needs.aplicar-infraestructura.outputs.app_url }} |"
+            echo "| Imagen | \`${{ steps.imagen.outputs.referencia }}\` |"
+            echo "| Commit | \`${GITHUB_SHA::12}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

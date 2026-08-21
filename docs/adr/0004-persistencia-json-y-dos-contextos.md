@@ -1,6 +1,22 @@
 # ADR 0004 · Análisis serializado en JSON y dos contextos de EF Core
 
-**Estado:** aceptada
+**Estado:** parcialmente sustituida por el [ADR 0007](0007-capas-cqrs-y-repositorios.md)
+
+> **Qué sigue vigente y qué no.**
+>
+> La decisión de guardar el análisis serializado en una columna **sigue en pie**, y por los
+> mismos motivos: se escribe una vez y se lee entero. Lo que cambió es dónde vive esa
+> decisión: la serialización estaba en un servicio del proyecto web y ahora está en el
+> repositorio de la capa de persistencia, que es su sitio.
+>
+> La decisión de usar **dos contextos** queda sustituida. Se justificaba porque el contexto
+> de análisis no tenía evolución de esquema que versionar y usaba `EnsureCreated`. Al pasar
+> a Azure SQL con migraciones aplicadas desde el pipeline, dos historiales de esquema
+> pasaron a ser dos cosas que aplicar y mantener en orden sin ninguna ventaja, así que hay
+> un único contexto.
+>
+> También desapareció `EnsureCreated`, y con él la limitación que este documento anotaba
+> como contrapartida.
 
 ## Contexto
 

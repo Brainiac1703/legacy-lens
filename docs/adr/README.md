@@ -11,6 +11,7 @@ Formato: contexto, decisión, consecuencias y alternativas consideradas.
 | [0001](0001-separar-lo-calculado-de-lo-interpretado.md) | Separar lo calculado de lo interpretado | Aceptada |
 | [0002](0002-blazor-interactive-server.md) | Blazor `InteractiveServer` en lugar de `Auto` | Aceptada |
 | [0003](0003-dos-modelos-de-lenguaje.md) | Dos modelos de lenguaje con papeles distintos | Aceptada |
-| [0004](0004-persistencia-json-y-dos-contextos.md) | Análisis serializado en JSON y dos contextos de EF | Aceptada |
+| [0004](0004-persistencia-json-y-dos-contextos.md) | Análisis serializado en JSON y dos contextos de EF | Parcialmente sustituida por [0007](0007-capas-cqrs-y-repositorios.md) |
 | [0005](0005-identidad-administrada-sin-secretos.md) | Identidad administrada en lugar de claves | Aceptada |
 | [0006](0006-cicd-con-oidc-y-dos-identidades.md) | CI/CD con OIDC y dos identidades separadas | Aceptada |
+| [0007](0007-capas-cqrs-y-repositorios.md) | Separación en capas con CQRS y repositorios | Aceptada |

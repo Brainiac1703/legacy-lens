@@ -81,8 +81,23 @@ resource "azurerm_container_app" "main" {
         value = azurerm_cognitive_deployment.planning.name
       }
 
-      # No hace falta ninguna variable con credenciales: al no configurarse
-      # Ai__ApiKey, la aplicación usa la identidad administrada del contenedor.
+      # Cadena de conexión sin credenciales: Active Directory Default hace que
+      # el cliente de SQL pida un token con la identidad administrada del
+      # contenedor. Para que funcione, esa identidad tiene que existir como
+      # usuario dentro de la base de datos, y de eso se encarga el paso de
+      # actualización del pipeline.
+      env {
+        name = "ConnectionStrings__DefaultConnection"
+        value = join("", [
+          "Server=tcp:${azurerm_mssql_server.main[0].fully_qualified_domain_name},1433;",
+          "Database=${azurerm_mssql_database.main[0].name};",
+          "Authentication=Active Directory Default;",
+          "Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;"
+        ])
+      }
+
+      # Tampoco hay clave de OpenAI: al no configurarse Ai__ApiKey, la
+      # aplicación usa esa misma identidad administrada.
     }
   }
 

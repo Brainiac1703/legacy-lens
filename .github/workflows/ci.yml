@@ -47,13 +47,13 @@ jobs:
 
       - name: Comprobar formato
         run: terraform fmt -check -recursive
-        working-directory: infra
+        working-directory: Deploy/infra
 
       # init sin backend: valida la sintaxis sin necesitar credenciales.
       - name: Inicializar
         run: terraform init -backend=false
-        working-directory: infra
+        working-directory: Deploy/infra
 
       - name: Validar
         run: terraform validate
-        working-directory: infra
+        working-directory: Deploy/infra

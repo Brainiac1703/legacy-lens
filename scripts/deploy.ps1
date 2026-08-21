@@ -24,7 +24,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$infraPath = Join-Path $repoRoot 'infra'
+$infraPath = Join-Path $repoRoot 'Deploy/infra'
 
 Write-Host 'Leyendo las salidas de Terraform...' -ForegroundColor Cyan
 

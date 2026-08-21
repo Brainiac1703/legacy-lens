@@ -25,11 +25,11 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Contenido | | Dónde |
 | --- | --- | --- |
 | Principios SOLID | ✔ | Dirección de dependencias entre proyectos; `Analysis` y `Ai` dependen solo de `Domain` |
-| Inversión de dependencias | ✔ | `IChatClient` como abstracción de proveedor; inyección en `Program.cs` |
+| Inversión de dependencias | ✔ | La infraestructura implementa interfaces declarados en `Application`, no al revés. Cada capa se registra con su propio `Add...` |
 | DRY, KISS, YAGNI | ✔ | Decisión de serializar el análisis en JSON en lugar de modelar 6 tablas: ver README §7 |
-| Patrones de diseño | ✔ | **Visitor** en `ObjectAnalysisVisitor`; Repository en `AnalysisStore` |
+| Patrones de diseño | ✔ | **Visitor** en `ObjectAnalysisVisitor`; Repository en `AnalysisRepository`; Mediator y Decorator en la pipeline de behaviours |
 | Antipatrones | ✔ | El propio producto **detecta antipatrones** en el código analizado: cursores, SQL dinámico, escrituras sin transacción |
-| Validación de requisitos | ✔ | Requisitos del TFM analizados y trazados en este documento |
+| Validación de requisitos | ✔ | Requisitos del TFM trazados aquí; validación de entrada con FluentValidation en la pipeline |
 | Spec Driven Development | ◐ | El alcance se fijó por escrito antes de codificar; sin especificación formal ejecutable |
 
 ## 02 · Arquitectura de Software
@@ -37,9 +37,12 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Contenido | | Dónde |
 | --- | --- | --- |
 | Decisiones arquitectónicas y su registro | ✔ | `docs/adr/` |
-| Monolito modular | ✔ | Cuatro proyectos con fronteras explícitas y dirección de dependencias controlada |
+| Monolito modular | ✔ | Seis proyectos con fronteras explícitas y dirección de dependencias controlada |
 | Separación dominio / aplicación / infraestructura | ✔ | `Domain` sin dependencias externas; `Web` orquesta |
-| Clean Architecture / Hexagonal completa | ◐ | La separación existe, pero sin puertos y adaptadores formales ni casos de uso como clases |
+| Clean Architecture | ✔ | `Application` con casos de uso como clases e interfaces de salida que implementan `Persistence.EF`, `Analysis` y `Ai`. [ADR 0007](adr/0007-capas-cqrs-y-repositorios.md) |
+| **CQRS** | ✔ | Comandos y queries con MediatR 12.5.0; el análisis como `IStreamRequest` |
+| Patrón repositorio | ✔ | `IAnalysisRepository` con métodos de dominio; EF encerrado en `Persistence.EF` |
+| Puertos y adaptadores | ✔ | `ITSqlAnalyzer`, `IAiEnrichmentService` e `IAnalysisRepository` son los puertos; los tres proyectos de infraestructura, los adaptadores |
 | DDD: entidades y value objects | ◐ | `SqlObject` es una entidad; `CodeMetrics` y `RiskScore` son value objects inmutables. Sin agregados ni repositorios de dominio formales |
 | Event-Driven Architecture, patrón Outbox | ○ | Fase 4: el análisis como trabajo asíncrono encolado |
 | Microservicios | — | Descartado a propósito: no hay ningún problema que justifique distribuir esto |
@@ -86,7 +89,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Deuda técnica explícita | ✔ | README §7 «Limitaciones conocidas», sin maquillar |
 | Métricas mínimas que importan | ✔ | Tokens y llamadas por modelo, con coste estimado, en la pantalla de resultado y en el informe exportado |
 | Coverage honesto | ○ | Fase 1 |
-| Quality gates | ◐ | El CI bloquea con tests, `terraform fmt` y build del contenedor; sin hooks locales |
+| Quality gates | ✔ | El pipeline de despliegue para en seco si fallan los tests, y exige aprobación manual del plan antes de tocar infraestructura |
 | Observabilidad y Release Health | ○ | Fase 3: OpenTelemetry y trazas por llamada al modelo |
 | E2E con Playwright | ○ | Fase 3 |
 | Accesibilidad | ◐ | Bootstrap accesible de base, `aria` en la barra de progreso; sin auditoría |
@@ -99,12 +102,12 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | GitHub Actions | ✔ | Plan de Terraform comentado en el *pull request*, apply del plan guardado, y despliegue verificado con comprobación de que la aplicación responde |
 | Despliegue continuo sin secretos | ✔ | OIDC con credenciales federadas y dos identidades de permisos distintos. [ADR 0006](adr/0006-cicd-con-oidc-y-dos-identidades.md) |
 | Cloud computing | ✔ | Azure Container Apps, Container Registry, Log Analytics |
-| **Infraestructura como código** | ✔ | `infra/` completo, con aprovisionamiento por etapas mediante `deploy_app` |
+| **Infraestructura como código** | ✔ | `Deploy/infra/` completo, con aprovisionamiento por etapas mediante `deploy_app` |
 | Costes y mejores prácticas | ✔ | Dos modelos por coste; SKU Basic; una réplica. Ver README §2 |
 | Contenerización | ✔ | Dockerfile multi-stage, imagen no-root, 503 MB |
-| Orquestación local con Compose | ✔ | `docker-compose.yml`: aplicación con datos en volumen y SQL Server con el ERP de ejemplo cargado de forma idempotente |
+| Orquestación local con Compose | ✔ | `docker-compose.yml`: aplicación y SQL Server con su base de datos y el ERP de ejemplo cargado de forma idempotente |
 | Estado de infraestructura gestionado | ✔ | Backend remoto en Azure Storage con versionado, retención y acceso por identidad, no por clave |
-| Bases de datos | ✔ | SQLite con EF Core, dos contextos con criterio distinto |
+| Bases de datos | ✔ | Azure SQL Database serverless con autopausa; un contexto con migraciones aplicadas por el pipeline |
 | **Bases de datos vectoriales** | ○ | **Fase 2**, junto con RAG |
 | **RAG** | ○ | **Fase 2**: preguntar en lenguaje natural sobre todo el corpus analizado |
 | Kubernetes | — | Descartado: Container Apps cubre el caso sin la complejidad operativa |
@@ -117,7 +120,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Security by design / by default | ✔ | Sin secretos por diseño: identidad administrada |
 | Gestión de credenciales | ✔ | Asignaciones de rol en Terraform; `terraform.tfvars` fuera del repositorio |
 | Identificación y autenticación | ✔ | ASP.NET Core Identity; cada usuario ve solo sus análisis |
-| Broken Access Control | ✔ | `AnalysisStore` filtra por propietario; el endpoint de descarga exige autorización |
+| Broken Access Control | ✔ | El filtro por propietario está en la consulta del repositorio y en la firma del método, no en una comprobación posterior |
 | Injection | ✔ | El SQL analizado **nunca se ejecuta**: se parsea. Es análisis estático puro |
 | Componentes vulnerables | ✔ | Detectado y corregido `SQLitePCLRaw` con CVE conocido durante el desarrollo; ahora el CI lo impide de forma automática |
 | Costes y su control | ✔ | Coste estimado por análisis, desglosado por modelo, visible en la interfaz |

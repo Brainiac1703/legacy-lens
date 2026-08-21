@@ -31,7 +31,7 @@ src/LegacyLens.Analysis    ScriptDom. Determinista → testeable con asserts.
 src/LegacyLens.Ai          Modelo de lenguaje. No determinista → se evalúa con métricas.
 src/LegacyLens.Web         Blazor Web App (InteractiveServer).
 tests/                     Tests del analizador.
-infra/                     Terraform.
+Deploy/infra/                     Terraform.
 ```
 
 ## Comandos
@@ -41,7 +41,7 @@ dotnet build LegacyLens.slnx                  # compila la solución (LegacyLens
 dotnet test LegacyLens.slnx                   # 15 tests sobre el analizador
 dotnet run --project src/LegacyLens.Web       # arranca en local
 docker build -t legacylens .                  # valida el contenedor
-cd infra && terraform validate && terraform fmt -check -recursive
+cd Deploy/infra && terraform validate && terraform fmt -check -recursive
 ```
 
 El CI ejecuta exactamente esas comprobaciones. Si pasan en local, pasan en CI.

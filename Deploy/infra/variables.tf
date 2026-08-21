@@ -57,6 +57,42 @@ variable "deploy_app" {
   default     = false
 }
 
+variable "sql_admin" {
+  description = <<-EOT
+    Identidad de Entra que administra el servidor SQL. Es la que usa el pipeline
+    para aplicar migraciones y para dar de alta la identidad administrada de la
+    aplicación dentro de la base de datos.
+
+    No hay usuario y contraseña: el servidor se crea con autenticación
+    exclusivamente por Entra. Los valores los imprime
+    scripts/bootstrap-github-oidc.ps1.
+  EOT
+  type = object({
+    login     = string
+    object_id = string
+  })
+  default = null
+}
+
+variable "database" {
+  description = "Dimensionado de la base de datos. Los valores por omisión son los más baratos que sirven."
+  type = object({
+    sku_name           = string
+    min_capacity       = number
+    auto_pause_minutes = number
+    max_size_gb        = number
+  })
+  default = {
+    # Serverless de propósito general, 1 vCore máximo.
+    sku_name     = "GP_S_Gen5_1"
+    min_capacity = 0.5
+    # El mínimo que admite Azure. Con uso a ráfagas, la base pasa pausada la
+    # mayor parte del tiempo y solo se paga el almacenamiento.
+    auto_pause_minutes = 60
+    max_size_gb        = 32
+  }
+}
+
 variable "container_image" {
   description = "Imagen a desplegar. El CI la sustituye por la recién construida."
   type        = string
