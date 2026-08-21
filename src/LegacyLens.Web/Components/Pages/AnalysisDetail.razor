@@ -1,4 +1,4 @@
-@page "/analisis/{Id:guid}"
+@page "/analyses/{Id:guid}"
 @using System.Security.Claims
 @using LegacyLens.Application.Analyses
 @using LegacyLens.Application.Costing
@@ -32,7 +32,7 @@ else
                 Analizado el @result.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
             </p>
         </div>
-        <a class="btn btn-outline-primary" href="/analisis/@Id/markdown" target="_blank">
+        <a class="btn btn-outline-primary" href="/analyses/@Id/markdown" target="_blank">
             Descargar documentación
         </a>
     </div>
@@ -196,19 +196,19 @@ else
         <div class="accordion">
             @foreach (var obj in Programmable)
             {
-                var abierto = expandido == obj.FullName;
+                var isOpen = expanded == obj.FullName;
 
                 <div class="accordion-item">
                     <h2 class="accordion-header">
-                        <button class="accordion-button @(abierto ? "" : "collapsed")" type="button"
-                                aria-expanded="@abierto.ToString().ToLowerInvariant()"
-                                @onclick="() => Alternar(obj.FullName)">
+                        <button class="accordion-button @(isOpen ? "" : "collapsed")" type="button"
+                                aria-expanded="@isOpen.ToString().ToLowerInvariant()"
+                                @onclick="() => Toggle(obj.FullName)">
                             <span class="badge @BadgeClass(obj.Risk.Level) me-2">@obj.Risk.Value</span>
                             <code class="me-2">@obj.FullName</code>
                             <span class="text-secondary small">@obj.Kind</span>
                         </button>
                     </h2>
-                    <div class="accordion-collapse collapse @(abierto ? "show" : "")">
+                    <div class="accordion-collapse collapse @(isOpen ? "show" : "")">
                         <div class="accordion-body">
                             @if (obj.Documentation is { } doc)
                             {
@@ -321,14 +321,14 @@ else
     private bool graphNeedsRender;
 
     /// <summary>Nombre completo del objeto desplegado, o nulo si están todos cerrados.</summary>
-    private string? expandido;
+    private string? expanded;
 
     /// <summary>
     /// Un solo objeto abierto a la vez, que es lo que hacía el data-bs-parent del
     /// acordeón de Bootstrap. Volver a pulsar el que ya está abierto lo cierra.
     /// </summary>
-    private void Alternar(string nombreCompleto) =>
-        expandido = expandido == nombreCompleto ? null : nombreCompleto;
+    private void Toggle(string fullName) =>
+        expanded = expanded == fullName ? null : fullName;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }

@@ -24,36 +24,36 @@ namespace LegacyLens.Persistence.EF;
 /// </summary>
 public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<LegacyLensDbContext>
 {
-    private const string CadenaDeDiseño =
+    private const string DesignTimeConnectionString =
         "Server=(localdb)\\mssqllocaldb;Database=LegacyLens;Trusted_Connection=True";
 
     public LegacyLensDbContext CreateDbContext(string[] args)
     {
-        var cadena =
+        var connectionString =
             Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-            ?? CadenaDeDiseño;
+            ?? DesignTimeConnectionString;
 
         var options = new DbContextOptionsBuilder<LegacyLensDbContext>()
-            .UseSqlServer(cadena, sql => sql.MigrationsAssembly(
+            .UseSqlServer(connectionString, sql => sql.MigrationsAssembly(
                 typeof(LegacyLensDbContext).Assembly.FullName))
             // IdentityDbContext lee la versión del esquema de las opciones de
             // Identity, y las busca en el proveedor de servicios de la
             // aplicación. En tiempo de diseño no hay ninguno, así que hay que
             // darle uno mínimo: sin esto, el esquema generado se queda en la
             // versión por omisión y la migración sale sin la tabla de passkeys.
-            .UseApplicationServiceProvider(ProveedorMinimo())
+            .UseApplicationServiceProvider(BuildMinimalServiceProvider())
             .Options;
 
         return new LegacyLensDbContext(options);
     }
 
-    private static IServiceProvider ProveedorMinimo()
+    private static IServiceProvider BuildMinimalServiceProvider()
     {
-        var servicios = new ServiceCollection();
+        var services = new ServiceCollection();
 
-        servicios.AddOptions<IdentityOptions>()
+        services.AddOptions<IdentityOptions>()
             .Configure(o => o.Stores.SchemaVersion = IdentityDefaults.SchemaVersion);
 
-        return servicios.BuildServiceProvider();
+        return services.BuildServiceProvider();
     }
 }

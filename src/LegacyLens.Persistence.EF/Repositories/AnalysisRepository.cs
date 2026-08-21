@@ -34,7 +34,7 @@ public sealed class AnalysisRepository(LegacyLensDbContext db) : IAnalysisReposi
     public async Task<Guid> SaveAsync(
         AnalysisResult result, string ownerUserId, CancellationToken cancellationToken = default)
     {
-        var fila = new StoredAnalysis
+        var row = new StoredAnalysis
         {
             Id = result.Id,
             FileName = result.SourceFileName,
@@ -46,10 +46,10 @@ public sealed class AnalysisRepository(LegacyLensDbContext db) : IAnalysisReposi
             Payload = JsonSerializer.Serialize(result, SerializerOptions)
         };
 
-        db.Analyses.Add(fila);
+        db.Analyses.Add(row);
         await db.SaveChangesAsync(cancellationToken);
 
-        return fila.Id;
+        return row.Id;
     }
 
     public async Task<AnalysisResult?> GetAsync(

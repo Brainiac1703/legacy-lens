@@ -39,7 +39,7 @@ fuente de la base de datos de alguien, así que una fuga entre usuarios sería g
 - Las páginas llevan `[Authorize]`, y el endpoint de descarga `.RequireAuthorization()`.
 - Los identificadores son `Guid`, no enteros secuenciales: no se pueden enumerar.
 
-**Verificado:** una petición a `/analizar` sin sesión responde 302 al inicio de sesión.
+**Verificado:** una petición a `/analyze` sin sesión responde 302 al inicio de sesión.
 
 **Pendiente:** una prueba automatizada que intente leer el análisis de otro usuario. Hoy la
 garantía es la revisión del código, no un test. Entra en la fase 3 con Playwright.

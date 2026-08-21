@@ -1,4 +1,4 @@
-@page "/analizar"
+@page "/analyze"
 @using System.Security.Claims
 @using LegacyLens.Application.Abstractions
 @using LegacyLens.Application.Analyses
@@ -11,7 +11,7 @@
 @inject ISender Sender
 @inject IAiEnrichmentService Ai
 @inject NavigationManager Navigation
-@inject ILogger<Analizar> Logger
+@inject ILogger<Analyze> Logger
 
 <PageTitle>Analizar script | Legacy Lens</PageTitle>
 
@@ -32,7 +32,7 @@
     </div>
 }
 
-@if (estado is null)
+@if (state is null)
 {
     <div class="card mb-4">
         <div class="card-body">
@@ -52,30 +52,30 @@
                 sistema heredado: cursores, SQL dinámico, escrituras sin transacción y
                 procedimientos encadenados.
             </p>
-            <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@ejecutando">
+            <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@running">
                 Analizar el ejemplo
             </button>
         </div>
     </div>
 }
 
-@if (estado is not null)
+@if (state is not null)
 {
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">@ficheroEnCurso</h5>
-            <p class="mb-2">@estado.Message</p>
+            <h5 class="card-title">@currentFileName</h5>
+            <p class="mb-2">@state.Message</p>
 
-            @if (estado.Total > 0)
+            @if (state.Total > 0)
             {
-                <div class="progress mb-2" role="progressbar" aria-valuenow="@estado.Percentage"
+                <div class="progress mb-2" role="progressbar" aria-valuenow="@state.Percentage"
                      aria-valuemin="0" aria-valuemax="100">
-                    <div class="progress-bar" style="width: @(estado.Percentage)%">
-                        @estado.Completed / @estado.Total
+                    <div class="progress-bar" style="width: @(state.Percentage)%">
+                        @state.Completed / @state.Total
                     </div>
                 </div>
             }
-            else if (estado.Phase != AnalysisPhase.Done)
+            else if (state.Phase != AnalysisPhase.Done)
             {
                 <div class="progress mb-2">
                     <div class="progress-bar progress-bar-striped progress-bar-animated"
@@ -84,26 +84,26 @@
             }
 
             <ul class="list-unstyled small text-secondary mb-0">
-                <li>@Marca(AnalysisPhase.Parsing) Análisis estático del script</li>
-                <li>@Marca(AnalysisPhase.Documenting) Documentación de cada objeto</li>
-                <li>@Marca(AnalysisPhase.Planning) Plan de migración</li>
-                <li>@Marca(AnalysisPhase.Saving) Guardado</li>
+                <li>@Marker(AnalysisPhase.Parsing) Análisis estático del script</li>
+                <li>@Marker(AnalysisPhase.Documenting) Documentación de cada objeto</li>
+                <li>@Marker(AnalysisPhase.Planning) Plan de migración</li>
+                <li>@Marker(AnalysisPhase.Saving) Guardado</li>
             </ul>
         </div>
     </div>
 }
 
-@if (errores.Count > 0)
+@if (errors.Count > 0)
 {
     <div class="alert alert-danger mt-3">
         <strong>No se pudo completar el análisis.</strong>
         <ul class="small mt-1 mb-2">
-            @foreach (var error in errores)
+            @foreach (var error in errors)
             {
                 <li>@error</li>
             }
         </ul>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="Reiniciar">Volver a intentarlo</button>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="Reset">Volver a intentarlo</button>
     </div>
 }
 
@@ -111,10 +111,10 @@
     private const int MaxFileSizeMb = 8;
     private const long MaxFileSize = MaxFileSizeMb * 1024L * 1024L;
 
-    private AnalysisProgress? estado;
-    private readonly List<string> errores = [];
-    private bool ejecutando;
-    private string ficheroEnCurso = string.Empty;
+    private AnalysisProgress? state;
+    private readonly List<string> errors = [];
+    private bool running;
+    private string currentFileName = string.Empty;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
@@ -125,7 +125,7 @@
 
         if (file.Size > MaxFileSize)
         {
-            errores.Add($"El fichero pesa {file.Size / 1024 / 1024} MB y el límite son {MaxFileSizeMb} MB.");
+            errors.Add($"El fichero pesa {file.Size / 1024 / 1024} MB y el límite son {MaxFileSizeMb} MB.");
             return;
         }
 
@@ -135,12 +135,12 @@
             using var reader = new StreamReader(stream);
             var script = await reader.ReadToEndAsync();
 
-            await EjecutarAsync(script, file.Name);
+            await RunAnalysisAsync(script, file.Name);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error leyendo el fichero subido");
-            errores.Add("No se pudo leer el fichero.");
+            errors.Add("No se pudo leer el fichero.");
         }
     }
 
@@ -150,11 +150,11 @@
 
         if (!File.Exists(path))
         {
-            errores.Add("No se encontró el script de ejemplo en el despliegue.");
+            errors.Add("No se encontró el script de ejemplo en el despliegue.");
             return;
         }
 
-        await EjecutarAsync(await File.ReadAllTextAsync(path), "legacy-erp.sql");
+        await RunAnalysisAsync(await File.ReadAllTextAsync(path), "legacy-erp.sql");
     }
 
     /// <summary>
@@ -164,53 +164,53 @@
     /// emite. Toda la coordinación entre parser, IA y persistencia vive en el
     /// handler, que es donde se puede probar sin un navegador delante.
     /// </summary>
-    private async Task EjecutarAsync(string script, string fileName)
+    private async Task RunAnalysisAsync(string script, string fileName)
     {
-        if (ejecutando) return;
+        if (running) return;
 
-        ejecutando = true;
-        errores.Clear();
-        ficheroEnCurso = fileName;
+        running = true;
+        errors.Clear();
+        currentFileName = fileName;
 
         try
         {
-            var userId = await UsuarioActualAsync();
-            var peticion = new AnalyzeScriptRequest(script, fileName, userId ?? string.Empty);
+            var userId = await CurrentUserIdAsync();
+            var request = new AnalyzeScriptRequest(script, fileName, userId ?? string.Empty);
 
-            await foreach (var paso in Sender.CreateStream(peticion))
+            await foreach (var step in Sender.CreateStream(request))
             {
-                estado = paso;
+                state = step;
                 StateHasChanged();
 
-                if (paso.Phase == AnalysisPhase.Done && paso.AnalysisId is { } id)
-                    Navigation.NavigateTo($"/analisis/{id}");
+                if (step.Phase == AnalysisPhase.Done && step.AnalysisId is { } id)
+                    Navigation.NavigateTo($"/analyses/{id}");
             }
         }
         catch (ValidationException ex)
         {
             // Los mensajes vienen del validador, así que se pueden mostrar tal cual.
-            errores.AddRange(ex.Errors.SelectMany(e => e.Value));
-            estado = null;
+            errors.AddRange(ex.Errors.SelectMany(e => e.Value));
+            state = null;
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Falló el análisis de {Fichero}", fileName);
-            errores.Add(ex.Message);
-            estado = null;
+            errors.Add(ex.Message);
+            state = null;
         }
         finally
         {
-            ejecutando = false;
+            running = false;
         }
     }
 
-    private void Reiniciar()
+    private void Reset()
     {
-        errores.Clear();
-        estado = null;
+        errors.Clear();
+        state = null;
     }
 
-    private async Task<string?> UsuarioActualAsync()
+    private async Task<string?> CurrentUserIdAsync()
     {
         if (AuthenticationState is null) return null;
 
@@ -218,10 +218,10 @@
         return authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
-    private string Marca(AnalysisPhase phase)
+    private string Marker(AnalysisPhase phase)
     {
-        if (estado is null) return "○";
-        if (estado.Phase > phase || estado.Phase == AnalysisPhase.Done) return "✓";
-        return estado.Phase == phase ? "▸" : "○";
+        if (state is null) return "○";
+        if (state.Phase > phase || state.Phase == AnalysisPhase.Done) return "✓";
+        return state.Phase == phase ? "▸" : "○";
     }
 }

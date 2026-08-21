@@ -48,8 +48,18 @@ El CI ejecuta exactamente esas comprobaciones. Si pasan en local, pasan en CI.
 
 ## Convenciones
 
-- **Idioma:** el código, los comentarios y la documentación están en español, incluidos los
-  identificadores de dominio cuando corresponde. Mantenlo.
+- **Idioma, y conviene leerlo entero porque no es uniforme:**
+  - **Identificadores, nombres de fichero y rutas: en inglés.** Clases, métodos, variables,
+    propiedades y las URL de las páginas. Sin excepciones.
+  - **Comentarios y documentación: en español.** Son para el equipo, y traducirlos
+    perdería matices en los razonamientos largos. Un comentario en español que menciona un
+    identificador lo escribe con su nombre real en inglés.
+  - **Texto que ve el usuario: en ficheros de recursos, nunca literal en el código.**
+    `es-ES` es el idioma por omisión e `en` el alternativo.
+  - **Mensajes de log: en español y sin localizar.** Decisión consciente del propietario del
+    proyecto. Si algún día se quiere agregarlos o alertar sobre ellos, habrá que revisarla.
+  - El script de ejemplo `samples/legacy-erp.sql` está en español porque es **dato**, no
+    código: representa un ERP heredado español y eso es parte del realismo del caso.
 - **Comentarios:** explican **por qué**, nunca qué. Si un comentario parafrasea la línea
   siguiente, sobra.
 - **Nada de resúmenes de cambios en el código.** No dejes comentarios del tipo «añadido

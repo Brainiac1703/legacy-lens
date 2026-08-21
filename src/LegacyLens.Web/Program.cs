@@ -106,7 +106,7 @@ app.MapAdditionalIdentityEndpoints();
 // El endpoint no construye el documento: solo traduce HTTP a una consulta y la
 // respuesta a un fichero. Generar el informe es trabajo de la capa de
 // aplicación, y así el mismo documento saldría igual desde una API o una CLI.
-app.MapGet("/analisis/{id:guid}/markdown", async (
+app.MapGet("/analyses/{id:guid}/markdown", async (
         Guid id,
         ClaimsPrincipal user,
         ISender sender,

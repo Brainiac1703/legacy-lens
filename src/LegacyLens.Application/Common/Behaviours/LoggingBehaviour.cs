@@ -23,56 +23,56 @@ public sealed class LoggingBehaviour<TRequest, TResponse>(
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
-    private const int UmbralLentoMs = 3_000;
+    private const int SlowThresholdMs = 3_000;
 
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        var nombre = typeof(TRequest).Name;
-        var reloj = Stopwatch.StartNew();
+        var name = typeof(TRequest).Name;
+        var stopwatch = Stopwatch.StartNew();
 
-        logger.LogInformation("Ejecutando {Peticion}", nombre);
+        logger.LogInformation("Ejecutando {Peticion}", name);
 
         try
         {
-            var respuesta = await next();
-            reloj.Stop();
+            var response = await next();
+            stopwatch.Stop();
 
-            if (reloj.ElapsedMilliseconds > UmbralLentoMs)
+            if (stopwatch.ElapsedMilliseconds > SlowThresholdMs)
                 logger.LogWarning(
                     "{Peticion} completada en {Milisegundos} ms, por encima del umbral de {Umbral} ms",
-                    nombre, reloj.ElapsedMilliseconds, UmbralLentoMs);
+                    name, stopwatch.ElapsedMilliseconds, SlowThresholdMs);
             else
                 logger.LogInformation(
-                    "{Peticion} completada en {Milisegundos} ms", nombre, reloj.ElapsedMilliseconds);
+                    "{Peticion} completada en {Milisegundos} ms", name, stopwatch.ElapsedMilliseconds);
 
-            return respuesta;
+            return response;
         }
         catch (ValidationException ex)
         {
-            reloj.Stop();
+            stopwatch.Stop();
 
             // Una petición inválida no es un fallo del sistema: se registra como
             // aviso y sin traza, que solo añadiría ruido.
             logger.LogWarning(
                 "{Peticion} rechazada por validación tras {Milisegundos} ms: {Errores}",
-                nombre, reloj.ElapsedMilliseconds, ex.Message);
+                name, stopwatch.ElapsedMilliseconds, ex.Message);
             throw;
         }
         catch (OperationCanceledException)
         {
-            reloj.Stop();
+            stopwatch.Stop();
             logger.LogInformation(
-                "{Peticion} cancelada tras {Milisegundos} ms", nombre, reloj.ElapsedMilliseconds);
+                "{Peticion} cancelada tras {Milisegundos} ms", name, stopwatch.ElapsedMilliseconds);
             throw;
         }
         catch (Exception ex)
         {
-            reloj.Stop();
+            stopwatch.Stop();
             logger.LogError(ex,
-                "{Peticion} falló tras {Milisegundos} ms", nombre, reloj.ElapsedMilliseconds);
+                "{Peticion} falló tras {Milisegundos} ms", name, stopwatch.ElapsedMilliseconds);
             throw;
         }
     }
@@ -96,28 +96,28 @@ public sealed class StreamLoggingBehaviour<TRequest, TResponse>(
         StreamHandlerDelegate<TResponse> next,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var nombre = typeof(TRequest).Name;
-        var reloj = Stopwatch.StartNew();
-        var emitidos = 0;
+        var name = typeof(TRequest).Name;
+        var stopwatch = Stopwatch.StartNew();
+        var emitted = 0;
 
-        logger.LogInformation("Iniciando el flujo {Peticion}", nombre);
+        logger.LogInformation("Iniciando el flujo {Peticion}", name);
 
         try
         {
-            await foreach (var elemento in next().WithCancellation(cancellationToken))
+            await foreach (var item in next().WithCancellation(cancellationToken))
             {
-                emitidos++;
-                yield return elemento;
+                emitted++;
+                yield return item;
             }
         }
         finally
         {
             // En finally para que también quede rastro cuando el consumidor
             // abandona el flujo o se cancela a mitad.
-            reloj.Stop();
+            stopwatch.Stop();
             logger.LogInformation(
-                "Flujo {Peticion} terminado: {Emitidos} elemento(s) en {Milisegundos} ms",
-                nombre, emitidos, reloj.ElapsedMilliseconds);
+                "Flujo {Peticion} terminado: {Emitidos} item(s) en {Milisegundos} ms",
+                name, emitted, stopwatch.ElapsedMilliseconds);
         }
     }
 }

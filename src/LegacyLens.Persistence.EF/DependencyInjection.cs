@@ -18,12 +18,12 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var cadena = configuration.GetConnectionString("DefaultConnection")
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException(
-                "Falta la cadena de conexión 'DefaultConnection'.");
+                "Falta la connectionString de conexión 'DefaultConnection'.");
 
         services.AddDbContext<LegacyLensDbContext>(options =>
-            options.UseSqlServer(cadena, sql =>
+            options.UseSqlServer(connectionString, sql =>
             {
                 // Azure SQL corta conexiones por mantenimiento o por límites del
                 // plan, y son fallos transitorios de los que merece la pena

@@ -1,4 +1,4 @@
-@page "/analisis"
+@page "/analyses"
 @using System.Security.Claims
 @using LegacyLens.Application.Abstractions
 @using LegacyLens.Application.Analyses
@@ -13,15 +13,15 @@
 
 <h1>Mis análisis</h1>
 
-@if (analisis is null)
+@if (analyses is null)
 {
     <p class="text-secondary">Cargando...</p>
 }
-else if (analisis.Count == 0)
+else if (analyses.Count == 0)
 {
     <p class="text-secondary">
         Todavía no has analizado ningún script.
-        <a href="/analizar">Analiza el primero</a>.
+        <a href="/analyze">Analiza el primero</a>.
     </p>
 }
 else
@@ -37,7 +37,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in analisis)
+            @foreach (var item in analyses)
             {
                 <tr>
                     <td><code>@item.FileName</code></td>
@@ -58,7 +58,7 @@ else
                         }
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-primary" href="/analisis/@item.Id">Ver</a>
+                        <a class="btn btn-sm btn-outline-primary" href="/analyses/@item.Id">Ver</a>
                     </td>
                 </tr>
             }
@@ -69,7 +69,7 @@ else
 @code {
     // AnalysisSummary es un modelo de lectura de la capa de aplicación, no la
     // entidad de persistencia: la página ya no sabe cómo se guardan los datos.
-    private IReadOnlyList<AnalysisSummary>? analisis;
+    private IReadOnlyList<AnalysisSummary>? analyses;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
@@ -84,6 +84,6 @@ else
             userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
-        analisis = await Sender.Send(new ListAnalysesQuery(userId ?? string.Empty));
+        analyses = await Sender.Send(new ListAnalysesQuery(userId ?? string.Empty));
     }
 }

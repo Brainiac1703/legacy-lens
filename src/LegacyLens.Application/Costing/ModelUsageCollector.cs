@@ -17,26 +17,26 @@ namespace LegacyLens.Application.Costing;
 /// </summary>
 public sealed class ModelUsageCollector : IModelUsageCollector
 {
-    private sealed class Entrada
+    private sealed class Entry
     {
         public long InputTokens;
         public long OutputTokens;
         public int Calls;
     }
 
-    private readonly ConcurrentDictionary<string, Entrada> _porModelo = new();
+    private readonly ConcurrentDictionary<string, Entry> _byModel = new();
 
     public void Add(string model, long inputTokens, long outputTokens)
     {
-        var entrada = _porModelo.GetOrAdd(model, _ => new Entrada());
+        var entry = _byModel.GetOrAdd(model, _ => new Entry());
 
-        Interlocked.Add(ref entrada.InputTokens, inputTokens);
-        Interlocked.Add(ref entrada.OutputTokens, outputTokens);
-        Interlocked.Increment(ref entrada.Calls);
+        Interlocked.Add(ref entry.InputTokens, inputTokens);
+        Interlocked.Add(ref entry.OutputTokens, outputTokens);
+        Interlocked.Increment(ref entry.Calls);
     }
 
     public IReadOnlyList<ModelUsage> Snapshot() =>
-        [.. _porModelo.Select(kv => new ModelUsage(
+        [.. _byModel.Select(kv => new ModelUsage(
             kv.Key,
             Interlocked.Read(ref kv.Value.InputTokens),
             Interlocked.Read(ref kv.Value.OutputTokens),

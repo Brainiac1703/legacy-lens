@@ -84,24 +84,24 @@ public sealed class AnalyzeScriptHandler(
 
         // Etapa determinista: rápida y sin dependencias externas que puedan fallar.
         var result = analyzer.Analyze(request.Script, request.FileName);
-        var programables = result.Objects.Count(o => o.IsProgrammable);
+        var programmable = result.Objects.Count(o => o.IsProgrammable);
 
         logger.LogInformation(
-            "Analizado {Fichero}: {Objetos} objetos, {Programables} programables, {Dependencias} dependencias",
-            request.FileName, result.ObjectCount, programables, result.Dependencies.Count);
+            "Analizado {Fichero}: {Objetos} objetos, {Programables} programmable, {Dependencias} dependencias",
+            request.FileName, result.ObjectCount, programmable, result.Dependencies.Count);
 
-        if (ai.IsAvailable && programables > 0)
+        if (ai.IsAvailable && programmable > 0)
         {
-            var consumo = new ModelUsageCollector();
+            var usage = new ModelUsageCollector();
 
-            await foreach (var paso in Documentar(result, programables, consumo, cancellationToken))
-                yield return paso;
+            await foreach (var step in DocumentAsync(result, programmable, usage, cancellationToken))
+                yield return step;
 
             yield return new AnalysisProgress(
-                AnalysisPhase.Planning, "Generando el plan de migración...", programables, programables);
+                AnalysisPhase.Planning, "Generando el plan de migración...", programmable, programmable);
 
-            result.Plan = await ai.BuildPlanAsync(result, consumo, cancellationToken);
-            result.Usage.AddRange(consumo.Snapshot());
+            result.Plan = await ai.BuildPlanAsync(result, usage, cancellationToken);
+            result.Usage.AddRange(usage.Snapshot());
         }
         else if (!ai.IsAvailable)
         {
@@ -123,45 +123,45 @@ public sealed class AnalyzeScriptHandler(
     /// llegan desde hilos del pool— en elementos de un flujo que el consumidor
     /// recorre a su ritmo, sin que ninguna de las dos capas conozca a la otra.
     /// </summary>
-    private async IAsyncEnumerable<AnalysisProgress> Documentar(
+    private async IAsyncEnumerable<AnalysisProgress> DocumentAsync(
         Domain.AnalysisResult result,
         int total,
-        IModelUsageCollector consumo,
+        IModelUsageCollector usage,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var canal = Channel.CreateUnbounded<AnalysisProgress>();
+        var channel = Channel.CreateUnbounded<AnalysisProgress>();
 
-        var progreso = new Progress<AiProgress>(p =>
-            canal.Writer.TryWrite(new AnalysisProgress(
+        var progress = new Progress<AiProgress>(p =>
+            channel.Writer.TryWrite(new AnalysisProgress(
                 AnalysisPhase.Documenting,
                 $"Documentando {p.CurrentObject}",
                 p.Completed,
                 p.Total)));
 
-        async Task Documentacion()
+        async Task RunDocumentation()
         {
             try
             {
-                await ai.DocumentAllAsync(result, progreso, consumo, cancellationToken);
+                await ai.DocumentAllAsync(result, progress, usage, cancellationToken);
             }
             finally
             {
                 // Cerrar el canal en finally garantiza que el consumidor sale del
                 // bucle también cuando la documentación falla o se cancela.
-                canal.Writer.TryComplete();
+                channel.Writer.TryComplete();
             }
         }
 
         yield return new AnalysisProgress(
             AnalysisPhase.Documenting, "Documentando objetos...", 0, total);
 
-        var tarea = Documentacion();
+        var documentationTask = RunDocumentation();
 
-        await foreach (var paso in canal.Reader.ReadAllAsync(cancellationToken))
-            yield return paso;
+        await foreach (var step in channel.Reader.ReadAllAsync(cancellationToken))
+            yield return step;
 
         // Se espera la tarea para que cualquier excepción se propague en lugar
         // de quedarse en un Task abandonado.
-        await tarea;
+        await documentationTask;
     }
 }
