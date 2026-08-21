@@ -1,0 +1,134 @@
+# Trazabilidad con el temario del máster
+
+Este documento existe por una razón concreta: el TFM pide «un proyecto que demuestre los
+conocimientos adquiridos a lo largo del máster», y conviene poder señalar **dónde** se
+demuestra cada cosa en lugar de afirmarlo de palabra.
+
+También señala con honestidad lo que **no** está cubierto. Las ausencias son deliberadas y
+están planificadas como fases siguientes en [hoja-de-ruta.md](hoja-de-ruta.md), no
+olvidadas.
+
+Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoja de ruta
+
+---
+
+## 00 · Fundamentos del desarrollo de software
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Terminal y línea de comandos | ✔ | `scripts/deploy.ps1`, flujo de trabajo con CLI |
+| Control de versiones con Git y GitHub | ✔ | Repositorio, `.gitignore` que excluye `tfvars` y `tfstate` |
+| Pensamiento computacional | ✔ | El recorrido del AST y el cálculo del riesgo son el núcleo del proyecto |
+
+## 01 · Ingeniería de Software
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Principios SOLID | ✔ | Dirección de dependencias entre proyectos; `Analysis` y `Ai` dependen solo de `Domain` |
+| Inversión de dependencias | ✔ | `IChatClient` como abstracción de proveedor; inyección en `Program.cs` |
+| DRY, KISS, YAGNI | ✔ | Decisión de serializar el análisis en JSON en lugar de modelar 6 tablas: ver README §7 |
+| Patrones de diseño | ✔ | **Visitor** en `ObjectAnalysisVisitor`; Repository en `AnalysisStore` |
+| Antipatrones | ✔ | El propio producto **detecta antipatrones** en el código analizado: cursores, SQL dinámico, escrituras sin transacción |
+| Validación de requisitos | ✔ | Requisitos del TFM analizados y trazados en este documento |
+| Spec Driven Development | ◐ | El alcance se fijó por escrito antes de codificar; sin especificación formal ejecutable |
+
+## 02 · Arquitectura de Software
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Decisiones arquitectónicas y su registro | ✔ | `docs/adr/` |
+| Monolito modular | ✔ | Cuatro proyectos con fronteras explícitas y dirección de dependencias controlada |
+| Separación dominio / aplicación / infraestructura | ✔ | `Domain` sin dependencias externas; `Web` orquesta |
+| Clean Architecture / Hexagonal completa | ◐ | La separación existe, pero sin puertos y adaptadores formales ni casos de uso como clases |
+| DDD: entidades y value objects | ◐ | `SqlObject` es una entidad; `CodeMetrics` y `RiskScore` son value objects inmutables. Sin agregados ni repositorios de dominio formales |
+| Event-Driven Architecture, patrón Outbox | ○ | Fase 4: el análisis como trabajo asíncrono encolado |
+| Microservicios | — | Descartado a propósito: no hay ningún problema que justifique distribuir esto |
+
+## 03 · Fundamentos de la IA
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Capacidades y límites de los modelos | ✔ | La tesis del proyecto: qué se calcula y qué se pregunta. README §1 |
+| Datos sintéticos | ✔ | `samples/legacy-erp.sql` es un dataset sintético creado para no exponer código real |
+
+## 04 · Herramientas
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Claude Code CLI | ✔ | El proyecto se construyó en sesión de pareja con Claude Code. README §8 |
+| Revisión de código con IA | ○ | Fase 1: CodeRabbit sobre los PR |
+| Code scanning y Dependabot | ○ | Fase 1 |
+
+## 05 · Flujo de desarrollo con IA
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Prompt engineering aplicado a código | ✔ | `Prompts.cs`: rol, restricciones explícitas, formato de salida |
+| Prompts con restricciones anti-alucinación | ✔ | «No inventes tablas que no aparezcan en los hechos verificados» |
+| **Prompt chaining** | ✔ | Cadena real: documentar cada objeto → los resúmenes alimentan el prompt del plan global |
+| Roles y personificación | ✔ | Dos prompts de sistema distintos: documentador y planificador de migración |
+| Bases de conocimiento para IA | ✔ | Los hechos verificados por el parser **son** la base de conocimiento que se inyecta |
+| Salida estructurada | ✔ | Esquema JSON forzado con `GetResponseAsync<T>` |
+| APIs de IA | ✔ | Azure OpenAI vía `Microsoft.Extensions.AI` |
+| Multi-proveedor | ◐ | La abstracción `IChatClient` lo permite; solo hay un proveedor conectado |
+| `AGENTS.md` / comportamiento del agente | ✔ | `AGENTS.md` en la raíz |
+| Skills y subagentes | ○ | Fase 2 |
+| **MCP (Model Context Protocol)** | ○ | **Fase 2**: exponer el análisis como servidor MCP |
+
+## 06 · Calidad
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Testing y mapa de pruebas | ✔ | 15 tests sobre la capa determinista |
+| Estrategia de qué testear | ✔ | Se testea lo determinista con asserts; lo no determinista se **evalúa con métricas** en `tools/LegacyLens.Evals` |
+| **ADR: documentar el porqué** | ✔ | `docs/adr/` |
+| Docs as code | ✔ | Toda la documentación en Markdown en el repositorio; el producto **genera** docs-as-code |
+| Deuda técnica explícita | ✔ | README §7 «Limitaciones conocidas», sin maquillar |
+| Métricas mínimas que importan | ◐ | Se cuentan tokens y llamadas; sin exponerlas todavía en la interfaz |
+| Coverage honesto | ○ | Fase 1 |
+| Quality gates | ◐ | El CI bloquea con tests, `terraform fmt` y build del contenedor; sin hooks locales |
+| Observabilidad y Release Health | ○ | Fase 3: OpenTelemetry y trazas por llamada al modelo |
+| E2E con Playwright | ○ | Fase 3 |
+| Accesibilidad | ◐ | Bootstrap accesible de base, `aria` en la barra de progreso; sin auditoría |
+
+## 07 · Infraestructura y Cloud
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| DevOps y CI/CD | ✔ | `.github/workflows/ci.yml`: build, tests, contenedor y validación de Terraform |
+| GitHub Actions | ✔ | Ídem |
+| Cloud computing | ✔ | Azure Container Apps, Container Registry, Log Analytics |
+| **Infraestructura como código** | ✔ | `infra/` completo, con aprovisionamiento por etapas mediante `deploy_app` |
+| Costes y mejores prácticas | ✔ | Dos modelos por coste; SKU Basic; una réplica. Ver README §2 |
+| Contenerización | ✔ | Dockerfile multi-stage, imagen no-root, 503 MB |
+| Bases de datos | ✔ | SQLite con EF Core, dos contextos con criterio distinto |
+| **Bases de datos vectoriales** | ○ | **Fase 2**, junto con RAG |
+| **RAG** | ○ | **Fase 2**: preguntar en lenguaje natural sobre todo el corpus analizado |
+| Kubernetes | — | Descartado: Container Apps cubre el caso sin la complejidad operativa |
+| **LLMOps** | ◐ | Evaluación reproducible entregada; la observabilidad en producción es fase 3 |
+
+## 08 · Seguridad
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Security by design / by default | ✔ | Sin secretos por diseño: identidad administrada |
+| Gestión de credenciales | ✔ | Asignaciones de rol en Terraform; `terraform.tfvars` fuera del repositorio |
+| Identificación y autenticación | ✔ | ASP.NET Core Identity; cada usuario ve solo sus análisis |
+| Broken Access Control | ✔ | `AnalysisStore` filtra por propietario; el endpoint de descarga exige autorización |
+| Injection | ✔ | El SQL analizado **nunca se ejecuta**: se parsea. Es análisis estático puro |
+| Componentes vulnerables | ✔ | Detectado y corregido `SQLitePCLRaw` con CVE conocido durante el desarrollo |
+| Validación de entradas | ◐ | Límite de tamaño y extensión en la subida; sin validación de contenido más profunda |
+| DevSecOps en el pipeline | ○ | Fase 1: Dependabot y CodeQL |
+| Mapeo OWASP Top 10 explícito | ○ | Fase 1: `docs/seguridad.md` |
+| Logging y monitorización | ◐ | Logging estructurado; sin alertas |
+
+## 09 y 11 · Desarrollo potenciado por IA y masterclass
+
+| Contenido | | Dónde |
+| --- | --- | --- |
+| Integración de IA en producto real | ✔ | Es el proyecto |
+| Tolerancia a fallos del modelo | ✔ | Un objeto que falla no tumba el análisis; sin IA la aplicación sigue siendo útil |
+| Caché y control de coste | ✔ | Caché por hash de contenido; concurrencia limitada; modelo económico para el volumen |
+| **Evaluación de LLMs** | ✔ | `tools/LegacyLens.Evals`: conjunto dorado, detección automática de alucinación y comparativa entre modelos. Informe en [`docs/evals/informe.md`](evals/informe.md) |
+| Fine-tuning | — | Descartado: no hay volumen de datos que lo justifique, y el prompting fundamentado resuelve el caso |
+| Docker e IA | ✔ | Aplicación con IA contenerizada y desplegada |

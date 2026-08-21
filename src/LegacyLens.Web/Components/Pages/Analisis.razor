@@ -1,0 +1,86 @@
+@page "/analisis"
+@using System.Security.Claims
+@using LegacyLens.Web.Data
+@using LegacyLens.Web.Services
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@inject AnalysisStore Store
+
+<PageTitle>Mis análisis | Legacy Lens</PageTitle>
+
+<h1>Mis análisis</h1>
+
+@if (analyses is null)
+{
+    <p class="text-secondary">Cargando...</p>
+}
+else if (analyses.Count == 0)
+{
+    <p class="text-secondary">
+        Todavía no has analizado ningún script.
+        <a href="/analizar">Analiza el primero</a>.
+    </p>
+}
+else
+{
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Fichero</th>
+                <th>Fecha</th>
+                <th class="text-end">Objetos</th>
+                <th>Contenido</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in analyses)
+            {
+                <tr>
+                    <td><code>@item.FileName</code></td>
+                    <td>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="text-end">@item.ObjectCount</td>
+                    <td>
+                        @if (item.HasAiDocumentation)
+                        {
+                            <span class="badge text-bg-success">Documentado</span>
+                        }
+                        else
+                        {
+                            <span class="badge text-bg-secondary">Solo análisis estático</span>
+                        }
+                        @if (item.HasPlan)
+                        {
+                            <span class="badge text-bg-primary">Con plan</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-primary" href="/analisis/@item.Id">Ver</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<StoredAnalysis>? analyses;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        string? userId = null;
+
+        if (AuthenticationState is not null)
+        {
+            var authState = await AuthenticationState;
+            userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        analyses = await Store.ListAsync(userId);
+    }
+}

@@ -1,0 +1,7 @@
+# Copia este fichero a terraform.tfvars y pon tu suscripción.
+# terraform.tfvars está excluido del repositorio a propósito.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Con false solo se crea Azure OpenAI, suficiente para desarrollar en local.
+# Con true se añaden el registro de contenedores y el Container App público.
+deploy_app = false

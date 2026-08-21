@@ -1,0 +1,213 @@
+@page "/analizar"
+@using System.Security.Claims
+@using LegacyLens.Ai
+@using LegacyLens.Domain
+@using LegacyLens.Web.Services
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@inject AnalysisWorkflow Workflow
+@inject AiEnrichmentService Ai
+@inject NavigationManager Navigation
+@inject IWebHostEnvironment Environment
+@inject ILogger<Analizar> Logger
+
+<PageTitle>Analizar script | Legacy Lens</PageTitle>
+
+<h1>Analizar un script T-SQL</h1>
+
+<p class="text-secondary">
+    Sube el script generado con <em>Generate Scripts</em> de SSMS. Legacy Lens extrae el
+    inventario de objetos y el grafo de dependencias con el parser oficial de T-SQL, y
+    después genera la documentación y el plan de migración con IA.
+</p>
+
+@if (!Ai.IsAvailable)
+{
+    <div class="alert alert-warning">
+        <strong>Azure OpenAI no está configurado.</strong>
+        El análisis estático funcionará con normalidad (inventario, dependencias, métricas y
+        riesgo), pero no se generará documentación ni plan de migración.
+    </div>
+}
+
+@if (state is null)
+{
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Subir un fichero</h5>
+
+            <InputFile OnChange="OnFileSelected" class="form-control" accept=".sql,.txt" />
+
+            <div class="form-text">Ficheros .sql de hasta @(MaxFileSizeMb) MB.</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">O probar con el script de ejemplo</h5>
+            <p class="card-text text-secondary">
+                Una base de datos de ERP sintética que reproduce los patrones habituales de un
+                sistema heredado: cursores, SQL dinámico, escrituras sin transacción y
+                procedimientos encadenados.
+            </p>
+            <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@running">
+                Analizar el ejemplo
+            </button>
+        </div>
+    </div>
+}
+
+@if (state is not null)
+{
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">@FileNameInProgress</h5>
+            <p class="mb-2">@state.Message</p>
+
+            @if (state.Total > 0)
+            {
+                <div class="progress mb-2" role="progressbar" aria-valuenow="@state.Percentage"
+                     aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width: @(state.Percentage)%">
+                        @state.Completed / @state.Total
+                    </div>
+                </div>
+            }
+            else if (state.Phase != AnalysisPhase.Done)
+            {
+                <div class="progress mb-2">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                         style="width: 100%"></div>
+                </div>
+            }
+
+            <ul class="list-unstyled small text-secondary mb-0">
+                <li>@Marker(AnalysisPhase.Parsing) Análisis estático del script</li>
+                <li>@Marker(AnalysisPhase.Documenting) Documentación de cada objeto</li>
+                <li>@Marker(AnalysisPhase.Planning) Plan de migración</li>
+                <li>@Marker(AnalysisPhase.Saving) Guardado</li>
+            </ul>
+        </div>
+    </div>
+}
+
+@if (error is not null)
+{
+    <div class="alert alert-danger mt-3">
+        <strong>No se pudo completar el análisis.</strong>
+        <div class="small mt-1">@error</div>
+        <button class="btn btn-sm btn-outline-secondary mt-2" @onclick="Reset">Volver a intentarlo</button>
+    </div>
+}
+
+@code {
+    private const int MaxFileSizeMb = 8;
+    private const long MaxFileSize = MaxFileSizeMb * 1024L * 1024L;
+
+    private AnalysisProgressState? state;
+    private string? error;
+    private bool running;
+    private string FileNameInProgress = string.Empty;
+
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file.Size > MaxFileSize)
+        {
+            error = $"El fichero pesa {file.Size / 1024 / 1024} MB y el límite son {MaxFileSizeMb} MB.";
+            return;
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream(MaxFileSize);
+            using var reader = new StreamReader(stream);
+            var script = await reader.ReadToEndAsync();
+
+            await RunAsync(script, file.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error leyendo el fichero subido");
+            error = "No se pudo leer el fichero.";
+        }
+    }
+
+    private async Task RunSampleAsync()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Samples", "legacy-erp.sql");
+
+        if (!File.Exists(path))
+        {
+            error = "No se encontró el script de ejemplo en el despliegue.";
+            return;
+        }
+
+        await RunAsync(await File.ReadAllTextAsync(path), "legacy-erp.sql");
+    }
+
+    private async Task RunAsync(string script, string fileName)
+    {
+        if (running) return;
+
+        running = true;
+        error = null;
+        FileNameInProgress = fileName;
+
+        try
+        {
+            var userId = await CurrentUserIdAsync();
+
+            var result = await Workflow.RunAsync(
+                script,
+                fileName,
+                userId,
+                // El callback llega desde hilos del pool, así que hay que volver
+                // al contexto del circuito antes de tocar la interfaz.
+                async progress =>
+                {
+                    state = progress;
+                    await InvokeAsync(StateHasChanged);
+                });
+
+            Navigation.NavigateTo($"/analisis/{result.Id}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fallo el análisis de {Fichero}", fileName);
+            error = ex.Message;
+            state = null;
+        }
+        finally
+        {
+            running = false;
+        }
+    }
+
+    private void Reset()
+    {
+        error = null;
+        state = null;
+    }
+
+    private async Task<string?> CurrentUserIdAsync()
+    {
+        if (AuthenticationState is null) return null;
+
+        var authState = await AuthenticationState;
+        return authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private string Marker(AnalysisPhase phase)
+    {
+        if (state is null) return "○";
+        if (state.Phase > phase || state.Phase == AnalysisPhase.Done) return "✓";
+        return state.Phase == phase ? "▸" : "○";
+    }
+}

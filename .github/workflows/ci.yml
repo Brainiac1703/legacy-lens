@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Compilar y probar
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar
+        run: dotnet restore
+
+      - name: Compilar
+        run: dotnet build --no-restore --configuration Release
+
+      # Los tests cubren el analizador, que es la parte determinista del
+      # sistema y por tanto la única que se puede verificar con asserts.
+      - name: Probar
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+      - name: Validar el contenedor
+        run: docker build -t legacylens:ci .
+
+  terraform:
+    name: Validar infraestructura
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Comprobar formato
+        run: terraform fmt -check -recursive
+        working-directory: infra
+
+      # init sin backend: valida la sintaxis sin necesitar credenciales.
+      - name: Inicializar
+        run: terraform init -backend=false
+        working-directory: infra
+
+      - name: Validar
+        run: terraform validate
+        working-directory: infra
