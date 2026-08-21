@@ -164,12 +164,22 @@ esquema, con un agente que consolida.
 OpenTelemetry con trazas por llamada al modelo: latencia, tokens, coste y tasa de fallo por
 despliegue. Es lo que convierte la fase 1 en algo continuo en lugar de una foto.
 
-### 3.2 Pruebas de extremo a extremo
+### 3.2 Migrar el proyecto de tests a Microsoft.Testing Platform
+
+`xunit.v3` 4.x abandona VSTest, así que la actualización dejó de ser un cambio de versión y
+pasó a ser una migración: quitar `xunit.runner.visualstudio` y `Microsoft.NET.Test.Sdk`, y
+activar la nueva experiencia de `dotnet test`. Hasta hacerla, el mayor de `xunit.v3` está
+bloqueado en `dependabot.yml` para no arrastrar una propuesta en rojo permanente.
+
+*Criterio de aceptación:* los 15 tests siguen pasando y el CI no necesita `--no-build` ni
+banderas de compatibilidad.
+
+### 3.3 Pruebas de extremo a extremo
 
 Playwright sobre el recorrido completo: iniciar sesión, analizar el ejemplo, comprobar que
 el plan aparece y descargar el documento.
 
-### 3.3 Persistencia y escalado de verdad
+### 3.4 Persistencia y escalado de verdad
 
 - ~~Base de datos servidor en lugar de SQLite~~ **entregado**: Azure SQL Database serverless,
   con las migraciones aplicadas por el pipeline antes de publicar la revisión nueva.

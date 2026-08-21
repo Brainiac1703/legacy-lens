@@ -19,6 +19,25 @@ updates:
       azure:
         patterns:
           - 'Azure.*'
+    ignore:
+      # MediatR 12.5.0 es la ultima version Apache-2.0. Desde la 13, el paquete
+      # esta bajo Reciprocal Public License 1.5 -que obliga a publicar el codigo
+      # de lo que construyas con ella- o licencia comercial de Lucky Penny
+      # Software. Aceptar un mayor aqui cambiaria la licencia del proyecto sin
+      # que nadie lo decidiera, asi que se bloquea por configuracion y no por
+      # confiar en que quien revise la propuesta lo sepa. Ver ADR 0003 y 0007.
+      - dependency-name: MediatR
+        update-types:
+          - version-update:semver-major
+
+      # xunit.v3 4.x abandona VSTest y exige migrar a Microsoft.Testing Platform,
+      # que no es un cambio de version sino una migracion del proyecto de tests:
+      # hay que quitar xunit.runner.visualstudio y Microsoft.NET.Test.Sdk y
+      # activar el nuevo dotnet test. Bloqueado hasta hacerla, para no tener una
+      # propuesta en rojo permanente. Anotado en la hoja de ruta.
+      - dependency-name: xunit.v3
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
