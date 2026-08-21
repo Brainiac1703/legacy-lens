@@ -1,0 +1,9 @@
+# Copia a backend.hcl y ajusta con los valores que imprime
+# scripts/bootstrap-tfstate.ps1. backend.hcl está excluido del repositorio.
+#
+#   terraform init -backend-config=backend.hcl
+
+resource_group_name  = "rg-legacylens-tfstate"
+storage_account_name = "stlegacylenstf0000"
+container_name       = "tfstate"
+key                  = "legacy-lens.tfstate"

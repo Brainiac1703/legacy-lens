@@ -141,7 +141,7 @@ Necesitarás el rol *Cognitive Services OpenAI User* sobre el recurso.
 ### Ejecutar los tests
 
 ```bash
-dotnet test
+dotnet test LegacyLens.slnx
 ```
 
 ### Ejecutar el arnés de evaluación
@@ -159,14 +159,35 @@ dotnet run --project tools/LegacyLens.Evals -- \
 El informe incluye las métricas **y la salida generada íntegra**: una cobertura del cien por
 cien no significa nada si nadie lee el texto.
 
-### En contenedor
+### Entorno completo con Docker Compose
+
+Es la forma recomendada de desarrollar: levanta la aplicación y un **SQL Server con el ERP
+de ejemplo ya cargado**, del que puedes generar scripts reales para analizar.
 
 ```bash
-docker build -t legacylens .
-docker run -p 8080:8080 legacylens
+cp .env.example .env       # y pon MSSQL_SA_PASSWORD y, si quieres IA, Ai__Endpoint
+docker compose up --build
 ```
 
-### Desplegar en Azure
+- Aplicación: http://localhost:8080
+- SQL Server: `localhost,14330` con usuario `sa` y la base de datos `LegacyERP`
+
+El puerto de SQL Server **no es el 1433** a propósito, para no chocar con una instancia
+local ni con el contenedor de otro proyecto. Se cambia con `SQLSERVER_PORT` en `.env`.
+
+Un detalle del diseño que conviene entender: **la aplicación no se conecta a ese SQL
+Server, y no debe hacerlo nunca.** El SQL que analiza se parsea, jamás se ejecuta. El
+servidor está ahí como fuente de la que generar scripts con *Generate Scripts* y probar el
+flujo completo sin depender de ningún servidor de la empresa. Por eso el servicio `web` no
+declara `depends_on` sobre él: sería una dependencia falsa.
+
+Los datos de la aplicación viven en un volumen, así que los análisis y los usuarios
+sobreviven a un `docker compose down`. Para empezar de cero, `docker compose down -v`.
+
+`docker-compose.dcproj` existe para que el entorno aparezca como proyecto en la solución de
+Visual Studio y se pueda arrancar con F5. Fuera de Visual Studio no hace falta.
+
+### Desplegar a mano
 
 ```bash
 cd infra
@@ -215,6 +236,9 @@ legacy-lens/
 ├── .github/workflows/ci.yml      Integración continua
 ├── AGENTS.md                     Instrucciones para agentes de IA
 ├── tools/LegacyLens.Evals/       Arnés de evaluación del modelo
+├── docker-compose.yml           Entorno de desarrollo: app + SQL Server con el ejemplo
+├── docker-compose.override.yml  Ajustes que solo aplican en local
+├── docker-compose.dcproj        Para que aparezca en la solución de Visual Studio
 └── docs/
     ├── adr/                      Registros de decisiones de arquitectura
     ├── evals/informe.md          Resultado de la evaluación, con la salida generada
@@ -421,6 +445,43 @@ La fase 1.1 ya está entregada, y su primer resultado justifica por sí solo hab
 elección de modelos estaba tomada por criterio razonable, y al medirla resultó que el modelo
 económico **documenta mejor** que el capaz. Eso no se descubre discutiendo, se descubre
 midiendo.
+
+### Despliegue continuo desde GitHub
+
+La infraestructura y la aplicación se gestionan desde el repositorio, con dos pipelines
+separados y **sin ningún secreto almacenado**: la autenticación es con OIDC, así que GitHub
+presenta un token firmado que Azure valida contra este repositorio y esta rama.
+
+| Pipeline | Se dispara con | Qué hace |
+| --- | --- | --- |
+| `infra.yml` | Cambios en `infra/` | En un *pull request* planifica y **publica el plan como comentario**. Al integrar, aplica **el plan guardado**, no uno nuevo. |
+| `deploy.yml` | Cambios en `src/` o el `Dockerfile` | Verifica con los tests, construye la imagen con `az acr build`, publica la revisión y **comprueba que la aplicación responde 200** antes de darlo por bueno. |
+
+Hay **dos identidades con permisos distintos**, y es deliberado: la de despliegue —la que se
+ejecuta en cada *commit*— está limitada a un grupo de recursos y **no puede tocar la
+infraestructura ni conceder permisos**. El razonamiento completo, con sus contrapartidas
+declaradas, está en el [ADR 0006](docs/adr/0006-cicd-con-oidc-y-dos-identidades.md).
+
+#### Puesta en marcha, una sola vez
+
+```powershell
+# 1. Cuenta de almacenamiento para el estado de Terraform, con versionado.
+./scripts/bootstrap-tfstate.ps1
+
+# 2. Migrar el estado local al remoto.
+cd infra; terraform init -migrate-state -backend-config=backend.hcl; cd ..
+
+# 3. Identidades y credenciales federadas para GitHub.
+./scripts/bootstrap-github-oidc.ps1 -Repository Brainiac1703/legacy-lens
+```
+
+El último script imprime las variables que hay que definir en GitHub, en
+*Settings → Secrets and variables → Actions → Variables*. **Son variables, no secretos:**
+ninguno de esos valores es una credencial, que es precisamente la ventaja de OIDC.
+
+Si además configuras una regla de protección en el entorno `produccion`, GitHub exigirá
+aprobación manual antes de tocar infraestructura o publicar una revisión — el equivalente a
+las aprobaciones de *release* de Azure DevOps.
 
 ### Seguridad
 

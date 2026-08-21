@@ -95,12 +95,15 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 
 | Contenido | | Dónde |
 | --- | --- | --- |
-| DevOps y CI/CD | ✔ | `.github/workflows/ci.yml`: build, tests, contenedor y validación de Terraform |
-| GitHub Actions | ✔ | Ídem |
+| DevOps y CI/CD | ✔ | Cinco *workflows*: integración, seguridad, infraestructura, despliegue y Dependabot |
+| GitHub Actions | ✔ | Plan de Terraform comentado en el *pull request*, apply del plan guardado, y despliegue verificado con comprobación de que la aplicación responde |
+| Despliegue continuo sin secretos | ✔ | OIDC con credenciales federadas y dos identidades de permisos distintos. [ADR 0006](adr/0006-cicd-con-oidc-y-dos-identidades.md) |
 | Cloud computing | ✔ | Azure Container Apps, Container Registry, Log Analytics |
 | **Infraestructura como código** | ✔ | `infra/` completo, con aprovisionamiento por etapas mediante `deploy_app` |
 | Costes y mejores prácticas | ✔ | Dos modelos por coste; SKU Basic; una réplica. Ver README §2 |
 | Contenerización | ✔ | Dockerfile multi-stage, imagen no-root, 503 MB |
+| Orquestación local con Compose | ✔ | `docker-compose.yml`: aplicación con datos en volumen y SQL Server con el ERP de ejemplo cargado de forma idempotente |
+| Estado de infraestructura gestionado | ✔ | Backend remoto en Azure Storage con versionado, retención y acceso por identidad, no por clave |
 | Bases de datos | ✔ | SQLite con EF Core, dos contextos con criterio distinto |
 | **Bases de datos vectoriales** | ○ | **Fase 2**, junto con RAG |
 | **RAG** | ○ | **Fase 2**: preguntar en lenguaje natural sobre todo el corpus analizado |

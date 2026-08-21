@@ -40,7 +40,7 @@ jobs:
       # CodeQL necesita observar una compilación real para construir su base de
       # datos, así que aquí no vale con restaurar.
       - name: Compilar
-        run: dotnet build --configuration Release
+        run: dotnet build LegacyLens.slnx --configuration Release
 
       - name: Analizar
         uses: github/codeql-action/analyze@v3
@@ -58,14 +58,14 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restaurar
-        run: dotnet restore
+        run: dotnet restore LegacyLens.slnx
 
       # Falla la ejecución si aparece cualquier paquete con vulnerabilidad
       # conocida, incluidas las transitivas. Es exactamente el aviso que hubo
       # que atender durante el desarrollo con SQLitePCLRaw.
       - name: Buscar paquetes vulnerables
         run: |
-          dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
+          dotnet list LegacyLens.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
           if grep -q -E "Crítica|Critical|Alta|High|Moderada|Moderate" vulnerables.txt; then
             echo "::error::Se han detectado dependencias con vulnerabilidades conocidas"
             exit 1

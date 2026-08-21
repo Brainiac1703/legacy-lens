@@ -16,3 +16,7 @@ infra
 README.md
 Dockerfile
 .dockerignore
+docker-compose*.yml
+docker-compose.dcproj
+.env
+.env.example

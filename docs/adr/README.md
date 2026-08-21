@@ -13,3 +13,4 @@ Formato: contexto, decisión, consecuencias y alternativas consideradas.
 | [0003](0003-dos-modelos-de-lenguaje.md) | Dos modelos de lenguaje con papeles distintos | Aceptada |
 | [0004](0004-persistencia-json-y-dos-contextos.md) | Análisis serializado en JSON y dos contextos de EF | Aceptada |
 | [0005](0005-identidad-administrada-sin-secretos.md) | Identidad administrada en lugar de claves | Aceptada |
+| [0006](0006-cicd-con-oidc-y-dos-identidades.md) | CI/CD con OIDC y dos identidades separadas | Aceptada |

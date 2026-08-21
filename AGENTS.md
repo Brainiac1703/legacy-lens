@@ -37,8 +37,8 @@ infra/                     Terraform.
 ## Comandos
 
 ```bash
-dotnet build                                  # compila la solución (LegacyLens.slnx)
-dotnet test                                   # 15 tests sobre el analizador
+dotnet build LegacyLens.slnx                  # compila la solución (LegacyLens.slnx)
+dotnet test LegacyLens.slnx                   # 15 tests sobre el analizador
 dotnet run --project src/LegacyLens.Web       # arranca en local
 docker build -t legacylens .                  # valida el contenedor
 cd infra && terraform validate && terraform fmt -check -recursive

@@ -1,0 +1,29 @@
+# ---------------------------------------------------------------------------
+# Ajustes que solo aplican en desarrollo local.
+#
+# Docker Compose lo combina automáticamente con docker-compose.yml, así que el
+# fichero base se mantiene limpio y reutilizable. Es el mismo patrón que usa
+# Visual Studio con su proyecto de docker-compose.
+#
+# Para levantar el entorno sin estos ajustes (por ejemplo para reproducir el
+# comportamiento de producción):
+#   docker compose -f docker-compose.yml up --build
+# ---------------------------------------------------------------------------
+
+services:
+  web:
+    environment:
+      # Registro más detallado, incluido el SQL que ejecuta EF Core.
+      Logging__LogLevel__Default: Information
+      Logging__LogLevel__LegacyLens: Debug
+      Logging__LogLevel__Microsoft.EntityFrameworkCore.Database.Command: Information
+
+      # Concurrencia baja para no consumir la cuota del despliegue mientras se
+      # prueba, y para que el progreso en pantalla se vea avanzar paso a paso.
+      Ai__MaxConcurrency: '2'
+    # Se para si falla en el arranque, en lugar de reiniciarse en bucle y
+    # esconder el error entre los reintentos.
+    restart: 'no'
+
+  sqlserver:
+    restart: 'no'

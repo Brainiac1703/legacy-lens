@@ -505,3 +505,9 @@ terraform.rc
 # Aportados por la plantilla de Visual Studio del repositorio remoto
 *.env
 *.trx
+
+# Variables locales de Docker Compose: contienen contraseñas y claves.
+.env
+
+# Configuración del backend de Terraform: contiene nombres de recursos propios.
+backend.hcl

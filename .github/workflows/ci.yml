@@ -21,15 +21,15 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restaurar
-        run: dotnet restore
+        run: dotnet restore LegacyLens.slnx
 
       - name: Compilar
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build LegacyLens.slnx --no-restore --configuration Release
 
       # Los tests cubren el analizador, que es la parte determinista del
       # sistema y por tanto la única que se puede verificar con asserts.
       - name: Probar
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: dotnet test LegacyLens.slnx --no-build --configuration Release --verbosity normal
 
       - name: Validar el contenedor
         run: docker build -t legacylens:ci .

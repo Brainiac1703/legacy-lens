@@ -1,0 +1,254 @@
+name: Infraestructura
+
+# ---------------------------------------------------------------------------
+# Gestiona la infraestructura con Terraform desde el repositorio.
+#
+# En un pull request solo planifica, y publica el plan como comentario para que
+# se pueda revisar antes de aprobar el cambio. El apply ocurre al integrar en
+# main, o a mano.
+#
+# La autenticación es con OIDC: GitHub presenta un token firmado que Azure valida
+# contra este repositorio y esta rama. No hay ningún secreto almacenado.
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/**'
+  workflow_dispatch:
+    inputs:
+      deploy_app:
+        description: 'Aprovisionar también el registro y el Container App'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+env:
+  ARM_USE_OIDC: 'true'
+  ARM_CLIENT_ID: ${{ vars.AZURE_INFRA_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+  TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+  # Explícito a propósito: en un push, inputs.deploy_app viene vacío y una
+  # comparación directa con false se evaluaría como verdadera, desactivando el
+  # aprovisionamiento de la aplicación sin que nadie lo hubiera pedido. Solo se
+  # respeta el valor cuando la ejecución es manual.
+  TF_VAR_deploy_app: >-
+    ${{ (github.event_name == 'workflow_dispatch' && inputs.deploy_app == false)
+        && 'false' || 'true' }}
+
+  TF_IN_AUTOMATION: 'true'
+
+defaults:
+  run:
+    working-directory: infra
+
+jobs:
+  # Mientras no se hayan ejecutado los scripts de arranque, este pipeline no
+  # puede funcionar. Se omite en lugar de fallar: un aspa roja permanente en el
+  # repositorio acaba haciendo que nadie mire los pipelines.
+  configuracion:
+    name: Comprobar configuración
+    runs-on: ubuntu-latest
+    outputs:
+      listo: ${{ steps.check.outputs.listo }}
+
+    steps:
+      - id: check
+        run: |
+          if [ -n "${{ vars.TFSTATE_STORAGE_ACCOUNT }}" ] && [ -n "${{ vars.AZURE_INFRA_CLIENT_ID }}" ]; then
+            echo 'listo=si' >> "$GITHUB_OUTPUT"
+          else
+            echo 'listo=no' >> "$GITHUB_OUTPUT"
+            {
+              echo '### Pipeline de infraestructura sin configurar'
+              echo ''
+              echo 'Faltan las variables del repositorio. Ejecuta una vez:'
+              echo ''
+              echo '```powershell'
+              echo './scripts/bootstrap-tfstate.ps1'
+              echo './scripts/bootstrap-github-oidc.ps1 -Repository ${{ github.repository }}'
+              echo '```'
+              echo ''
+              echo 'y define las variables que imprimen en Settings → Actions → Variables.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  plan:
+    name: Planificar
+    needs: configuracion
+    if: needs.configuracion.outputs.listo == 'si'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Comprobar formato
+        run: terraform fmt -check -recursive
+
+      - name: Inicializar
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=legacy-lens.tfstate"
+
+      - name: Validar
+        run: terraform validate
+
+      # -detailed-exitcode distingue tres casos: 0 sin cambios, 2 con cambios,
+      # 1 error. Sin esto, un plan vacío y un plan con cambios son indistinguibles.
+      - name: Planificar
+        id: plan
+        run: |
+          set +e
+          terraform plan -no-color -input=false -out=tfplan -detailed-exitcode > plan.txt 2>&1
+          código=$?
+          set -e
+
+          echo "exitcode=$código" >> "$GITHUB_OUTPUT"
+
+          # Se recorta porque un comentario de GitHub no admite más de 65.536
+          # caracteres y un plan grande los supera con facilidad.
+          {
+            echo 'plan<<TERRAFORM_PLAN'
+            tail -c 60000 plan.txt
+            echo 'TERRAFORM_PLAN'
+          } >> "$GITHUB_OUTPUT"
+
+          cat plan.txt
+
+          if [ "$código" -eq 1 ]; then exit 1; fi
+
+      - name: Resumen
+        run: |
+          case "${{ steps.plan.outputs.exitcode }}" in
+            0) echo '### Sin cambios en la infraestructura' >> "$GITHUB_STEP_SUMMARY" ;;
+            2) echo '### Hay cambios pendientes de aplicar' >> "$GITHUB_STEP_SUMMARY" ;;
+          esac
+
+      - name: Comentar el plan en el pull request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const exitcode = '${{ steps.plan.outputs.exitcode }}';
+            const plan = `${{ steps.plan.outputs.plan }}`;
+
+            const titulo = exitcode === '0'
+              ? 'Terraform: sin cambios'
+              : 'Terraform: hay cambios que se aplicarán al integrar';
+
+            const cuerpo = [
+              `### ${titulo}`,
+              '',
+              '<details><summary>Ver el plan completo</summary>',
+              '',
+              '```hcl',
+              plan,
+              '```',
+              '',
+              '</details>'
+            ].join('\n');
+
+            // Se reutiliza el comentario anterior en lugar de acumular uno por
+            // cada push a la rama.
+            const marca = '<!-- terraform-plan -->';
+            const comentarios = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const previo = comentarios.data.find(c => c.body.includes(marca));
+            const contenido = `${marca}\n${cuerpo}`;
+
+            if (previo) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previo.id,
+                body: contenido
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: contenido
+              });
+            }
+
+      - name: Guardar el plan
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: infra/tfplan
+          retention-days: 5
+
+  apply:
+    name: Aplicar
+    needs: plan
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    # Si se configura una regla de protección en este entorno, GitHub exige
+    # aprobación manual antes de tocar la infraestructura. Es el equivalente a
+    # las aprobaciones de release de Azure DevOps.
+    environment: produccion
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Inicializar
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TFSTATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TFSTATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
+            -backend-config="key=legacy-lens.tfstate"
+
+      - name: Recuperar el plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: infra
+
+      # Se aplica el plan guardado y no uno nuevo: así lo que se aplica es
+      # exactamente lo que se revisó, sin ventana para que algo cambie en medio.
+      - name: Aplicar
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Publicar las salidas
+        run: |
+          {
+            echo '### Infraestructura aplicada'
+            echo ''
+            echo '| Salida | Valor |'
+            echo '| --- | --- |'
+            echo "| URL de la aplicación | $(terraform output -raw app_url) |"
+            echo "| Registro | $(terraform output -raw container_registry) |"
+            echo "| Endpoint de OpenAI | $(terraform output -raw openai_endpoint) |"
+          } >> "$GITHUB_STEP_SUMMARY"

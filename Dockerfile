@@ -36,7 +36,12 @@ EXPOSE 8080
 COPY --from=build /app/publish .
 
 # SQLite necesita escribir en su directorio, y el proceso no corre como root.
-RUN mkdir -p /app/Data && chown -R $APP_UID /app/Data
+#
+# /data existe y pertenece al usuario de la aplicación para que, al montar ahí un
+# volumen con docker compose, Docker herede esa propiedad al inicializarlo. Sin
+# esto el volumen se crearía como root y el proceso no podría escribir.
+RUN mkdir -p /app/Data /data \
+    && chown -R $APP_UID /app/Data /data
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "LegacyLens.Web.dll"]

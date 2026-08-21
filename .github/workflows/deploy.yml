@@ -1,0 +1,176 @@
+name: Desplegar aplicación
+
+# ---------------------------------------------------------------------------
+# Construye la imagen y publica una revisión nueva del Container App.
+#
+# La imagen se construye con 'az acr build', es decir dentro de Azure: el
+# ejecutor no necesita credenciales del registro ni subir capas por la red, y el
+# registro puede seguir con las credenciales de administrador desactivadas.
+#
+# Primero se verifica y después se despliega, con la misma separación que un
+# build y un release de Azure DevOps: si los tests fallan, no se despliega nada.
+# ---------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'samples/**'
+      - 'Dockerfile'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      imagen:
+        description: 'Etiqueta ya existente a desplegar. Vacío para construir desde el commit actual.'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GRUPO_RECURSOS: rg-legacylens-tfm
+  CONTAINER_APP: ca-legacylens-tfm
+  REPOSITORIO_IMAGEN: legacy-lens
+
+jobs:
+  verificar:
+    name: Verificar
+    runs-on: ubuntu-latest
+    # Si se despliega una imagen ya construida, no hay código nuevo que verificar.
+    if: inputs.imagen == ''
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - run: dotnet restore LegacyLens.slnx
+
+      - run: dotnet build LegacyLens.slnx --no-restore --configuration Release
+
+      - run: dotnet test LegacyLens.slnx --no-build --configuration Release
+
+  desplegar:
+    name: Desplegar
+    needs: [verificar]
+    # always() con la comprobación de resultado permite que el despliegue de una
+    # imagen existente se salte la verificación sin quedar bloqueado por ella.
+    # La comprobación de la variable evita que el pipeline falle mientras no se
+    # haya ejecutado scripts/bootstrap-github-oidc.ps1.
+    if: >-
+      always()
+      && vars.AZURE_DEPLOY_CLIENT_ID != ''
+      && (needs.verificar.result == 'success' || needs.verificar.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: produccion
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Autenticarse en Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # El nombre del registro se descubre en lugar de fijarlo: así el pipeline
+      # no se rompe si Terraform lo renombra.
+      - name: Localizar el registro
+        id: registro
+        run: |
+          nombre=$(az acr list \
+            --resource-group "$GRUPO_RECURSOS" \
+            --query '[0].name' --output tsv)
+
+          if [ -z "$nombre" ]; then
+            echo "::error::No hay ningún registro en $GRUPO_RECURSOS. Ejecuta antes el pipeline de Infraestructura con deploy_app activado."
+            exit 1
+          fi
+
+          servidor=$(az acr show --name "$nombre" --query loginServer --output tsv)
+
+          echo "nombre=$nombre" >> "$GITHUB_OUTPUT"
+          echo "servidor=$servidor" >> "$GITHUB_OUTPUT"
+
+      - name: Determinar la etiqueta
+        id: etiqueta
+        run: |
+          if [ -n "${{ inputs.imagen }}" ]; then
+            echo "valor=${{ inputs.imagen }}" >> "$GITHUB_OUTPUT"
+            echo "construir=no" >> "$GITHUB_OUTPUT"
+          else
+            # El SHA del commit como etiqueta permite saber exactamente qué código
+            # corre en producción y volver a una revisión anterior sin ambigüedad.
+            echo "valor=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "construir=si" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Construir la imagen en Azure
+        if: steps.etiqueta.outputs.construir == 'si'
+        run: |
+          az acr build \
+            --registry "${{ steps.registro.outputs.nombre }}" \
+            --image "$REPOSITORIO_IMAGEN:${{ steps.etiqueta.outputs.valor }}" \
+            --image "$REPOSITORIO_IMAGEN:latest" \
+            --file Dockerfile \
+            .
+
+      - name: Publicar la revisión
+        id: revision
+        run: |
+          imagen="${{ steps.registro.outputs.servidor }}/$REPOSITORIO_IMAGEN:${{ steps.etiqueta.outputs.valor }}"
+
+          az containerapp update \
+            --name "$CONTAINER_APP" \
+            --resource-group "$GRUPO_RECURSOS" \
+            --image "$imagen" \
+            --output none
+
+          fqdn=$(az containerapp show \
+            --name "$CONTAINER_APP" \
+            --resource-group "$GRUPO_RECURSOS" \
+            --query 'properties.configuration.ingress.fqdn' --output tsv)
+
+          echo "url=https://$fqdn" >> "$GITHUB_OUTPUT"
+          echo "imagen=$imagen" >> "$GITHUB_OUTPUT"
+
+      # No basta con que az devuelva éxito: la revisión puede fallar al arrancar.
+      # Aquí se comprueba que la aplicación responde de verdad antes de dar el
+      # despliegue por bueno.
+      - name: Comprobar que responde
+        run: |
+          url="${{ steps.revision.outputs.url }}"
+
+          for intento in $(seq 1 20); do
+            código=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
+
+            if [ "$código" = '200' ]; then
+              echo "La aplicación responde 200 en el intento $intento."
+              exit 0
+            fi
+
+            echo "Intento $intento: $código. Esperando..."
+            sleep 15
+          done
+
+          echo "::error::La aplicación no respondió 200 tras 20 intentos. Revisa los registros de la revisión."
+          exit 1
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo '### Despliegue'
+            echo ''
+            echo '| | |'
+            echo '| --- | --- |'
+            echo "| URL | ${{ steps.revision.outputs.url }} |"
+            echo "| Imagen | \`${{ steps.revision.outputs.imagen }}\` |"
+            echo "| Commit | \`${GITHUB_SHA::12}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

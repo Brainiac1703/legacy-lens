@@ -1,0 +1,124 @@
+name: legacy-lens
+
+# ---------------------------------------------------------------------------
+# Entorno de desarrollo completo en contenedores.
+#
+#   docker compose up --build
+#   -> aplicación en http://localhost:8080
+#   -> SQL Server en localhost:1433 con la base de datos LegacyERP cargada
+#
+# Nota importante sobre el diseño: la aplicación NO se conecta a SQL Server, y
+# no debe hacerlo nunca. El SQL que analiza se parsea, jamás se ejecuta (ver
+# docs/seguridad.md, A05). El servidor está aquí como fuente de la que generar
+# scripts reales con Generate Scripts y probar el flujo completo sin depender de
+# ningún servidor de la empresa. Por eso 'web' no declara depends_on sobre él:
+# sería una dependencia falsa.
+# ---------------------------------------------------------------------------
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: legacy-lens:dev
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: '8080'
+
+      # Las bases de datos van al volumen, no a la capa del contenedor: así los
+      # análisis y los usuarios sobreviven a un docker compose down.
+      ConnectionStrings__DefaultConnection: 'DataSource=/data/app.db;Cache=Shared'
+      ConnectionStrings__AnalysisConnection: 'DataSource=/data/analyses.db;Cache=Shared'
+
+      # Sin endpoint la aplicación arranca igual y entrega el análisis estático.
+      Ai__Endpoint: '${Ai__Endpoint:-}'
+      Ai__ApiKey: '${Ai__ApiKey:-}'
+    volumes:
+      - app-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', "timeout 2 bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: '${MSSQL_SA_PASSWORD:?define MSSQL_SA_PASSWORD en el fichero .env}'
+      MSSQL_PID: Developer
+    ports:
+      # 14330 y no 1433 a propósito: es muy habitual tener ya una instancia local
+      # de SQL Server, o el contenedor de otro proyecto, ocupando el puerto
+      # estándar. Se puede cambiar con SQLSERVER_PORT en el fichero .env.
+      - '${SQLSERVER_PORT:-14330}:1433'
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      # Las imágenes de SQL Server 2022 ya no incluyen mssql-tools, así que se
+      # comprueba el puerto en lugar de ejecutar una consulta.
+      test: ['CMD-SHELL', "timeout 2 bash -c '</dev/tcp/localhost/1433' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  # Crea la base de datos de ejemplo y ejecuta el script del ERP heredado.
+  # Termina y no se reinicia: es una tarea de inicialización, no un servicio.
+  sqlserver-init:
+    # Las herramientas 17 no fuerzan cifrado, así que no hace falta el flag -C
+    # para confiar en el certificado autofirmado del contenedor.
+    image: mcr.microsoft.com/mssql-tools:latest
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    volumes:
+      - ./samples:/samples:ro
+    environment:
+      MSSQL_SA_PASSWORD: '${MSSQL_SA_PASSWORD:?define MSSQL_SA_PASSWORD en el fichero .env}'
+      SQLSERVER_PORT: '${SQLSERVER_PORT:-14330}'
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        SQLCMD="/opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P $$MSSQL_SA_PASSWORD"
+
+        # El healthcheck solo comprueba el puerto: SQL Server lo abre antes de
+        # aceptar consultas, así que aquí se espera a que responda de verdad.
+        for i in $$(seq 1 30); do
+          if $$SQLCMD -Q "SELECT 1" > /dev/null 2>&1; then break; fi
+          echo "Esperando a que SQL Server acepte consultas... ($$i)"
+          sleep 3
+        done
+
+        echo "Creando la base de datos LegacyERP..."
+        $$SQLCMD -Q "IF DB_ID('LegacyERP') IS NULL CREATE DATABASE LegacyERP;"
+
+        # Compose vuelve a lanzar este contenedor en cada 'up', así que la carga
+        # tiene que ser idempotente: sin esta comprobación, cada arranque
+        # ensuciaría el log con errores de objeto ya existente.
+        OBJETOS=$$($$SQLCMD -d LegacyERP -h -1 -W -Q \
+          "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.objects WHERE is_ms_shipped = 0" | tr -d '[:space:]')
+
+        if [ "$$OBJETOS" -gt 0 ] 2>/dev/null; then
+          echo "El esquema ya está cargado ($$OBJETOS objetos). No se hace nada."
+        else
+          echo "Cargando el esquema del ERP heredado..."
+          $$SQLCMD -d LegacyERP -i /samples/legacy-erp.sql
+          echo "Esquema cargado."
+        fi
+
+        echo ""
+        echo "Conecta desde el equipo anfitrión con:"
+        echo "  sqlcmd -S localhost,$${SQLSERVER_PORT:-14330} -U sa -d LegacyERP"
+    restart: 'no'
+
+volumes:
+  app-data:
+  mssql-data:
