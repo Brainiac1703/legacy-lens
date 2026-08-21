@@ -1,0 +1,36 @@
+version: 2
+
+updates:
+  # Las dependencias de NuGet son la vía por la que entró la única vulnerabilidad
+  # detectada durante el desarrollo: SQLitePCLRaw con un CVE conocido, que llegó
+  # como dependencia transitiva de EF Core.
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Los paquetes de Microsoft se versionan juntos: actualizarlos por separado
+      # genera conflictos de versión sin aportar nada.
+      microsoft:
+        patterns:
+          - 'Microsoft.*'
+          - 'System.*'
+      azure:
+        patterns:
+          - 'Azure.*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: terraform
+    directory: /infra
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly

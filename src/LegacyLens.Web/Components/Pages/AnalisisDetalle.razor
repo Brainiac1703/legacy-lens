@@ -7,6 +7,7 @@
 @rendermode InteractiveServer
 
 @inject AnalysisStore Store
+@inject CostEstimator Costs
 @inject IJSRuntime JS
 
 <PageTitle>@(result?.SourceFileName ?? "Análisis") | Legacy Lens</PageTitle>
@@ -48,6 +49,57 @@ else
             </div>
         }
     </div>
+
+    @if (result.Usage.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-body py-3">
+                <h6 class="card-title mb-3">Consumo de este análisis</h6>
+
+                <table class="table table-sm mb-2">
+                    <thead>
+                        <tr>
+                            <th>Modelo</th>
+                            <th class="text-end">Llamadas</th>
+                            <th class="text-end">Tokens entrada</th>
+                            <th class="text-end">Tokens salida</th>
+                            <th class="text-end">Coste estimado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in Costs.Breakdown(result))
+                        {
+                            <tr>
+                                <td><code>@line.Usage.Model</code></td>
+                                <td class="text-end">@line.Usage.Calls</td>
+                                <td class="text-end">@line.Usage.InputTokens.ToString("N0")</td>
+                                <td class="text-end">@line.Usage.OutputTokens.ToString("N0")</td>
+                                <td class="text-end">
+                                    @(line.EstimatedUsd is { } usd
+                                        ? CostEstimator.Format(usd)
+                                        : "sin precio configurado")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if (Costs.TotalUsd(result) is { } total)
+                    {
+                        <tfoot>
+                            <tr class="fw-semibold">
+                                <td colspan="4" class="text-end">Total estimado</td>
+                                <td class="text-end">@CostEstimator.Format(total)</td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+
+                <p class="small text-secondary mb-0">
+                    El coste es una estimación calculada a partir de los tokens consumidos y los
+                    precios configurados. Los tokens son reales; los precios, orientativos.
+                </p>
+            </div>
+        </div>
+    }
 
     @if (result.ParseErrors.Count > 0)
     {

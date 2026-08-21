@@ -78,7 +78,14 @@ argumento razonable para convertirse en una decisión medida.
 
 </details>
 
-### 1.2 DevSecOps en el pipeline
+### 1.2 DevSecOps en el pipeline — **ENTREGADO**
+
+`.github/workflows/seguridad.yml` con CodeQL y comprobación de dependencias vulnerables que
+**falla la compilación**. `dependabot.yml` vigilando NuGet, Actions, Terraform y Docker.
+Mapeo completo de OWASP Top 10 2025 en [`seguridad.md`](seguridad.md).
+
+<details>
+<summary>Especificación original</summary>
 
 - Dependabot para dependencias de NuGet y GitHub Actions.
 - CodeQL como análisis estático de seguridad.
@@ -87,12 +94,16 @@ argumento razonable para convertirse en una decisión medida.
 
 *Criterio de aceptación:* el CI falla ante una dependencia con vulnerabilidad conocida.
 
-### 1.3 Métricas visibles
+</details>
 
-Exponer en la interfaz lo que ya se cuenta internamente: tokens de entrada y salida,
-número de llamadas y coste estimado del análisis. Y *coverage* real publicado en el CI.
+### 1.3 Métricas visibles — **ENTREGADO en su mayor parte**
 
-*Criterio de aceptación:* al terminar un análisis, la aplicación dice cuánto ha costado.
+Tokens de entrada y salida, llamadas y coste estimado, **desglosados por modelo**, en la
+pantalla de resultado y en el informe exportado. Los precios están en configuración, y si
+falta el de un modelo se muestran los tokens sin importe: es preferible no decir nada a
+inventarse una cifra.
+
+*Queda pendiente:* publicar el *coverage* real en el CI.
 
 ---
 

@@ -66,8 +66,9 @@ tarea concreta el modelo económico es además el mejor.
 
 **Cautelas honestas sobre esta medición:**
 
-- Una ejecución por modelo. Una diferencia de dos reglas sobre dieciséis está dentro de lo
-  que podría ser variabilidad entre ejecuciones.
+- `gpt-4.1-mini` se ha ejecutado tres veces con el mismo resultado (16/16), lo que da cierta
+  confianza en su estabilidad. De `gpt-4o` solo hay **una ejecución**, así que su 88 % podría
+  ser variabilidad y no una diferencia real. Es la primera cosa que hay que ampliar.
 - La cobertura se mide por presencia de términos alternativos, no por juicio semántico. Es
   una medida de ausencias, no de calidad de la redacción; la lectura del informe completo
   sigue siendo necesaria.

@@ -1,0 +1,73 @@
+name: Seguridad
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Un análisis semanal detecta vulnerabilidades publicadas después del último
+    # commit, que es justo el caso que un análisis por push nunca ve.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Inicializar CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          queries: security-extended
+
+      # CodeQL necesita observar una compilación real para construir su base de
+      # datos, así que aquí no vale con restaurar.
+      - name: Compilar
+        run: dotnet build --configuration Release
+
+      - name: Analizar
+        uses: github/codeql-action/analyze@v3
+
+  dependencias:
+    name: Dependencias vulnerables
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar
+        run: dotnet restore
+
+      # Falla la ejecución si aparece cualquier paquete con vulnerabilidad
+      # conocida, incluidas las transitivas. Es exactamente el aviso que hubo
+      # que atender durante el desarrollo con SQLitePCLRaw.
+      - name: Buscar paquetes vulnerables
+        run: |
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
+          if grep -q -E "Crítica|Critical|Alta|High|Moderada|Moderate" vulnerables.txt; then
+            echo "::error::Se han detectado dependencias con vulnerabilidades conocidas"
+            exit 1
+          fi
+          echo "Sin dependencias vulnerables."

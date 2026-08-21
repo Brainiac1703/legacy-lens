@@ -64,6 +64,8 @@ builder.Services.AddSingleton<TSqlAnalyzer>();
 builder.Services.AddSingleton<AiUsage>();
 builder.Services.AddSingleton<AiEnrichmentService>();
 
+builder.Services.AddSingleton<CostEstimator>();
+
 builder.Services.AddScoped<AnalysisStore>();
 builder.Services.AddScoped<AnalysisWorkflow>();
 

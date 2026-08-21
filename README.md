@@ -7,6 +7,7 @@ Autor: Nacho Tovar
 
 | Recurso | Enlace |
 | --- | --- |
+| Repositorio | https://github.com/Brainiac1703/legacy-lens |
 | Aplicación desplegada | _(pendiente: URL de Azure Container Apps)_ |
 | Presentación | _(pendiente: URL de las slides)_ |
 | Vídeo explicativo | _(pendiente: URL del vídeo)_ |
@@ -213,8 +214,11 @@ legacy-lens/
 ├── scripts/deploy.ps1            Despliegue
 ├── .github/workflows/ci.yml      Integración continua
 ├── AGENTS.md                     Instrucciones para agentes de IA
+├── tools/LegacyLens.Evals/       Arnés de evaluación del modelo
 └── docs/
     ├── adr/                      Registros de decisiones de arquitectura
+    ├── evals/informe.md          Resultado de la evaluación, con la salida generada
+    ├── seguridad.md              Revisión contra OWASP Top 10 2025
     ├── hoja-de-ruta.md           Alcance, fases siguientes y descartes
     ├── trazabilidad-temario.md   Dónde se demuestra cada módulo del máster
     ├── guion-video.md            Guion de la presentación grabada
@@ -403,7 +407,8 @@ planificado:
 | --- | --- | --- |
 | **0** | Núcleo del producto | **Entregado** |
 | **1.1** | **Arnés de evaluación de LLM** con conjunto dorado y detección automática de alucinación | **Entregado** |
-| **1.2** | DevSecOps en el pipeline, métricas de coste visibles | Siguiente |
+| **1.2** | **DevSecOps**: CodeQL, Dependabot y mapeo OWASP Top 10 2025 | **Entregado** |
+| **1.3** | **Coste y consumo de tokens** visibles por análisis y por modelo | **Entregado** |
 | **2** | Servidor **MCP**, **RAG** sobre base vectorial, más dialectos (PL/SQL, Delphi) | Planificado |
 | **3** | Observabilidad con OpenTelemetry, E2E con Playwright, PostgreSQL | Planificado |
 | **4** | Análisis asíncrono encolado con patrón Outbox, comparación temporal | Planificado |
@@ -416,6 +421,18 @@ La fase 1.1 ya está entregada, y su primer resultado justifica por sí solo hab
 elección de modelos estaba tomada por criterio razonable, y al medirla resultó que el modelo
 económico **documenta mejor** que el capaz. Eso no se descubre discutiendo, se descubre
 midiendo.
+
+### Seguridad
+
+[`docs/seguridad.md`](docs/seguridad.md) revisa el proyecto contra las diez categorías de
+**OWASP Top 10 2025**, una por una, incluyendo lo que queda pendiente y por orden de
+importancia real. Dos apartados merecen la pena leerse:
+
+- **A05 Injection** se resuelve por diseño: el SQL recibido se parsea, **nunca se ejecuta**.
+  No existe ninguna conexión a la base de datos analizada, y esa frontera está escrita en
+  `AGENTS.md` para que no se debilite en el futuro.
+- **A03 Supply Chain** dejó de ser teórico durante el desarrollo: apareció una dependencia
+  transitiva con CVE conocido. Se corrigió, y ahora el CI falla si vuelve a ocurrir.
 
 ### Trazabilidad con el temario del máster
 

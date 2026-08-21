@@ -84,7 +84,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | **ADR: documentar el porqué** | ✔ | `docs/adr/` |
 | Docs as code | ✔ | Toda la documentación en Markdown en el repositorio; el producto **genera** docs-as-code |
 | Deuda técnica explícita | ✔ | README §7 «Limitaciones conocidas», sin maquillar |
-| Métricas mínimas que importan | ◐ | Se cuentan tokens y llamadas; sin exponerlas todavía en la interfaz |
+| Métricas mínimas que importan | ✔ | Tokens y llamadas por modelo, con coste estimado, en la pantalla de resultado y en el informe exportado |
 | Coverage honesto | ○ | Fase 1 |
 | Quality gates | ◐ | El CI bloquea con tests, `terraform fmt` y build del contenedor; sin hooks locales |
 | Observabilidad y Release Health | ○ | Fase 3: OpenTelemetry y trazas por llamada al modelo |
@@ -116,10 +116,12 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Identificación y autenticación | ✔ | ASP.NET Core Identity; cada usuario ve solo sus análisis |
 | Broken Access Control | ✔ | `AnalysisStore` filtra por propietario; el endpoint de descarga exige autorización |
 | Injection | ✔ | El SQL analizado **nunca se ejecuta**: se parsea. Es análisis estático puro |
-| Componentes vulnerables | ✔ | Detectado y corregido `SQLitePCLRaw` con CVE conocido durante el desarrollo |
+| Componentes vulnerables | ✔ | Detectado y corregido `SQLitePCLRaw` con CVE conocido durante el desarrollo; ahora el CI lo impide de forma automática |
+| Costes y su control | ✔ | Coste estimado por análisis, desglosado por modelo, visible en la interfaz |
 | Validación de entradas | ◐ | Límite de tamaño y extensión en la subida; sin validación de contenido más profunda |
-| DevSecOps en el pipeline | ○ | Fase 1: Dependabot y CodeQL |
-| Mapeo OWASP Top 10 explícito | ○ | Fase 1: `docs/seguridad.md` |
+| DevSecOps en el pipeline | ✔ | `.github/workflows/seguridad.yml`: CodeQL y comprobación de dependencias vulnerables que **falla la compilación**. `dependabot.yml` sobre NuGet, Actions, Terraform y Docker |
+| Shift-left security | ✔ | El análisis de seguridad corre en cada *pull request*, no antes de desplegar |
+| Mapeo OWASP Top 10 explícito | ✔ | [`docs/seguridad.md`](seguridad.md), las diez categorías de la edición 2025 |
 | Logging y monitorización | ◐ | Logging estructurado; sin alertas |
 
 ## 09 y 11 · Desarrollo potenciado por IA y masterclass

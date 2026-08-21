@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using LegacyLens.Domain;
+
 namespace LegacyLens.Ai;
 
 /// <summary>
@@ -37,6 +40,13 @@ public sealed class AiOptions
     public int MaxBodyCharacters { get; set; } = 12_000;
 
     /// <summary>
+    /// Precios por modelo, indexados por nombre de despliegue. Si un modelo no
+    /// aparece aquí, la aplicación muestra los tokens pero no estima importe:
+    /// es preferible no decir nada a inventarse una cifra.
+    /// </summary>
+    public Dictionary<string, ModelPricing> Pricing { get; set; } = [];
+
+    /// <summary>
     /// La aplicación funciona sin IA: el análisis estático es independiente.
     /// Esto permite ejecutarla en local sin credenciales y sin fingir nada.
     /// </summary>
@@ -50,21 +60,73 @@ public sealed class AiOptions
     public bool UsesManagedIdentity => IsConfigured && string.IsNullOrWhiteSpace(ApiKey);
 }
 
-/// <summary>Consumo acumulado, para poder afirmar cuánto cuesta un análisis.</summary>
+/// <summary>
+/// Precio de un modelo, en dólares por millón de tokens.
+///
+/// Los precios están en configuración y no en el código porque cambian, y porque
+/// dependen de la región y del tipo de despliegue. Los valores por omisión son
+/// orientativos: el importe que muestra la aplicación es siempre una estimación.
+/// </summary>
+public sealed class ModelPricing
+{
+    public decimal InputPerMillion { get; set; }
+    public decimal OutputPerMillion { get; set; }
+
+    public decimal Estimate(long inputTokens, long outputTokens) =>
+        inputTokens / 1_000_000m * InputPerMillion +
+        outputTokens / 1_000_000m * OutputPerMillion;
+}
+
+/// <summary>
+/// Consumo acumulado del proceso, desglosado por modelo.
+///
+/// El desglose por modelo no es un adorno: el proyecto usa dos modelos con precios
+/// muy distintos, así que un total agregado no permitiría estimar el coste ni
+/// comprobar que cada modelo hace el trabajo que le corresponde.
+/// </summary>
 public sealed class AiUsage
 {
-    private long _inputTokens;
-    private long _outputTokens;
-    private int _calls;
+    private readonly ConcurrentDictionary<string, Entry> _byModel = new();
 
-    public long InputTokens => Interlocked.Read(ref _inputTokens);
-    public long OutputTokens => Interlocked.Read(ref _outputTokens);
-    public int Calls => Volatile.Read(ref _calls);
-
-    public void Add(long input, long output)
+    private sealed class Entry
     {
-        Interlocked.Add(ref _inputTokens, input);
-        Interlocked.Add(ref _outputTokens, output);
-        Interlocked.Increment(ref _calls);
+        public long InputTokens;
+        public long OutputTokens;
+        public int Calls;
     }
+
+    public void Add(string model, long input, long output)
+    {
+        var entry = _byModel.GetOrAdd(model, _ => new Entry());
+
+        Interlocked.Add(ref entry.InputTokens, input);
+        Interlocked.Add(ref entry.OutputTokens, output);
+        Interlocked.Increment(ref entry.Calls);
+    }
+
+    public long InputTokens => _byModel.Values.Sum(e => Interlocked.Read(ref e.InputTokens));
+    public long OutputTokens => _byModel.Values.Sum(e => Interlocked.Read(ref e.OutputTokens));
+    public int Calls => _byModel.Values.Sum(e => Volatile.Read(ref e.Calls));
+
+    public IReadOnlyList<ModelUsage> Snapshot() =>
+        [.. _byModel.Select(kv => new ModelUsage(
+            kv.Key,
+            Interlocked.Read(ref kv.Value.InputTokens),
+            Interlocked.Read(ref kv.Value.OutputTokens),
+            Volatile.Read(ref kv.Value.Calls)))];
+}
+
+/// <summary>
+/// Consumo de un único análisis.
+///
+/// Existe además del acumulado del proceso porque la aplicación necesita decir
+/// cuánto costó **este** análisis, y varios pueden estar ejecutándose a la vez.
+/// </summary>
+public sealed class AiRunUsage
+{
+    private readonly AiUsage _usage = new();
+
+    public void Add(string model, long input, long output) => _usage.Add(model, input, output);
+
+    public IReadOnlyList<ModelUsage> Snapshot() => _usage.Snapshot();
 }

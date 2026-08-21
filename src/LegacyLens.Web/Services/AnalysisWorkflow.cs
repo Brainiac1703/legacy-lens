@@ -56,6 +56,8 @@ public sealed class AnalysisWorkflow(
 
         if (ai.IsAvailable && programmable > 0)
         {
+            var runUsage = new AiRunUsage();
+
             await onProgress(new AnalysisProgressState(
                 AnalysisPhase.Documenting, "Documentando objetos...", 0, programmable));
 
@@ -70,12 +72,14 @@ public sealed class AnalysisWorkflow(
                     p.Total));
             });
 
-            await ai.DocumentAllAsync(result, progress, cancellationToken);
+            await ai.DocumentAllAsync(result, progress, runUsage, cancellationToken);
 
             await onProgress(new AnalysisProgressState(
                 AnalysisPhase.Planning, "Generando el plan de migración...", programmable, programmable));
 
-            result.Plan = await ai.BuildPlanAsync(result, cancellationToken);
+            result.Plan = await ai.BuildPlanAsync(result, runUsage, cancellationToken);
+
+            result.Usage.AddRange(runUsage.Snapshot());
         }
         else if (!ai.IsAvailable)
         {

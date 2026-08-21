@@ -51,6 +51,19 @@ public static class MarkdownExporter
             sb.AppendLine($"| Objetos de riesgo alto o crítico | {critical} de {programmable.Count} |");
         }
 
+        if (result.Usage.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("### Consumo");
+            sb.AppendLine();
+            sb.AppendLine("| Modelo | Llamadas | Tokens entrada | Tokens salida |");
+            sb.AppendLine("| --- | --- | --- | --- |");
+
+            foreach (var usage in result.Usage)
+                sb.AppendLine($"| `{usage.Model}` | {usage.Calls} | " +
+                              $"{usage.InputTokens:N0} | {usage.OutputTokens:N0} |");
+        }
+
         if (result.ParseErrors.Count > 0)
         {
             sb.AppendLine();

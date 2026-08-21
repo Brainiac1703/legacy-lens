@@ -30,6 +30,13 @@ public sealed record MigrationPlan(
     IReadOnlyList<string> GlobalRisks,
     string ModelUsed);
 
+/// <summary>
+/// Consumo de un modelo durante un análisis. Se guardan tokens y llamadas, no
+/// dinero: los precios cambian y no son un hecho del dominio. El importe se
+/// calcula en la capa de presentación con los precios configurados.
+/// </summary>
+public sealed record ModelUsage(string Model, long InputTokens, long OutputTokens, int Calls);
+
 /// <summary>Resultado completo de analizar un script.</summary>
 public sealed class AnalysisResult
 {
@@ -42,6 +49,9 @@ public sealed class AnalysisResult
     public List<string> ParseErrors { get; init; } = [];
 
     public MigrationPlan? Plan { get; set; }
+
+    /// <summary>Consumo de cada modelo en este análisis concreto.</summary>
+    public List<ModelUsage> Usage { get; init; } = [];
 
     public int ObjectCount => Objects.Count;
 
