@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -90,7 +90,7 @@ jobs:
       hay_cambios: ${{ steps.plan.outputs.hay_cambios }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./Deploy/actions/terraform
         with:
@@ -169,7 +169,7 @@ jobs:
       registro: ${{ steps.salidas.outputs.registro }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./Deploy/actions/terraform
         with:
@@ -208,7 +208,7 @@ jobs:
     environment: produccion
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -306,7 +306,7 @@ jobs:
     environment: produccion
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Autenticarse en Azure
         uses: azure/login@v2
