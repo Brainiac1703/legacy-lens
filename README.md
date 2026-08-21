@@ -201,6 +201,13 @@ sobreviven a un `docker compose down`. Para empezar de cero, `docker compose dow
 `docker-compose.dcproj` existe para que el entorno aparezca como proyecto en la solución de
 Visual Studio y se pueda arrancar con F5. Fuera de Visual Studio no hace falta.
 
+Ese proyecto fija `DockerComposeProjectName` al mismo nombre que declara
+`docker-compose.yml`, y no es un detalle cosmético: sin ello Visual Studio deriva un nombre
+de proyecto de la ruta y F5 levanta **un segundo juego de contenedores** en paralelo al que
+hubiera creado `docker compose` desde la terminal. Los dos intentan publicar el mismo puerto
+y el segundo falla con `port is already allocated`. Con el nombre fijado, terminal y Visual
+Studio operan sobre el mismo proyecto.
+
 ### Desplegar a mano
 
 ```bash
