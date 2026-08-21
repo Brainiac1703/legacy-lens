@@ -501,3 +501,7 @@ terraform.rc
 *.db
 *.db-shm
 *.db-wal
+
+# Aportados por la plantilla de Visual Studio del repositorio remoto
+*.env
+*.trx
