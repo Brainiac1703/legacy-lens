@@ -27,10 +27,19 @@ RUN dotnet restore src/LegacyLens.Web/LegacyLens.Web.csproj
 COPY src/ src/
 COPY samples/ samples/
 
+# Sin --no-restore, y no es un descuido.
+#
+# El restore de arriba se ejecuta con solo los csproj presentes, que es lo que
+# permite reutilizar la capa. Publicar después con --no-restore reutiliza ese
+# resultado incompleto y el publish sale **sin wwwroot/_framework**, es decir sin
+# blazor.web.js. La aplicación arranca, responde 200 y parece correcta, pero
+# ningún botón funciona porque no hay runtime de Blazor en el navegador.
+#
+# Dejando que publish haga su propio restore, los paquetes ya están en la caché
+# del contenedor, así que cuesta segundos y la capa de restore sigue sirviendo.
 RUN dotnet publish src/LegacyLens.Web/LegacyLens.Web.csproj \
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 # ---------------------------------------------------------------------------
 # Ejecución

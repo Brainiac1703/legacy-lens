@@ -34,6 +34,34 @@ jobs:
       - name: Validar el contenedor
         run: docker build -t legacylens:ci .
 
+      # Que la imagen se construya y responda 200 no basta: una aplicación de
+      # Blazor Server a la que le falte wwwroot/_framework arranca, sirve el HTML
+      # y parece correcta, pero no tiene runtime en el navegador y ningún botón
+      # funciona. Pasó de verdad, por publicar con --no-restore, y tardó en
+      # detectarse porque todas las comprobaciones anteriores daban verde.
+      - name: Comprobar que la imagen sirve el runtime de Blazor
+        run: |
+          docker run -d --name humo -p 8080:8080 \
+            -e 'ConnectionStrings__DefaultConnection=Server=nohay;Database=x;Encrypt=False' \
+            legacylens:ci
+
+          # Se espera a que el servidor acepte conexiones. La base de datos no
+          # existe a propósito: aquí solo se comprueba que los activos estáticos
+          # del framework están en la imagen.
+          for intento in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:8080/_framework/blazor.web.js; then
+              echo "blazor.web.js servido correctamente."
+              docker rm -f humo
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo '::error::La imagen no sirve _framework/blazor.web.js: el publish no incluyó los activos del framework.'
+          docker logs humo | tail -30
+          docker rm -f humo
+          exit 1
+
   terraform:
     name: Validar infraestructura
     runs-on: ubuntu-latest
