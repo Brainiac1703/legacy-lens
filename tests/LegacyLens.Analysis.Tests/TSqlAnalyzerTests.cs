@@ -1,7 +1,8 @@
 using System.Text;
 using LegacyLens.Domain;
-using Xunit.Abstractions;
 
+// ITestOutputHelper llega por el using implícito de Xunit que declara el csproj:
+// en la v3 vive en el espacio de nombres Xunit y no en Xunit.Abstractions.
 namespace LegacyLens.Analysis.Tests;
 
 public class TSqlAnalyzerTests

@@ -63,11 +63,34 @@ jobs:
       # Falla la ejecución si aparece cualquier paquete con vulnerabilidad
       # conocida, incluidas las transitivas. Es exactamente el aviso que hubo
       # que atender durante el desarrollo con SQLitePCLRaw.
+      #
+      # Se recorren los proyectos uno a uno y no la solución: docker-compose.dcproj
+      # forma parte de ella para que aparezca en Visual Studio, y su SDK solo
+      # existe dentro de Visual Studio. 'restore', 'build' y 'test' lo ignoran sin
+      # problema, pero 'dotnet list package' intenta evaluarlo y falla.
       - name: Buscar paquetes vulnerables
         run: |
-          dotnet list LegacyLens.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
+          : > vulnerables.txt
+
+          for proyecto in $(find src tests tools -name '*.csproj' | sort); do
+            echo "--- $proyecto" >> vulnerables.txt
+            dotnet list "$proyecto" package --vulnerable --include-transitive >> vulnerables.txt 2>&1
+          done
+
+          cat vulnerables.txt
+
           if grep -q -E "Crítica|Critical|Alta|High|Moderada|Moderate" vulnerables.txt; then
             echo "::error::Se han detectado dependencias con vulnerabilidades conocidas"
             exit 1
           fi
+
           echo "Sin dependencias vulnerables."
+
+      # Los paquetes obsoletos no rompen nada hoy, pero dejan de recibir
+      # correcciones de seguridad. Se avisa sin fallar.
+      - name: Buscar paquetes obsoletos
+        continue-on-error: true
+        run: |
+          for proyecto in $(find src tests tools -name '*.csproj' | sort); do
+            dotnet list "$proyecto" package --deprecated
+          done

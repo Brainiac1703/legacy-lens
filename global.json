@@ -1,0 +1,7 @@
+{
+  "//": "Fija el SDK para que el error sea claro en lugar de confuso. Visual Studio 2022 trae el SDK 9 y no entiende net10.0: sin este fichero, el síntoma son avisos incomprensibles en los nodos Microsoft.AspNetCore.App y Microsoft.NETCore.App. Con él, dice directamente que falta el SDK. Este proyecto necesita Visual Studio 2026, Rider o VS Code.",
+  "sdk": {
+    "version": "10.0.300",
+    "rollForward": "latestFeature"
+  }
+}

@@ -103,8 +103,22 @@ al 88 % de `gpt-4o`, que fue más lacónico y omitió detalles relevantes. Ver
 
 ### Requisitos
 
-- SDK de .NET 10
+- **SDK de .NET 10** (fijado en `global.json`)
 - Opcional: Docker, Terraform 1.7+, Azure CLI (solo para desplegar)
+
+**Si vas a abrirlo en Visual Studio, necesitas Visual Studio 2026.** Visual Studio 2022 trae
+el SDK 9 y no reconoce `net10.0`: el síntoma no es un error claro, sino avisos
+desconcertantes en los nodos `Microsoft.AspNetCore.App` y `Microsoft.NETCore.App` del árbol
+de dependencias, y ficheros que no se abren. El `global.json` está precisamente para que el
+diagnóstico sea explícito en lugar de ese síntoma indirecto.
+
+Con VS Code, Rider o la línea de comandos no hay ninguna restricción.
+
+`docker-compose.dcproj` forma parte de la solución para que el entorno de contenedores
+aparezca en Visual Studio y arranque con F5. Su SDK solo existe dentro de Visual Studio, así
+que `dotnet restore`, `build` y `test` lo ignoran sin problema — pero `dotnet list package`
+intenta evaluarlo y falla. Por eso el *workflow* de seguridad recorre los proyectos uno a
+uno en lugar de la solución.
 
 ### En local, sin IA
 

@@ -11,4 +11,5 @@
   <Folder Name="/tools/">
     <Project Path="tools/LegacyLens.Evals/LegacyLens.Evals.csproj" />
   </Folder>
+  <Project Path="docker-compose.dcproj" />
 </Solution>
