@@ -5,6 +5,17 @@
     <DockerTargetOS>Linux</DockerTargetOS>
     <DockerPublishLocally>False</DockerPublishLocally>
     <ProjectGuid>edbe2d3c-33b7-413b-8c60-0ae174214244</ProjectGuid>
+    <!--
+      Sin esta propiedad, Visual Studio genera un nombre de proyecto de Compose
+      derivado de la ruta (algo como dockercompose15774145228292134798). El
+      resultado es que F5 levanta un segundo juego de contenedores en paralelo al
+      que ya haya creado 'docker compose' desde la terminal, y ambos chocan al
+      intentar publicar el mismo puerto.
+
+      Fijandola al mismo nombre que declara docker-compose.yml, la terminal y
+      Visual Studio operan sobre un unico proyecto.
+    -->
+    <DockerComposeProjectName>legacy-lens</DockerComposeProjectName>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}</DockerServiceUrl>
     <DockerServiceName>web</DockerServiceName>
