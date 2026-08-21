@@ -99,15 +99,15 @@ foreach (var model in models)
     Console.WriteLine("  completado.                          ");
     Console.WriteLine();
 
-    var consumo = usage.Snapshot();
-    analysis.Usage.AddRange(consumo);
+    var snapshot = usage.Snapshot();
+    analysis.Usage.AddRange(snapshot);
 
     var result = Evaluator.Evaluate(
         analysis,
         model,
-        consumo.Sum(u => u.InputTokens),
-        consumo.Sum(u => u.OutputTokens),
-        consumo.Sum(u => u.Calls),
+        snapshot.Sum(u => u.InputTokens),
+        snapshot.Sum(u => u.OutputTokens),
+        snapshot.Sum(u => u.Calls),
         stopwatch.Elapsed);
 
     results.Add(result);

@@ -92,6 +92,8 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Quality gates | ✔ | El pipeline de despliegue para en seco si fallan los tests, y exige aprobación manual del plan antes de tocar infraestructura |
 | Observabilidad y Release Health | ○ | Fase 3: OpenTelemetry y trazas por llamada al modelo |
 | E2E con Playwright | ○ | Fase 3 |
+| Internacionalización | ✔ | `es-ES` e `en` en ficheros de recursos, con selector y detección por cabecera. Ningún literal de interfaz en el código |
+| Microcopy | ✔ | Los textos se revisaron al extraerlos a recursos: mensajes concretos en lugar de genéricos |
 | Accesibilidad | ◐ | Bootstrap accesible de base, `aria` en la barra de progreso; sin auditoría |
 
 ## 07 · Infraestructura y Cloud

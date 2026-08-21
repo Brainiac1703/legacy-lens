@@ -1,42 +1,22 @@
 @page "/"
 
+@inject IStringLocalizer<UiText> L
+
 <PageTitle>Legacy Lens</PageTitle>
 
 <h1>Legacy Lens</h1>
 
-<p class="lead">
-    De un script de SQL Server heredado a documentación y un plan de migración.
-</p>
+<p class="lead">@L["Home_Lead"]</p>
 
-<p>
-    En muchas empresas la lógica de negocio real no vive en el código de la aplicación, sino
-    enterrada en procedimientos almacenados escritos hace años por gente que ya no está.
-    Sin documentación. El primer muro de cualquier modernización no es técnico, es de
-    conocimiento: nadie sabe qué hace ese código ni por dónde empezar sin romper nada.
-</p>
+<p>@L["Home_Problem"]</p>
 
-<p>
-    Legacy Lens automatiza ese primer paso. Se le da un script generado con
-    <em>Generate Scripts</em> de SSMS y devuelve el inventario de objetos, el grafo de
-    dependencias, una puntuación de riesgo justificada, la documentación de cada objeto en
-    lenguaje de negocio y un plan de migración por fases.
-</p>
+<p>@L["Home_WhatItDoes"]</p>
 
 <div class="card border-primary mb-4">
-    <div class="card-header bg-primary text-white">La idea que sostiene el proyecto</div>
+    <div class="card-header bg-primary text-white">@L["Home_IdeaTitle"]</div>
     <div class="card-body">
-        <p class="mb-2">
-            <strong>Lo que se puede saber con certeza, se calcula. Lo que requiere juicio, se
-            le pregunta al modelo.</strong>
-        </p>
-        <p class="mb-0">
-            Las dependencias, las métricas y el riesgo salen del árbol sintáctico real del
-            T-SQL, obtenido con el parser oficial de Microsoft: son exactos y reproducibles, y
-            no hay ninguna posibilidad de que el modelo invente una tabla que no existe. El
-            modelo de lenguaje solo hace lo que un parser nunca podrá — interpretar la
-            intención de negocio y proponer un diseño — y lo hace ya alimentado con esos
-            hechos verificados.
-        </p>
+        <p class="mb-2"><strong>@L["Home_IdeaClaim"]</strong></p>
+        <p class="mb-0">@L["Home_IdeaBody"]</p>
     </div>
 </div>
 
@@ -44,36 +24,24 @@
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">1. Análisis estático</h5>
-                <p class="card-text small">
-                    Inventario de tablas, vistas, funciones, procedimientos y disparadores.
-                    Qué lee y qué escribe cada uno, a quién invoca, y qué construcciones
-                    problemáticas usa: cursores, SQL dinámico, escrituras sin transacción.
-                </p>
+                <h5 class="card-title">@L["Home_Step1Title"]</h5>
+                <p class="card-text small">@L["Home_Step1Body"]</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">2. Interpretación</h5>
-                <p class="card-text small">
-                    Un modelo económico documenta cada objeto por separado: qué hace en
-                    lenguaje de negocio, qué reglas impone y en qué debería convertirse
-                    dentro de una aplicación .NET.
-                </p>
+                <h5 class="card-title">@L["Home_Step2Title"]</h5>
+                <p class="card-text small">@L["Home_Step2Body"]</p>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">3. Plan de migración</h5>
-                <p class="card-text small">
-                    Una sola llamada a un modelo más capaz, la única que necesita ver el
-                    grafo completo, ordena la migración por fases siguiendo el patrón
-                    strangler fig: primero lo autocontenido, al final los nudos.
-                </p>
+                <h5 class="card-title">@L["Home_Step3Title"]</h5>
+                <p class="card-text small">@L["Home_Step3Body"]</p>
             </div>
         </div>
     </div>
@@ -82,12 +50,12 @@
 <AuthorizeView>
     <Authorized>
         <p class="mt-4">
-            <a class="btn btn-primary" href="/analizar">Analizar un script</a>
+            <a class="btn btn-primary" href="/analyze">@L["Home_CtaAnalyze"]</a>
         </p>
     </Authorized>
     <NotAuthorized>
         <p class="mt-4">
-            <a class="btn btn-primary" href="Account/Login">Iniciar sesión para probarlo</a>
+            <a class="btn btn-primary" href="Account/Login">@L["Home_CtaSignIn"]</a>
         </p>
     </NotAuthorized>
 </AuthorizeView>

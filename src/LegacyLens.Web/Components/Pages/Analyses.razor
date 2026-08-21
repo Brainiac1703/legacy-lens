@@ -1,4 +1,4 @@
-@page "/analisis"
+@page "/analyses"
 @using System.Security.Claims
 @using LegacyLens.Application.Abstractions
 @using LegacyLens.Application.Analyses
@@ -8,20 +8,21 @@
 @rendermode InteractiveServer
 
 @inject ISender Sender
+@inject IStringLocalizer<UiText> L
 
-<PageTitle>Mis análisis | Legacy Lens</PageTitle>
+<PageTitle>@L["Analyses_Title"] | Legacy Lens</PageTitle>
 
-<h1>Mis análisis</h1>
+<h1>@L["Analyses_Title"]</h1>
 
-@if (analisis is null)
+@if (analyses is null)
 {
-    <p class="text-secondary">Cargando...</p>
+    <p class="text-secondary">@L["Analyses_Loading"]</p>
 }
-else if (analisis.Count == 0)
+else if (analyses.Count == 0)
 {
     <p class="text-secondary">
-        Todavía no has analizado ningún script.
-        <a href="/analizar">Analiza el primero</a>.
+        @L["Analyses_EmptyBefore"]
+        <a href="/analyze">@L["Analyses_EmptyLink"]</a>.
     </p>
 }
 else
@@ -29,36 +30,37 @@ else
     <table class="table table-hover align-middle">
         <thead>
             <tr>
-                <th>Fichero</th>
-                <th>Fecha</th>
-                <th class="text-end">Objetos</th>
-                <th>Contenido</th>
+                <th>@L["Analyses_ColFile"]</th>
+                <th>@L["Analyses_ColDate"]</th>
+                <th class="text-end">@L["Analyses_ColObjects"]</th>
+                <th>@L["Analyses_ColContent"]</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in analisis)
+            @foreach (var item in analyses)
             {
                 <tr>
                     <td><code>@item.FileName</code></td>
-                    <td>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    @* La cultura actual decide el formato: no se fija uno a mano. *@
+                    <td>@item.CreatedAt.ToLocalTime().ToString("g")</td>
                     <td class="text-end">@item.ObjectCount</td>
                     <td>
                         @if (item.HasAiDocumentation)
                         {
-                            <span class="badge text-bg-success">Documentado</span>
+                            <span class="badge text-bg-success">@L["Analyses_BadgeDocumented"]</span>
                         }
                         else
                         {
-                            <span class="badge text-bg-secondary">Solo análisis estático</span>
+                            <span class="badge text-bg-secondary">@L["Analyses_BadgeStaticOnly"]</span>
                         }
                         @if (item.HasPlan)
                         {
-                            <span class="badge text-bg-primary">Con plan</span>
+                            <span class="badge text-bg-primary">@L["Analyses_BadgeWithPlan"]</span>
                         }
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-primary" href="/analisis/@item.Id">Ver</a>
+                        <a class="btn btn-sm btn-outline-primary" href="/analyses/@item.Id">@L["Analyses_View"]</a>
                     </td>
                 </tr>
             }
@@ -69,7 +71,7 @@ else
 @code {
     // AnalysisSummary es un modelo de lectura de la capa de aplicación, no la
     // entidad de persistencia: la página ya no sabe cómo se guardan los datos.
-    private IReadOnlyList<AnalysisSummary>? analisis;
+    private IReadOnlyList<AnalysisSummary>? analyses;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
@@ -84,6 +86,6 @@ else
             userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         }
 
-        analisis = await Sender.Send(new ListAnalysesQuery(userId ?? string.Empty));
+        analyses = await Sender.Send(new ListAnalysesQuery(userId ?? string.Empty));
     }
 }

@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Analyses_BadgeDocumented" xml:space="preserve">
+    <value>Documentado</value>
+  </data>
+  <data name="Analyses_BadgeStaticOnly" xml:space="preserve">
+    <value>Solo análisis estático</value>
+  </data>
+  <data name="Analyses_BadgeWithPlan" xml:space="preserve">
+    <value>Con plan</value>
+  </data>
+  <data name="Analyses_ColContent" xml:space="preserve">
+    <value>Contenido</value>
+  </data>
+  <data name="Analyses_ColDate" xml:space="preserve">
+    <value>Fecha</value>
+  </data>
+  <data name="Analyses_ColFile" xml:space="preserve">
+    <value>Fichero</value>
+  </data>
+  <data name="Analyses_ColObjects" xml:space="preserve">
+    <value>Objetos</value>
+  </data>
+  <data name="Analyses_EmptyBefore" xml:space="preserve">
+    <value>Todavía no has analizado ningún script.</value>
+  </data>
+  <data name="Analyses_EmptyLink" xml:space="preserve">
+    <value>Analiza el primero</value>
+  </data>
+  <data name="Analyses_Loading" xml:space="preserve">
+    <value>Cargando...</value>
+  </data>
+  <data name="Analyses_Title" xml:space="preserve">
+    <value>Mis análisis</value>
+  </data>
+  <data name="Analyses_View" xml:space="preserve">
+    <value>Ver</value>
+  </data>
+  <data name="Analyze_FailedTitle" xml:space="preserve">
+    <value>No se pudo completar el análisis.</value>
+  </data>
+  <data name="Analyze_FileTooLarge" xml:space="preserve">
+    <value>El fichero pesa {0} MB y el límite son {1} MB.</value>
+  </data>
+  <data name="Analyze_FileUnreadable" xml:space="preserve">
+    <value>No se pudo leer el fichero.</value>
+  </data>
+  <data name="Analyze_Intro" xml:space="preserve">
+    <value>Sube el script generado con Generate Scripts de SSMS. Legacy Lens extrae el inventario de objetos y el grafo de dependencias con el parser oficial de T-SQL, y después genera la documentación y el plan de migración con IA.</value>
+  </data>
+  <data name="Analyze_MsgDocumenting" xml:space="preserve">
+    <value>Documentando objetos...</value>
+  </data>
+  <data name="Analyze_MsgDocumentingOne" xml:space="preserve">
+    <value>Documentando {0}</value>
+  </data>
+  <data name="Analyze_MsgDone" xml:space="preserve">
+    <value>Listo</value>
+  </data>
+  <data name="Analyze_MsgParsing" xml:space="preserve">
+    <value>Analizando el script...</value>
+  </data>
+  <data name="Analyze_MsgPlanning" xml:space="preserve">
+    <value>Generando el plan de migración...</value>
+  </data>
+  <data name="Analyze_MsgSaving" xml:space="preserve">
+    <value>Guardando...</value>
+  </data>
+  <data name="Analyze_NoAiBody" xml:space="preserve">
+    <value>El análisis estático funcionará con normalidad (inventario, dependencias, métricas y riesgo), pero no se generará documentación ni plan de migración.</value>
+  </data>
+  <data name="Analyze_NoAiTitle" xml:space="preserve">
+    <value>Azure OpenAI no está configurado.</value>
+  </data>
+  <data name="Analyze_PhaseDocumenting" xml:space="preserve">
+    <value>Documentación de cada objeto</value>
+  </data>
+  <data name="Analyze_PhaseParsing" xml:space="preserve">
+    <value>Análisis estático del script</value>
+  </data>
+  <data name="Analyze_PhasePlanning" xml:space="preserve">
+    <value>Plan de migración</value>
+  </data>
+  <data name="Analyze_PhaseSaving" xml:space="preserve">
+    <value>Guardado</value>
+  </data>
+  <data name="Analyze_Retry" xml:space="preserve">
+    <value>Volver a intentarlo</value>
+  </data>
+  <data name="Analyze_SampleBody" xml:space="preserve">
+    <value>Una base de datos de ERP sintética que reproduce los patrones habituales de un sistema heredado: cursores, SQL dinámico, escrituras sin transacción y procedimientos encadenados.</value>
+  </data>
+  <data name="Analyze_SampleButton" xml:space="preserve">
+    <value>Analizar el ejemplo</value>
+  </data>
+  <data name="Analyze_SampleMissing" xml:space="preserve">
+    <value>No se encontró el script de ejemplo en el despliegue.</value>
+  </data>
+  <data name="Analyze_SampleTitle" xml:space="preserve">
+    <value>O probar con el script de ejemplo</value>
+  </data>
+  <data name="Analyze_Title" xml:space="preserve">
+    <value>Analizar un script T-SQL</value>
+  </data>
+  <data name="Analyze_UploadHint" xml:space="preserve">
+    <value>Ficheros .sql de hasta {0} MB.</value>
+  </data>
+  <data name="Analyze_UploadTitle" xml:space="preserve">
+    <value>Subir un fichero</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>no</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>sí</value>
+  </data>
+  <data name="Detail_AnalyzedOn" xml:space="preserve">
+    <value>Analizado el {0}</value>
+  </data>
+  <data name="Detail_BusinessRules" xml:space="preserve">
+    <value>Reglas de negocio</value>
+  </data>
+  <data name="Detail_Calls" xml:space="preserve">
+    <value>Invoca:</value>
+  </data>
+  <data name="Detail_Download" xml:space="preserve">
+    <value>Descargar documentación</value>
+  </data>
+  <data name="Detail_GlobalRisks" xml:space="preserve">
+    <value>Riesgos del proyecto</value>
+  </data>
+  <data name="Detail_GraphCalls" xml:space="preserve">
+    <value>Llamadas entre objetos</value>
+  </data>
+  <data name="Detail_GraphData" xml:space="preserve">
+    <value>Flujo de datos</value>
+  </data>
+  <data name="Detail_GraphNote" xml:space="preserve">
+    <value>El color indica el riesgo calculado. Las aristas salen del árbol sintáctico del SQL, no de una inferencia del modelo.</value>
+  </data>
+  <data name="Detail_InterpretedWith" xml:space="preserve">
+    <value>Interpretado con {0}.</value>
+  </data>
+  <data name="Detail_Loading" xml:space="preserve">
+    <value>Cargando el análisis...</value>
+  </data>
+  <data name="Detail_MetricsLine" xml:space="preserve">
+    <value>{0} líneas · {1} sentencias · complejidad {2} · {3} cursor(es) · {4} SQL dinámico · {5} transacción(es) · TRY/CATCH {6}</value>
+  </data>
+  <data name="Detail_MigrationTarget" xml:space="preserve">
+    <value>Destino propuesto en .NET</value>
+  </data>
+  <data name="Detail_NoDocumentation" xml:space="preserve">
+    <value>Sin documentación generada.</value>
+  </data>
+  <data name="Detail_NoPlan" xml:space="preserve">
+    <value>No se generó plan de migración. Ocurre cuando Azure OpenAI no está configurado o cuando la llamada falló; el análisis estático de las otras pestañas sigue siendo válido.</value>
+  </data>
+  <data name="Detail_NotFound" xml:space="preserve">
+    <value>Este análisis no existe o no es tuyo.</value>
+  </data>
+  <data name="Detail_OfTotal" xml:space="preserve">
+    <value>{0} de {1}</value>
+  </data>
+  <data name="Detail_ParseErrorsBody" xml:space="preserve">
+    <value>Los objetos afectados no se han podido analizar.</value>
+  </data>
+  <data name="Detail_ParseErrorsTitle" xml:space="preserve">
+    <value>El script contiene {0} error(es) de sintaxis.</value>
+  </data>
+  <data name="Detail_Phase" xml:space="preserve">
+    <value>Fase {0} — {1}</value>
+  </data>
+  <data name="Detail_PlanGeneratedWith" xml:space="preserve">
+    <value>Plan generado con {0}.</value>
+  </data>
+  <data name="Detail_Reads" xml:space="preserve">
+    <value>Lee:</value>
+  </data>
+  <data name="Detail_Risk" xml:space="preserve">
+    <value>Riesgo:</value>
+  </data>
+  <data name="Detail_RiskBreakdown" xml:space="preserve">
+    <value>De dónde sale la puntuación {0}</value>
+  </data>
+  <data name="Detail_ShowSource" xml:space="preserve">
+    <value>Ver el código original</value>
+  </data>
+  <data name="Detail_SideEffects" xml:space="preserve">
+    <value>Efectos colaterales</value>
+  </data>
+  <data name="Detail_TabGraph" xml:space="preserve">
+    <value>Grafo</value>
+  </data>
+  <data name="Detail_TabObjects" xml:space="preserve">
+    <value>Objetos</value>
+  </data>
+  <data name="Detail_TabPlan" xml:space="preserve">
+    <value>Plan</value>
+  </data>
+  <data name="Detail_TileDependencies" xml:space="preserve">
+    <value>Dependencias detectadas</value>
+  </data>
+  <data name="Detail_TileObjects" xml:space="preserve">
+    <value>Objetos analizados</value>
+  </data>
+  <data name="Detail_TileProgrammable" xml:space="preserve">
+    <value>Objetos programables</value>
+  </data>
+  <data name="Detail_TileRisky" xml:space="preserve">
+    <value>Riesgo alto o crítico</value>
+  </data>
+  <data name="Detail_UsageCalls" xml:space="preserve">
+    <value>Llamadas</value>
+  </data>
+  <data name="Detail_UsageCost" xml:space="preserve">
+    <value>Coste estimado</value>
+  </data>
+  <data name="Detail_UsageInput" xml:space="preserve">
+    <value>Tokens entrada</value>
+  </data>
+  <data name="Detail_UsageModel" xml:space="preserve">
+    <value>Modelo</value>
+  </data>
+  <data name="Detail_UsageNoPrice" xml:space="preserve">
+    <value>sin precio configurado</value>
+  </data>
+  <data name="Detail_UsageNote" xml:space="preserve">
+    <value>El coste es una estimación calculada a partir de los tokens consumidos y los precios configurados. Los tokens son reales; los precios, orientativos.</value>
+  </data>
+  <data name="Detail_UsageOutput" xml:space="preserve">
+    <value>Tokens salida</value>
+  </data>
+  <data name="Detail_UsageTitle" xml:space="preserve">
+    <value>Consumo de este análisis</value>
+  </data>
+  <data name="Detail_UsageTotal" xml:space="preserve">
+    <value>Total estimado</value>
+  </data>
+  <data name="Detail_VerifiedFacts" xml:space="preserve">
+    <value>Hechos verificados por el parser</value>
+  </data>
+  <data name="Detail_WhyNow" xml:space="preserve">
+    <value>Por qué ahora:</value>
+  </data>
+  <data name="Detail_Writes" xml:space="preserve">
+    <value>Escribe en:</value>
+  </data>
+  <data name="Home_CtaAnalyze" xml:space="preserve">
+    <value>Analizar un script</value>
+  </data>
+  <data name="Home_CtaSignIn" xml:space="preserve">
+    <value>Iniciar sesión para probarlo</value>
+  </data>
+  <data name="Home_IdeaBody" xml:space="preserve">
+    <value>Las dependencias, las métricas y el riesgo salen del árbol sintáctico real del T-SQL, obtenido con el parser oficial de Microsoft: son exactos y reproducibles, y no hay ninguna posibilidad de que el modelo invente una tabla que no existe. El modelo de lenguaje solo hace lo que un parser nunca podrá — interpretar la intención de negocio y proponer un diseño — y lo hace ya alimentado con esos hechos verificados.</value>
+  </data>
+  <data name="Home_IdeaClaim" xml:space="preserve">
+    <value>Lo que se puede saber con certeza, se calcula. Lo que requiere juicio, se le pregunta al modelo.</value>
+  </data>
+  <data name="Home_IdeaTitle" xml:space="preserve">
+    <value>La idea que sostiene el proyecto</value>
+  </data>
+  <data name="Home_Lead" xml:space="preserve">
+    <value>De un script de SQL Server heredado a documentación y un plan de migración.</value>
+  </data>
+  <data name="Home_Problem" xml:space="preserve">
+    <value>En muchas empresas la lógica de negocio real no vive en el código de la aplicación, sino enterrada en procedimientos almacenados escritos hace años por gente que ya no está. Sin documentación. El primer muro de cualquier modernización no es técnico, es de conocimiento: nadie sabe qué hace ese código ni por dónde empezar sin romper nada.</value>
+  </data>
+  <data name="Home_Step1Body" xml:space="preserve">
+    <value>Inventario de tablas, vistas, funciones, procedimientos y disparadores. Qué lee y qué escribe cada uno, a quién invoca, y qué construcciones problemáticas usa: cursores, SQL dinámico, escrituras sin transacción.</value>
+  </data>
+  <data name="Home_Step1Title" xml:space="preserve">
+    <value>1. Análisis estático</value>
+  </data>
+  <data name="Home_Step2Body" xml:space="preserve">
+    <value>Un modelo económico documenta cada objeto por separado: qué hace en lenguaje de negocio, qué reglas impone y en qué debería convertirse dentro de una aplicación .NET.</value>
+  </data>
+  <data name="Home_Step2Title" xml:space="preserve">
+    <value>2. Interpretación</value>
+  </data>
+  <data name="Home_Step3Body" xml:space="preserve">
+    <value>Una sola llamada a un modelo más capaz, la única que necesita ver el grafo completo, ordena la migración por fases siguiendo el patrón strangler fig: primero lo autocontenido, al final los nudos.</value>
+  </data>
+  <data name="Home_Step3Title" xml:space="preserve">
+    <value>3. Plan de migración</value>
+  </data>
+  <data name="Home_WhatItDoes" xml:space="preserve">
+    <value>Legacy Lens automatiza ese primer paso. Se le da un script generado con Generate Scripts de SSMS y devuelve el inventario de objetos, el grafo de dependencias, una puntuación de riesgo justificada, la documentación de cada objeto en lenguaje de negocio y un plan de migración por fases.</value>
+  </data>
+  <data name="Kind_Function" xml:space="preserve">
+    <value>Función</value>
+  </data>
+  <data name="Kind_Procedure" xml:space="preserve">
+    <value>Procedimiento</value>
+  </data>
+  <data name="Kind_Table" xml:space="preserve">
+    <value>Tabla</value>
+  </data>
+  <data name="Kind_Trigger" xml:space="preserve">
+    <value>Disparador</value>
+  </data>
+  <data name="Kind_View" xml:space="preserve">
+    <value>Vista</value>
+  </data>
+  <data name="Nav_Analyses" xml:space="preserve">
+    <value>Mis análisis</value>
+  </data>
+  <data name="Nav_Analyze" xml:space="preserve">
+    <value>Analizar script</value>
+  </data>
+  <data name="Nav_Home" xml:space="preserve">
+    <value>Inicio</value>
+  </data>
+  <data name="Nav_Language" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
+  <data name="Nav_Register" xml:space="preserve">
+    <value>Registrarse</value>
+  </data>
+  <data name="Nav_SignIn" xml:space="preserve">
+    <value>Iniciar sesión</value>
+  </data>
+  <data name="Nav_SignOut" xml:space="preserve">
+    <value>Salir</value>
+  </data>
+  <data name="Risk_Critical" xml:space="preserve">
+    <value>Crítico</value>
+  </data>
+  <data name="Risk_High" xml:space="preserve">
+    <value>Alto</value>
+  </data>
+  <data name="Risk_Low" xml:space="preserve">
+    <value>Bajo</value>
+  </data>
+  <data name="Risk_Medium" xml:space="preserve">
+    <value>Medio</value>
+  </data>
+</root>

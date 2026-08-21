@@ -21,9 +21,9 @@ public sealed class ValidationBehaviour<TRequest, TResponse>(
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
-        var errores = await Validate(validators, request, cancellationToken);
+        var failures = await Validate(validators, request, cancellationToken);
 
-        if (errores.Count > 0) throw new ValidationException(errores);
+        if (failures.Count > 0) throw new ValidationException(failures);
 
         return await next();
     }
@@ -37,15 +37,15 @@ public sealed class ValidationBehaviour<TRequest, TResponse>(
         TRequest request,
         CancellationToken cancellationToken)
     {
-        var lista = validators.ToList();
-        if (lista.Count == 0) return [];
+        var list = validators.ToList();
+        if (list.Count == 0) return [];
 
-        var contexto = new ValidationContext<TRequest>(request);
+        var context = new ValidationContext<TRequest>(request);
 
-        var resultados = await Task.WhenAll(
-            lista.Select(v => v.ValidateAsync(contexto, cancellationToken)));
+        var results = await Task.WhenAll(
+            list.Select(v => v.ValidateAsync(context, cancellationToken)));
 
-        return resultados
+        return results
             .SelectMany(r => r.Errors)
             .Where(f => f is not null)
             .GroupBy(f => f.PropertyName, f => f.ErrorMessage)
@@ -64,12 +64,12 @@ public sealed class StreamValidationBehaviour<TRequest, TResponse>(
         StreamHandlerDelegate<TResponse> next,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var errores = await ValidationBehaviour<TRequest, TResponse>
+        var failures = await ValidationBehaviour<TRequest, TResponse>
             .Validate(validators, request, cancellationToken);
 
-        if (errores.Count > 0) throw new ValidationException(errores);
+        if (failures.Count > 0) throw new ValidationException(failures);
 
-        await foreach (var elemento in next().WithCancellation(cancellationToken))
-            yield return elemento;
+        await foreach (var item in next().WithCancellation(cancellationToken))
+            yield return item;
     }
 }

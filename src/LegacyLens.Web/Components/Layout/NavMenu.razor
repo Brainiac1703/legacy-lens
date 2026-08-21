@@ -1,6 +1,9 @@
 ﻿@implements IDisposable
 
+@using System.Globalization
+@using Microsoft.Extensions.Localization
 @inject NavigationManager NavigationManager
+@inject IStringLocalizer<UiText> L
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -8,27 +11,27 @@
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<input type="checkbox" title="@L["Nav_Home"]" class="navbar-toggler" />
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> @L["Nav_Home"]
             </NavLink>
         </div>
 
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="analizar">
-                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Analizar script
+                    <NavLink class="nav-link" href="analyze">
+                        <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> @L["Nav_Analyze"]
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="analisis">
-                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Mis análisis
+                    <NavLink class="nav-link" href="analyses">
+                        <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> @L["Nav_Analyses"]
                     </NavLink>
                 </div>
 
@@ -42,7 +45,7 @@
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
                         <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Salir
+                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> @L["Nav_SignOut"]
                         </button>
                     </form>
                 </div>
@@ -50,20 +53,48 @@
             <NotAuthorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Iniciar sesión
+                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> @L["Nav_SignIn"]
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Registrarse
+                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> @L["Nav_Register"]
                     </NavLink>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
+
+        @*
+            El cambio de idioma son enlaces normales y no botones de Blazor: fijar
+            la cultura exige recargar la página, porque el circuito ya se creó con
+            la anterior. Un @onclick daría la falsa impresión de cambio inmediato.
+        *@
+        <div class="nav-item px-3 mt-3 border-top pt-2">
+            <span class="nav-link text-secondary small">@L["Nav_Language"]</span>
+            <div class="px-3 pb-2">
+                @foreach (var (code, label) in Languages)
+                {
+                    var isCurrent = CultureInfo.CurrentUICulture.Name.StartsWith(
+                        code.Split('-')[0], StringComparison.OrdinalIgnoreCase);
+
+                    <a class="btn btn-sm @(isCurrent ? "btn-secondary" : "btn-outline-secondary") me-1"
+                       href="@CultureUrl(code)"
+                       aria-current="@(isCurrent ? "true" : null)">
+                        @label
+                    </a>
+                }
+            </div>
+        </div>
     </nav>
 </div>
 
 @code {
+    private static readonly (string Code, string Label)[] Languages =
+    [
+        ("es-ES", "Español"),
+        ("en", "English")
+    ];
+
     private string? currentUrl;
 
     protected override void OnInitialized()
@@ -77,6 +108,14 @@
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         StateHasChanged();
     }
+
+    /// <summary>
+    /// Se vuelve a la misma página tras cambiar de idioma. La ruta se pasa como
+    /// relativa porque el endpoint solo acepta redirecciones locales.
+    /// </summary>
+    private string CultureUrl(string code) =>
+        $"/set-culture?culture={Uri.EscapeDataString(code)}" +
+        $"&redirectUri={Uri.EscapeDataString("/" + (currentUrl ?? string.Empty))}";
 
     public void Dispose()
     {

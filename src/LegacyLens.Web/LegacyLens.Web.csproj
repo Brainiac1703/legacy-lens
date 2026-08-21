@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-LegacyLens_Web-0bfc2bda-b920-414f-a4a8-c1f9621ac733</UserSecretsId>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Los .resx neutros contienen el espanol, asi que es-ES no necesita
+         ensamblado satelite y es el idioma al que se cae por omision. -->
+    <NeutralResourcesLanguage>es-ES</NeutralResourcesLanguage>
   </PropertyGroup>
 
   <ItemGroup>

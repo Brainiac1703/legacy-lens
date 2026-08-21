@@ -10,12 +10,41 @@ using MediatR;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// ---------------------------------------------------------------------------
+// Idiomas
+//
+// El español de España es el idioma por omisión y vive en los .resx neutros, así
+// que una cultura sin traducir cae en español en lugar de mostrar la clave.
+// ---------------------------------------------------------------------------
+
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    string[] supported = ["es-ES", "en"];
+
+    options.SetDefaultCulture("es-ES")
+        .AddSupportedCultures(supported)
+        .AddSupportedUICultures(supported);
+
+    // Solo la cookie y la cabecera del navegador. Se descarta el proveedor de
+    // cadena de consulta: dejaría que un enlace compartido cambiara el idioma
+    // de quien lo abre sin que lo hubiera pedido.
+    options.RequestCultureProviders =
+    [
+        new CookieRequestCultureProvider(),
+        new AcceptLanguageHeaderRequestCultureProvider()
+    ];
+});
 
 // ---------------------------------------------------------------------------
 // Capas de la aplicación.
@@ -79,6 +108,10 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+// Antes de servir cualquier componente: fija la cultura de la petición, y el
+// circuito de Blazor la hereda de ahí.
+app.UseRequestLocalization();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -99,6 +132,38 @@ app.MapRazorComponents<App>()
 
 app.MapAdditionalIdentityEndpoints();
 
+// Cambio de idioma. Va como endpoint y no como componente porque cambiar la
+// cultura exige recargar: el circuito de Blazor ya se creó con la anterior.
+app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext http) =>
+{
+    if (!culture.Equals("es-ES", StringComparison.OrdinalIgnoreCase) &&
+        !culture.Equals("en", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.BadRequest();
+    }
+
+    http.Response.Cookies.Append(
+        CookieRequestCultureProvider.DefaultCookieName,
+        CookieRequestCultureProvider.MakeCookieValue(
+            new RequestCulture(new CultureInfo(culture))),
+        new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            IsEssential = true,
+            Path = "/"
+        });
+
+    // La ruta de vuelta tiene que ser local, o esto sería una redirección
+    // abierta. Se comprueba antes en lugar de dejar que LocalRedirect lance:
+    // así una petición mal formada responde 400 y no un 500, que además
+    // ensuciaría el registro de errores con algo que no es un fallo del sistema.
+    var target = string.IsNullOrWhiteSpace(redirectUri) ? "/" : redirectUri;
+
+    if (!IsLocalPath(target)) return Results.BadRequest();
+
+    return Results.LocalRedirect(target);
+});
+
 // Descarga del paquete de documentación. Va como endpoint y no por interop con
 // JavaScript porque así el navegador gestiona la descarga como cualquier otra y
 // el fichero no tiene que pasar por el circuito de SignalR.
@@ -106,7 +171,7 @@ app.MapAdditionalIdentityEndpoints();
 // El endpoint no construye el documento: solo traduce HTTP a una consulta y la
 // respuesta a un fichero. Generar el informe es trabajo de la capa de
 // aplicación, y así el mismo documento saldría igual desde una API o una CLI.
-app.MapGet("/analisis/{id:guid}/markdown", async (
+app.MapGet("/analyses/{id:guid}/markdown", async (
         Guid id,
         ClaimsPrincipal user,
         ISender sender,
@@ -132,3 +197,11 @@ await DemoDataSeeder.MigrateAndSeedAsync(
     app.Services.GetRequiredService<ILogger<Program>>());
 
 app.Run();
+
+/// <summary>
+/// Ruta local: empieza por una sola barra. Se rechaza «//» y «/\» porque el
+/// navegador los interpreta como host, y serían una redirección fuera del sitio
+/// disfrazada de ruta relativa.
+/// </summary>
+static bool IsLocalPath(string path) =>
+    path.StartsWith('/') && !path.StartsWith("//") && !path.StartsWith("/\\");
