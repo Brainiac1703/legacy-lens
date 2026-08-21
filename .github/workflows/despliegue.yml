@@ -218,7 +218,7 @@ jobs:
       # Terraform ha dejado como administradora de Entra del servidor SQL. La
       # identidad de despliegue no puede aplicar migraciones, y es deliberado.
       - name: Autenticarse en Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_INFRA_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -309,7 +309,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Autenticarse en Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_DEPLOY_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
