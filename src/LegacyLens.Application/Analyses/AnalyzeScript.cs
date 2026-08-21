@@ -4,6 +4,7 @@ using FluentValidation;
 using LegacyLens.Application.Abstractions;
 using LegacyLens.Application.Costing;
 using MediatR;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace LegacyLens.Application.Analyses;
@@ -17,13 +18,21 @@ public enum AnalysisPhase
     Done
 }
 
-/// <summary>Un paso del análisis, tal como se emite al consumidor.</summary>
+/// <summary>
+/// Un paso del análisis, tal como se emite al consumidor.
+///
+/// No lleva ningún texto para el usuario, y es deliberado: la fase y el nombre
+/// del objeto en curso son datos, y con ellos la presentación compone el mensaje
+/// en el idioma que toque. Antes este registro llevaba un Message en español, con
+/// lo que un caso de uso decidía la redacción de la interfaz y hacía imposible
+/// traducirla.
+/// </summary>
 public sealed record AnalysisProgress(
     AnalysisPhase Phase,
-    string Message,
     int Completed = 0,
     int Total = 0,
-    Guid? AnalysisId = null)
+    Guid? AnalysisId = null,
+    string? CurrentObject = null)
 {
     public int Percentage => Total == 0 ? 0 : (int)(100.0 * Completed / Total);
 }
@@ -48,24 +57,24 @@ public sealed class AnalyzeScriptValidator : AbstractValidator<AnalyzeScriptRequ
     /// Ocho megas de script. Por encima de eso deja de ser un caso de uso
     /// interactivo y toca resolverlo con proceso en segundo plano.
     /// </summary>
-    private const int MaximoCaracteres = 8 * 1024 * 1024;
+    private const int MaxCharacters = 8 * 1024 * 1024;
 
-    public AnalyzeScriptValidator()
+    public AnalyzeScriptValidator(IStringLocalizer<ValidationText> localizer)
     {
         RuleFor(x => x.Script)
-            .NotEmpty().WithMessage("El script está vacío.")
-            .MaximumLength(MaximoCaracteres)
-            .WithMessage($"El script supera el límite de {MaximoCaracteres / 1024 / 1024} MB.");
+            .NotEmpty().WithMessage(_ => localizer["Script_Empty"])
+            .MaximumLength(MaxCharacters)
+            .WithMessage(_ => localizer["Script_TooLarge", MaxCharacters / 1024 / 1024]);
 
         RuleFor(x => x.FileName)
-            .NotEmpty().WithMessage("Falta el nombre del fichero.")
+            .NotEmpty().WithMessage(_ => localizer["FileName_Missing"])
             .MaximumLength(260);
 
         // Sin propietario el análisis quedaría accesible para cualquiera. La
         // regla está aquí, y no en el repositorio, para que el fallo salte antes
         // de tocar la base de datos.
         RuleFor(x => x.OwnerUserId)
-            .NotEmpty().WithMessage("No se ha identificado al usuario propietario.");
+            .NotEmpty().WithMessage(_ => localizer["Owner_Missing"]);
     }
 }
 
@@ -80,14 +89,14 @@ public sealed class AnalyzeScriptHandler(
         AnalyzeScriptRequest request,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        yield return new AnalysisProgress(AnalysisPhase.Parsing, "Analizando el script...");
+        yield return new AnalysisProgress(AnalysisPhase.Parsing);
 
         // Etapa determinista: rápida y sin dependencias externas que puedan fallar.
         var result = analyzer.Analyze(request.Script, request.FileName);
         var programmable = result.Objects.Count(o => o.IsProgrammable);
 
         logger.LogInformation(
-            "Analizado {Fichero}: {Objetos} objetos, {Programables} programmable, {Dependencias} dependencias",
+            "Analizado {Fichero}: {Objetos} objetos, {Programables} programables, {Dependencias} dependencias",
             request.FileName, result.ObjectCount, programmable, result.Dependencies.Count);
 
         if (ai.IsAvailable && programmable > 0)
@@ -98,7 +107,7 @@ public sealed class AnalyzeScriptHandler(
                 yield return step;
 
             yield return new AnalysisProgress(
-                AnalysisPhase.Planning, "Generando el plan de migración...", programmable, programmable);
+                AnalysisPhase.Planning, programmable, programmable);
 
             result.Plan = await ai.BuildPlanAsync(result, usage, cancellationToken);
             result.Usage.AddRange(usage.Snapshot());
@@ -108,11 +117,11 @@ public sealed class AnalyzeScriptHandler(
             logger.LogInformation("IA no disponible: se entrega solo el análisis estático");
         }
 
-        yield return new AnalysisProgress(AnalysisPhase.Saving, "Guardando...");
+        yield return new AnalysisProgress(AnalysisPhase.Saving);
 
         var id = await repository.SaveAsync(result, request.OwnerUserId, cancellationToken);
 
-        yield return new AnalysisProgress(AnalysisPhase.Done, "Listo", AnalysisId: id);
+        yield return new AnalysisProgress(AnalysisPhase.Done, AnalysisId: id);
     }
 
     /// <summary>
@@ -134,9 +143,9 @@ public sealed class AnalyzeScriptHandler(
         var progress = new Progress<AiProgress>(p =>
             channel.Writer.TryWrite(new AnalysisProgress(
                 AnalysisPhase.Documenting,
-                $"Documentando {p.CurrentObject}",
                 p.Completed,
-                p.Total)));
+                p.Total,
+                CurrentObject: p.CurrentObject)));
 
         async Task RunDocumentation()
         {
@@ -152,8 +161,7 @@ public sealed class AnalyzeScriptHandler(
             }
         }
 
-        yield return new AnalysisProgress(
-            AnalysisPhase.Documenting, "Documentando objetos...", 0, total);
+        yield return new AnalysisProgress(AnalysisPhase.Documenting, 0, total);
 
         var documentationTask = RunDocumentation();
 

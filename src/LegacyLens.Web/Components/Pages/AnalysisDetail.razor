@@ -11,17 +11,18 @@
 
 @inject ISender Sender
 @inject CostEstimator Costs
+@inject IStringLocalizer<UiText> L
 @inject IJSRuntime JS
 
-<PageTitle>@(result?.SourceFileName ?? "Análisis") | Legacy Lens</PageTitle>
+<PageTitle>@(result?.SourceFileName ?? L["Analyses_Title"].Value) | Legacy Lens</PageTitle>
 
 @if (loading)
 {
-    <p class="text-secondary">Cargando el análisis...</p>
+    <p class="text-secondary">@L["Detail_Loading"]</p>
 }
 else if (result is null)
 {
-    <div class="alert alert-warning">Este análisis no existe o no es tuyo.</div>
+    <div class="alert alert-warning">@L["Detail_NotFound"]</div>
 }
 else
 {
@@ -29,11 +30,11 @@ else
         <div>
             <h1 class="mb-1">@result.SourceFileName</h1>
             <p class="text-secondary mb-0">
-                Analizado el @result.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                @L["Detail_AnalyzedOn", result.CreatedAt.ToLocalTime().ToString("g")]
             </p>
         </div>
         <a class="btn btn-outline-primary" href="/analyses/@Id/markdown" target="_blank">
-            Descargar documentación
+            @L["Detail_Download"]
         </a>
     </div>
 
@@ -57,16 +58,16 @@ else
     {
         <div class="card mb-4">
             <div class="card-body py-3">
-                <h6 class="card-title mb-3">Consumo de este análisis</h6>
+                <h6 class="card-title mb-3">@L["Detail_UsageTitle"]</h6>
 
                 <table class="table table-sm mb-2">
                     <thead>
                         <tr>
-                            <th>Modelo</th>
-                            <th class="text-end">Llamadas</th>
-                            <th class="text-end">Tokens entrada</th>
-                            <th class="text-end">Tokens salida</th>
-                            <th class="text-end">Coste estimado</th>
+                            <th>@L["Detail_UsageModel"]</th>
+                            <th class="text-end">@L["Detail_UsageCalls"]</th>
+                            <th class="text-end">@L["Detail_UsageInput"]</th>
+                            <th class="text-end">@L["Detail_UsageOutput"]</th>
+                            <th class="text-end">@L["Detail_UsageCost"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -80,7 +81,7 @@ else
                                 <td class="text-end">
                                     @(line.EstimatedUsd is { } usd
                                         ? CostEstimator.Format(usd)
-                                        : "sin precio configurado")
+                                        : L["Detail_UsageNoPrice"].Value)
                                 </td>
                             </tr>
                         }
@@ -89,17 +90,14 @@ else
                     {
                         <tfoot>
                             <tr class="fw-semibold">
-                                <td colspan="4" class="text-end">Total estimado</td>
+                                <td colspan="4" class="text-end">@L["Detail_UsageTotal"]</td>
                                 <td class="text-end">@CostEstimator.Format(total)</td>
                             </tr>
                         </tfoot>
                     }
                 </table>
 
-                <p class="small text-secondary mb-0">
-                    El coste es una estimación calculada a partir de los tokens consumidos y los
-                    precios configurados. Los tokens son reales; los precios, orientativos.
-                </p>
+                <p class="small text-secondary mb-0">@L["Detail_UsageNote"]</p>
             </div>
         </div>
     }
@@ -107,8 +105,8 @@ else
     @if (result.ParseErrors.Count > 0)
     {
         <div class="alert alert-warning">
-            <strong>El script contiene @result.ParseErrors.Count error(es) de sintaxis.</strong>
-            Los objetos afectados no se han podido analizar.
+            <strong>@L["Detail_ParseErrorsTitle", result.ParseErrors.Count]</strong>
+            @L["Detail_ParseErrorsBody"]
             <ul class="mb-0 mt-2 small">
                 @foreach (var parseError in result.ParseErrors.Take(10))
                 {
@@ -124,21 +122,17 @@ else
             <li class="nav-item">
                 <button class="nav-link @(activeTab == tab ? "active" : "")"
                         @onclick="() => SetTab(tab)">
-                    @tab
+                    @L[$"Detail_Tab{tab}"]
                 </button>
             </li>
         }
     </ul>
 
-    @if (activeTab == "Plan")
+    @if (activeTab == TabPlan)
     {
         @if (result.Plan is null)
         {
-            <div class="alert alert-secondary">
-                No se generó plan de migración. Ocurre cuando Azure OpenAI no está configurado
-                o cuando la llamada falló; el análisis estático de las otras pestañas sigue
-                siendo válido.
-            </div>
+            <div class="alert alert-secondary">@L["Detail_NoPlan"]</div>
         }
         else
         {
@@ -148,10 +142,10 @@ else
             {
                 <div class="card mb-3">
                     <div class="card-header">
-                        <strong>Fase @phase.Order — @phase.Title</strong>
+                        <strong>@L["Detail_Phase", phase.Order, phase.Title]</strong>
                     </div>
                     <div class="card-body">
-                        <p class="mb-2"><em>Por qué ahora:</em> @phase.Rationale</p>
+                        <p class="mb-2"><em>@L["Detail_WhyNow"]</em> @phase.Rationale</p>
 
                         @if (phase.Objects.Count > 0)
                         {
@@ -163,14 +157,14 @@ else
                             </p>
                         }
 
-                        <p class="mb-0 text-danger-emphasis"><em>Riesgo:</em> @phase.Risk</p>
+                        <p class="mb-0 text-danger-emphasis"><em>@L["Detail_Risk"]</em> @phase.Risk</p>
                     </div>
                 </div>
             }
 
             @if (result.Plan.GlobalRisks.Count > 0)
             {
-                <h5>Riesgos del proyecto</h5>
+                <h5>@L["Detail_GlobalRisks"]</h5>
                 <ul>
                     @foreach (var risk in result.Plan.GlobalRisks)
                     {
@@ -179,10 +173,10 @@ else
                 </ul>
             }
 
-            <p class="small text-secondary">Plan generado con @result.Plan.ModelUsed.</p>
+            <p class="small text-secondary">@L["Detail_PlanGeneratedWith", result.Plan.ModelUsed]</p>
         }
     }
-    else if (activeTab == "Objetos")
+    else if (activeTab == TabObjects)
     {
         @*
             El desplegable se controla con estado de Blazor y no con
@@ -190,8 +184,7 @@ else
             Bootstrap, no su JavaScript, así que el atributo no hacía nada; y
             dejar que Bootstrap añada y quite clases sobre un DOM que Blazor
             gestiona es una fuente conocida de desincronización cuando el
-            componente se vuelve a renderizar. El resto de la página ya usaba
-            @@onclick para las pestañas, así que además es coherente.
+            componente se vuelve a renderizar.
         *@
         <div class="accordion">
             @foreach (var obj in Programmable)
@@ -205,7 +198,7 @@ else
                                 @onclick="() => Toggle(obj.FullName)">
                             <span class="badge @BadgeClass(obj.Risk.Level) me-2">@obj.Risk.Value</span>
                             <code class="me-2">@obj.FullName</code>
-                            <span class="text-secondary small">@obj.Kind</span>
+                            <span class="text-secondary small">@L.Text(obj.Kind)</span>
                         </button>
                     </h2>
                     <div class="accordion-collapse collapse @(isOpen ? "show" : "")">
@@ -216,7 +209,7 @@ else
 
                                 @if (doc.BusinessRules.Count > 0)
                                 {
-                                    <h6>Reglas de negocio</h6>
+                                    <h6>@L["Detail_BusinessRules"]</h6>
                                     <ul>
                                         @foreach (var rule in doc.BusinessRules)
                                         {
@@ -227,7 +220,7 @@ else
 
                                 @if (doc.SideEffects.Count > 0)
                                 {
-                                    <h6>Efectos colaterales</h6>
+                                    <h6>@L["Detail_SideEffects"]</h6>
                                     <ul>
                                         @foreach (var effect in doc.SideEffects)
                                         {
@@ -236,33 +229,34 @@ else
                                     </ul>
                                 }
 
-                                <h6>Destino propuesto en .NET</h6>
+                                <h6>@L["Detail_MigrationTarget"]</h6>
                                 <p>@doc.MigrationTarget</p>
-                                <p class="small text-secondary">Interpretado con @doc.ModelUsed.</p>
+                                <p class="small text-secondary">@L["Detail_InterpretedWith", doc.ModelUsed]</p>
                             }
                             else
                             {
-                                <p class="text-secondary"><em>Sin documentación generada.</em></p>
+                                <p class="text-secondary"><em>@L["Detail_NoDocumentation"]</em></p>
                             }
 
-                            <h6>Hechos verificados por el parser</h6>
+                            <h6>@L["Detail_VerifiedFacts"]</h6>
                             <p class="small mb-2">
-                                @obj.Metrics.Lines líneas ·
-                                @obj.Metrics.StatementCount sentencias ·
-                                complejidad @obj.Metrics.ControlFlowComplexity ·
-                                @obj.Metrics.CursorCount cursor(es) ·
-                                @obj.Metrics.DynamicSqlCount SQL dinámico ·
-                                @obj.Metrics.TransactionCount transacción(es) ·
-                                TRY/CATCH @(obj.Metrics.HasErrorHandling ? "sí" : "no")
+                                @L["Detail_MetricsLine",
+                                   obj.Metrics.Lines,
+                                   obj.Metrics.StatementCount,
+                                   obj.Metrics.ControlFlowComplexity,
+                                   obj.Metrics.CursorCount,
+                                   obj.Metrics.DynamicSqlCount,
+                                   obj.Metrics.TransactionCount,
+                                   L.YesNo(obj.Metrics.HasErrorHandling)]
                             </p>
 
-                            @RenderEdges(obj, DependencyKind.Reads, "Lee")
-                            @RenderEdges(obj, DependencyKind.Writes, "Escribe en")
-                            @RenderEdges(obj, DependencyKind.Calls, "Invoca")
+                            @RenderEdges(obj, DependencyKind.Reads, L["Detail_Reads"])
+                            @RenderEdges(obj, DependencyKind.Writes, L["Detail_Writes"])
+                            @RenderEdges(obj, DependencyKind.Calls, L["Detail_Calls"])
 
                             @if (obj.Risk.Factors.Count > 0)
                             {
-                                <h6 class="mt-3">De dónde sale la puntuación @obj.Risk.Value</h6>
+                                <h6 class="mt-3">@L["Detail_RiskBreakdown", obj.Risk.Value]</h6>
                                 <ul class="small">
                                     @foreach (var factor in obj.Risk.Factors)
                                     {
@@ -272,7 +266,7 @@ else
                             }
 
                             <details class="mt-3">
-                                <summary class="small">Ver el código original</summary>
+                                <summary class="small">@L["Detail_ShowSource"]</summary>
                                 <pre class="mt-2 p-2 bg-body-secondary small"><code>@obj.Body</code></pre>
                             </details>
                         </div>
@@ -281,16 +275,16 @@ else
             }
         </div>
     }
-    else if (activeTab == "Grafo")
+    else if (activeTab == TabGraph)
     {
         <div class="btn-group mb-3">
             <button class="btn btn-sm @(graphMode == GraphMode.Calls ? "btn-primary" : "btn-outline-primary")"
                     @onclick="() => SetGraph(GraphMode.Calls)">
-                Llamadas entre objetos
+                @L["Detail_GraphCalls"]
             </button>
             <button class="btn btn-sm @(graphMode == GraphMode.Data ? "btn-primary" : "btn-outline-primary")"
                     @onclick="() => SetGraph(GraphMode.Data)">
-                Flujo de datos
+                @L["Detail_GraphData"]
             </button>
         </div>
 
@@ -300,23 +294,26 @@ else
             </div>
         </div>
 
-        <p class="small text-secondary mt-2">
-            El color indica el riesgo calculado. Las aristas salen del árbol sintáctico del SQL,
-            no de una inferencia del modelo.
-        </p>
+        <p class="small text-secondary mt-2">@L["Detail_GraphNote"]</p>
     }
 }
 
 @code {
     private enum GraphMode { Calls, Data }
 
-    private static readonly string[] Tabs = ["Plan", "Objetos", "Grafo"];
+    // Las pestañas se identifican por una clave estable, no por su rótulo: si el
+    // rótulo se traduce, comparar cadenas visibles rompería la navegación.
+    private const string TabPlan = "Plan";
+    private const string TabObjects = "Objects";
+    private const string TabGraph = "Graph";
+
+    private static readonly string[] Tabs = [TabPlan, TabObjects, TabGraph];
 
     [Parameter] public Guid Id { get; set; }
 
     private AnalysisResult? result;
     private bool loading = true;
-    private string activeTab = "Plan";
+    private string activeTab = TabPlan;
     private GraphMode graphMode = GraphMode.Calls;
     private bool graphNeedsRender;
 
@@ -366,7 +363,7 @@ else
     private void SetTab(string tab)
     {
         activeTab = tab;
-        if (tab == "Grafo") graphNeedsRender = true;
+        if (tab == TabGraph) graphNeedsRender = true;
     }
 
     private void SetGraph(GraphMode mode)
@@ -380,10 +377,10 @@ else
         var programmable = result!.Objects.Where(o => o.IsProgrammable).ToList();
         var risky = programmable.Count(o => o.Risk.Level is RiskLevel.High or RiskLevel.Critical);
 
-        yield return ("Objetos analizados", result.ObjectCount.ToString());
-        yield return ("Objetos programables", programmable.Count.ToString());
-        yield return ("Dependencias detectadas", result.Dependencies.Count.ToString());
-        yield return ("Riesgo alto o crítico", $"{risky} de {programmable.Count}");
+        yield return (L["Detail_TileObjects"], result.ObjectCount.ToString());
+        yield return (L["Detail_TileProgrammable"], programmable.Count.ToString());
+        yield return (L["Detail_TileDependencies"], result.Dependencies.Count.ToString());
+        yield return (L["Detail_TileRisky"], L["Detail_OfTotal", risky, programmable.Count]);
     }
 
     private RenderFragment RenderEdges(SqlObject obj, DependencyKind kind, string label) => builder =>
@@ -396,7 +393,7 @@ else
         if (targets.Count == 0) return;
 
         builder.AddMarkupContent(0,
-            $"<p class=\"small mb-1\"><strong>{label}:</strong> " +
+            $"<p class=\"small mb-1\"><strong>{label}</strong> " +
             string.Join(", ", targets.Select(t => $"<code>{t}</code>")) +
             "</p>");
     };

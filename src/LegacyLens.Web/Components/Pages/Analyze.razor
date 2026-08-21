@@ -11,24 +11,20 @@
 @inject ISender Sender
 @inject IAiEnrichmentService Ai
 @inject NavigationManager Navigation
+@inject IStringLocalizer<UiText> L
 @inject ILogger<Analyze> Logger
 
-<PageTitle>Analizar script | Legacy Lens</PageTitle>
+<PageTitle>@L["Analyze_Title"] | Legacy Lens</PageTitle>
 
-<h1>Analizar un script T-SQL</h1>
+<h1>@L["Analyze_Title"]</h1>
 
-<p class="text-secondary">
-    Sube el script generado con <em>Generate Scripts</em> de SSMS. Legacy Lens extrae el
-    inventario de objetos y el grafo de dependencias con el parser oficial de T-SQL, y
-    después genera la documentación y el plan de migración con IA.
-</p>
+<p class="text-secondary">@L["Analyze_Intro"]</p>
 
 @if (!Ai.IsAvailable)
 {
     <div class="alert alert-warning">
-        <strong>Azure OpenAI no está configurado.</strong>
-        El análisis estático funcionará con normalidad (inventario, dependencias, métricas y
-        riesgo), pero no se generará documentación ni plan de migración.
+        <strong>@L["Analyze_NoAiTitle"]</strong>
+        @L["Analyze_NoAiBody"]
     </div>
 }
 
@@ -36,24 +32,20 @@
 {
     <div class="card mb-4">
         <div class="card-body">
-            <h5 class="card-title">Subir un fichero</h5>
+            <h5 class="card-title">@L["Analyze_UploadTitle"]</h5>
 
             <InputFile OnChange="OnFileSelected" class="form-control" accept=".sql,.txt" />
 
-            <div class="form-text">Ficheros .sql de hasta @(MaxFileSizeMb) MB.</div>
+            <div class="form-text">@L["Analyze_UploadHint", MaxFileSizeMb]</div>
         </div>
     </div>
 
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">O probar con el script de ejemplo</h5>
-            <p class="card-text text-secondary">
-                Una base de datos de ERP sintética que reproduce los patrones habituales de un
-                sistema heredado: cursores, SQL dinámico, escrituras sin transacción y
-                procedimientos encadenados.
-            </p>
+            <h5 class="card-title">@L["Analyze_SampleTitle"]</h5>
+            <p class="card-text text-secondary">@L["Analyze_SampleBody"]</p>
             <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@running">
-                Analizar el ejemplo
+                @L["Analyze_SampleButton"]
             </button>
         </div>
     </div>
@@ -64,7 +56,7 @@
     <div class="card">
         <div class="card-body">
             <h5 class="card-title">@currentFileName</h5>
-            <p class="mb-2">@state.Message</p>
+            <p class="mb-2">@Message(state)</p>
 
             @if (state.Total > 0)
             {
@@ -84,10 +76,10 @@
             }
 
             <ul class="list-unstyled small text-secondary mb-0">
-                <li>@Marker(AnalysisPhase.Parsing) Análisis estático del script</li>
-                <li>@Marker(AnalysisPhase.Documenting) Documentación de cada objeto</li>
-                <li>@Marker(AnalysisPhase.Planning) Plan de migración</li>
-                <li>@Marker(AnalysisPhase.Saving) Guardado</li>
+                @foreach (var phase in Steps)
+                {
+                    <li>@Marker(phase) @L.StepLabel(phase)</li>
+                }
             </ul>
         </div>
     </div>
@@ -96,20 +88,28 @@
 @if (errors.Count > 0)
 {
     <div class="alert alert-danger mt-3">
-        <strong>No se pudo completar el análisis.</strong>
+        <strong>@L["Analyze_FailedTitle"]</strong>
         <ul class="small mt-1 mb-2">
             @foreach (var error in errors)
             {
                 <li>@error</li>
             }
         </ul>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="Reset">Volver a intentarlo</button>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="Reset">@L["Analyze_Retry"]</button>
     </div>
 }
 
 @code {
     private const int MaxFileSizeMb = 8;
     private const long MaxFileSize = MaxFileSizeMb * 1024L * 1024L;
+
+    private static readonly AnalysisPhase[] Steps =
+    [
+        AnalysisPhase.Parsing,
+        AnalysisPhase.Documenting,
+        AnalysisPhase.Planning,
+        AnalysisPhase.Saving
+    ];
 
     private AnalysisProgress? state;
     private readonly List<string> errors = [];
@@ -119,13 +119,22 @@
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationState { get; set; }
 
+    /// <summary>
+    /// Compone el texto del paso en curso. La fase «documentando» es la única que
+    /// tiene un dato que mostrar, el objeto que se está procesando.
+    /// </summary>
+    private string Message(AnalysisProgress progress) =>
+        progress.Phase == AnalysisPhase.Documenting && progress.CurrentObject is { } name
+            ? L["Analyze_MsgDocumentingOne", name]
+            : L.Text(progress.Phase);
+
     private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.File;
 
         if (file.Size > MaxFileSize)
         {
-            errors.Add($"El fichero pesa {file.Size / 1024 / 1024} MB y el límite son {MaxFileSizeMb} MB.");
+            errors.Add(L["Analyze_FileTooLarge", file.Size / 1024 / 1024, MaxFileSizeMb]);
             return;
         }
 
@@ -140,7 +149,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error leyendo el fichero subido");
-            errors.Add("No se pudo leer el fichero.");
+            errors.Add(L["Analyze_FileUnreadable"]);
         }
     }
 
@@ -150,7 +159,7 @@
 
         if (!File.Exists(path))
         {
-            errors.Add("No se encontró el script de ejemplo en el despliegue.");
+            errors.Add(L["Analyze_SampleMissing"]);
             return;
         }
 
@@ -188,7 +197,7 @@
         }
         catch (ValidationException ex)
         {
-            // Los mensajes vienen del validador, así que se pueden mostrar tal cual.
+            // Los mensajes vienen del validador, que ya los localiza.
             errors.AddRange(ex.Errors.SelectMany(e => e.Value));
             state = null;
         }

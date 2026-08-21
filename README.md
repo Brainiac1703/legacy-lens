@@ -523,6 +523,34 @@ Si además configuras una regla de protección en el entorno `produccion`, GitHu
 aprobación manual antes de tocar infraestructura o publicar una revisión — el equivalente a
 las aprobaciones de *release* de Azure DevOps.
 
+### Idiomas
+
+La aplicación está en **español de España** por omisión y en **inglés** como alternativa. El
+selector está al final del menú lateral.
+
+Ningún texto que ve el usuario está escrito en el código: todo vive en ficheros de recursos.
+
+| Recurso | Qué contiene |
+| --- | --- |
+| `src/LegacyLens.Web/Resources/UiText.resx` | Textos de la interfaz, en español |
+| `src/LegacyLens.Web/Resources/UiText.en.resx` | Los mismos, en inglés |
+| `src/LegacyLens.Application/Resources/ValidationText.resx` | Mensajes de validación |
+
+Tres decisiones que conviene conocer:
+
+- **El español vive en los `.resx` neutros**, no en un `es-ES.resx`. Así, una cultura sin
+  traducir cae en español en lugar de mostrar la clave del recurso.
+- **Los mensajes de validación viven en la capa de aplicación**, no en la web, porque es el
+  validador quien decide qué está mal. Si mañana hubiera una API además de la web, ambas
+  darían el mismo mensaje.
+- **El caso de uso no produce texto.** El progreso del análisis emite la fase y el nombre del
+  objeto; el mensaje lo compone la presentación. Antes el handler devolvía una cadena en
+  español, con lo que un caso de uso decidía la redacción de la interfaz.
+
+Los **mensajes de log siguen en español y sin localizar**, por decisión explícita. Es una
+desviación de la práctica habitual —los logs se agregan y se buscan, y conviene un solo
+idioma— y está anotada como tal.
+
 ### Seguridad
 
 [`docs/seguridad.md`](docs/seguridad.md) revisa el proyecto contra las diez categorías de
