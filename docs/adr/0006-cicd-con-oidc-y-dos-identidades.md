@@ -29,8 +29,17 @@ ningún secreto almacenado en el repositorio.
 | `legacy-lens-infra` | Contributor en la suscripción, *RBAC Administrator* limitado al grupo de recursos de la aplicación, *Storage Blob Data Contributor* sobre el estado | Solo al cambiar `infra/` |
 | `legacy-lens-deploy` | Contributor limitado al grupo de recursos de la aplicación | En cada *commit* que toque el código |
 
-**Estado remoto en Azure Storage**, con versionado, retención de borrados y acceso por
-identidad de Azure en lugar de por clave de cuenta.
+**Estado remoto en Azure Storage.** El método de autenticación contra la cuenta **no se fija
+en el código**, y esa flexibilidad resultó necesaria: en este despliegue el estado vive en
+una cuenta de despliegues corporativa compartida que está en **otra suscripción**, sobre la
+que no se pueden asignar roles desde el proyecto. Así que el backend se autentica con clave
+de acceso, pasada al pipeline como el **único secreto** del proyecto.
+
+Es una desviación consciente del principio de «sin secretos», y conviene que quede escrita:
+todo lo demás que toca Azure —crear recursos, construir la imagen, publicar la revisión—
+sigue usando identidad federada. Si el estado se moviera a la misma suscripción, bastaría
+con `use_azuread_auth = true` y el secreto desaparecería. `scripts/bootstrap-tfstate.ps1`
+crea precisamente ese escenario para quien empiece de cero.
 
 **Plan y apply separados.** En un *pull request* solo se planifica, y el plan se publica
 como comentario. El `apply` usa **el fichero de plan guardado**, no uno nuevo.

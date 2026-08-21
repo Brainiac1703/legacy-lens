@@ -1,9 +1,25 @@
-# Copia a backend.hcl y ajusta con los valores que imprime
-# scripts/bootstrap-tfstate.ps1. backend.hcl está excluido del repositorio.
+# Copia a backend.hcl y ajusta. backend.hcl está excluido del repositorio porque
+# puede contener la clave de acceso a la cuenta de almacenamiento.
 #
 #   terraform init -backend-config=backend.hcl
 
-resource_group_name  = "rg-legacylens-tfstate"
-storage_account_name = "stlegacylenstf0000"
-container_name       = "tfstate"
-key                  = "legacy-lens.tfstate"
+storage_account_name = "micuentadealmacenamiento"
+container_name       = "deployments"
+
+# Conviene que la ruta incluya proyecto y entorno: la misma cuenta suele albergar
+# el estado de varios proyectos.
+key = "usuario/proyecto/dev/terraform.tfstate"
+
+# --- Autenticación: elige UNA de las dos opciones ------------------------------
+
+# Opción A. Clave de acceso. Práctica cuando la cuenta es corporativa y no se
+# tienen permisos para asignarse roles sobre ella. Es un secreto: no la subas.
+#
+#   az storage account keys list --account-name <cuenta> --query [0].value -o tsv
+#
+# access_key = "..."
+
+# Opción B. Identidad de Azure, la que usa el pipeline. No hay ningún secreto,
+# pero requiere el rol Storage Blob Data Contributor sobre la cuenta.
+#
+# use_azuread_auth = true

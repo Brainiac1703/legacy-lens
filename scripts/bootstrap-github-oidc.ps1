@@ -127,9 +127,18 @@ $infraId = New-OidcIdentity -Name 'legacy-lens-infra' -Subjects @(
 Write-Host 'Asignando permisos...' -ForegroundColor Cyan
 Grant-Role -AppId $infraId -Role 'Contributor' -Scope "/subscriptions/$subscriptionId"
 
-# El estado de Terraform se lee y escribe con identidad, no con clave de cuenta.
-Grant-Role -AppId $infraId -Role 'Storage Blob Data Contributor' `
-    -Scope "/subscriptions/$subscriptionId/resourceGroups/$StateResourceGroup"
+# El estado se lee y escribe con identidad solo si su cuenta de almacenamiento
+# está en esta misma suscripción. Si está en otra —por ejemplo una cuenta de
+# despliegues corporativa compartida— no se puede conceder el rol desde aquí, y
+# el backend se autentica con clave a través del secreto TFSTATE_ACCESS_KEY.
+if ((az group exists --name $StateResourceGroup) -eq 'true') {
+    Grant-Role -AppId $infraId -Role 'Storage Blob Data Contributor' `
+        -Scope "/subscriptions/$subscriptionId/resourceGroups/$StateResourceGroup"
+}
+else {
+    Write-Host "  $StateResourceGroup no está en esta suscripción." -ForegroundColor Yellow
+    Write-Host '  El backend usará clave de acceso: define el secreto TFSTATE_ACCESS_KEY.' -ForegroundColor Yellow
+}
 
 # Acotado al grupo de recursos de la aplicación, no a la suscripción.
 $appRgExists = az group exists --name $AppResourceGroup

@@ -480,9 +480,11 @@ declaradas, está en el [ADR 0006](docs/adr/0006-cicd-con-oidc-y-dos-identidades
 
 ```powershell
 # 1. Cuenta de almacenamiento para el estado de Terraform, con versionado.
+#    Se omite si ya tienes una cuenta de despliegues donde guardarlo.
 ./scripts/bootstrap-tfstate.ps1
 
-# 2. Migrar el estado local al remoto.
+# 2. Configurar el backend y migrar el estado local al remoto.
+cp infra/backend.hcl.example infra/backend.hcl   # y rellenar
 cd infra; terraform init -migrate-state -backend-config=backend.hcl; cd ..
 
 # 3. Identidades y credenciales federadas para GitHub.
@@ -490,8 +492,14 @@ cd infra; terraform init -migrate-state -backend-config=backend.hcl; cd ..
 ```
 
 El último script imprime las variables que hay que definir en GitHub, en
-*Settings → Secrets and variables → Actions → Variables*. **Son variables, no secretos:**
-ninguno de esos valores es una credencial, que es precisamente la ventaja de OIDC.
+*Settings → Secrets and variables → Actions*.
+
+**Casi todo son variables y no secretos**, porque con OIDC ninguno de esos valores es una
+credencial. La única excepción, cuando aplica, es `TFSTATE_ACCESS_KEY`: si la cuenta de
+almacenamiento del estado está en otra suscripción —el caso de una cuenta de despliegues
+corporativa compartida—, no se le pueden asignar roles desde este proyecto y el backend
+tiene que autenticarse con clave. Está anotado como desviación consciente en el
+[ADR 0006](docs/adr/0006-cicd-con-oidc-y-dos-identidades.md).
 
 Si además configuras una regla de protección en el entorno `produccion`, GitHub exigirá
 aprobación manual antes de tocar infraestructura o publicar una revisión — el equivalente a

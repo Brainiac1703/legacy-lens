@@ -51,6 +51,13 @@ env:
 
   TF_IN_AUTOMATION: 'true'
 
+  # La cuenta de almacenamiento del estado está en otra suscripción, así que el
+  # backend se autentica con clave de acceso y no con la identidad federada. Es
+  # el único secreto del proyecto: todo lo demás que toca Azure va con OIDC.
+  # Si algún día el estado se mueve a esta misma suscripción, esto se sustituye
+  # por -backend-config="use_azuread_auth=true" y el secreto desaparece.
+  ARM_ACCESS_KEY: ${{ secrets.TFSTATE_ACCESS_KEY }}
+
 defaults:
   run:
     working-directory: infra
@@ -68,7 +75,9 @@ jobs:
     steps:
       - id: check
         run: |
-          if [ -n "${{ vars.TFSTATE_STORAGE_ACCOUNT }}" ] && [ -n "${{ vars.AZURE_INFRA_CLIENT_ID }}" ]; then
+          if [ -n "${{ vars.TFSTATE_STORAGE_ACCOUNT }}" ] \
+             && [ -n "${{ vars.TFSTATE_KEY }}" ] \
+             && [ -n "${{ vars.AZURE_INFRA_CLIENT_ID }}" ]; then
             echo 'listo=si' >> "$GITHUB_OUTPUT"
           else
             echo 'listo=no' >> "$GITHUB_OUTPUT"
@@ -82,7 +91,13 @@ jobs:
               echo './scripts/bootstrap-github-oidc.ps1 -Repository ${{ github.repository }}'
               echo '```'
               echo ''
-              echo 'y define las variables que imprimen en Settings → Actions → Variables.'
+              echo 'y define en Settings → Actions:'
+              echo ''
+              echo '- Variables: AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID,'
+              echo '  AZURE_INFRA_CLIENT_ID, TFSTATE_STORAGE_ACCOUNT,'
+              echo '  TFSTATE_CONTAINER y TFSTATE_KEY.'
+              echo '- Secreto: TFSTATE_ACCESS_KEY, solo si la cuenta del estado está'
+              echo '  en otra suscripción y hay que autenticarse con clave.'
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -105,10 +120,9 @@ jobs:
       - name: Inicializar
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ vars.TFSTATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ vars.TFSTATE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
-            -backend-config="key=legacy-lens.tfstate"
+            -backend-config="key=${{ vars.TFSTATE_KEY }}"
 
       - name: Validar
         run: terraform validate
@@ -225,10 +239,9 @@ jobs:
       - name: Inicializar
         run: |
           terraform init \
-            -backend-config="resource_group_name=${{ vars.TFSTATE_RESOURCE_GROUP }}" \
             -backend-config="storage_account_name=${{ vars.TFSTATE_STORAGE_ACCOUNT }}" \
             -backend-config="container_name=${{ vars.TFSTATE_CONTAINER }}" \
-            -backend-config="key=legacy-lens.tfstate"
+            -backend-config="key=${{ vars.TFSTATE_KEY }}"
 
       - name: Recuperar el plan
         uses: actions/download-artifact@v4
