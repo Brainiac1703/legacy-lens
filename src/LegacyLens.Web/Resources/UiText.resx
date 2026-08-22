@@ -58,6 +58,117 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Account_CheckYourEmail" xml:space="preserve">
+    <value>Revisa tu correo para confirmar la cuenta.</value>
+  </data>
+  <data name="Account_ConfirmEmailError" xml:space="preserve">
+    <value>No se pudo confirmar el correo. El enlace puede haber caducado.</value>
+  </data>
+  <data name="Account_ConfirmEmailOk" xml:space="preserve">
+    <value>Gracias por confirmar tu correo. Ya puedes iniciar sesión.</value>
+  </data>
+  <data name="Account_ConfirmEmailTitle" xml:space="preserve">
+    <value>Confirmar el correo</value>
+  </data>
+  <data name="Account_ConfirmLink" xml:space="preserve">
+    <value>Pulsa aquí para confirmar tu cuenta</value>
+  </data>
+  <data name="Account_ConfirmPassword" xml:space="preserve">
+    <value>Repetir la contraseña</value>
+  </data>
+  <data name="Account_Email" xml:space="preserve">
+    <value>Correo electrónico</value>
+  </data>
+  <data name="Account_ForgotPassword" xml:space="preserve">
+    <value>¿Has olvidado la contraseña?</value>
+  </data>
+  <data name="Account_InvalidLogin" xml:space="preserve">
+    <value>El correo o la contraseña no son correctos.</value>
+  </data>
+  <data name="Account_LoadUserError" xml:space="preserve">
+    <value>No se pudo cargar el usuario indicado.</value>
+  </data>
+  <data name="Account_LoginSubtitle" xml:space="preserve">
+    <value>Entra con una cuenta local.</value>
+  </data>
+  <data name="Account_LoginTitle" xml:space="preserve">
+    <value>Iniciar sesión</value>
+  </data>
+  <data name="Account_LoginWithPasskey" xml:space="preserve">
+    <value>Entrar con una clave de acceso</value>
+  </data>
+  <data name="Account_ManageSubtitle" xml:space="preserve">
+    <value>Ajustes de la cuenta</value>
+  </data>
+  <data name="Account_ManageTitle" xml:space="preserve">
+    <value>Tu cuenta</value>
+  </data>
+  <data name="Account_NoEmailSender" xml:space="preserve">
+    <value>Esta aplicación no tiene configurado ningún servicio de correo, así que el enlace de confirmación se muestra aquí en lugar de enviarse.</value>
+  </data>
+  <data name="Account_Or" xml:space="preserve">
+    <value>o</value>
+  </data>
+  <data name="Account_Passkeys" xml:space="preserve">
+    <value>Claves de acceso</value>
+  </data>
+  <data name="Account_Password" xml:space="preserve">
+    <value>Contraseña</value>
+  </data>
+  <data name="Account_PasswordPlaceholder" xml:space="preserve">
+    <value>contraseña</value>
+  </data>
+  <data name="Account_PersonalData" xml:space="preserve">
+    <value>Datos personales</value>
+  </data>
+  <data name="Account_PhoneNumber" xml:space="preserve">
+    <value>Teléfono</value>
+  </data>
+  <data name="Account_PhoneNumberFailed" xml:space="preserve">
+    <value>No se pudo guardar el teléfono.</value>
+  </data>
+  <data name="Account_PhonePlaceholder" xml:space="preserve">
+    <value>Escribe tu teléfono</value>
+  </data>
+  <data name="Account_Profile" xml:space="preserve">
+    <value>Perfil</value>
+  </data>
+  <data name="Account_ProfileUpdated" xml:space="preserve">
+    <value>Perfil actualizado.</value>
+  </data>
+  <data name="Account_RegisterAsNew" xml:space="preserve">
+    <value>Registrarse como usuario nuevo</value>
+  </data>
+  <data name="Account_RegisterConfirmTitle" xml:space="preserve">
+    <value>Confirma tu cuenta</value>
+  </data>
+  <data name="Account_RegisterSubtitle" xml:space="preserve">
+    <value>Crea una cuenta nueva.</value>
+  </data>
+  <data name="Account_RegisterTitle" xml:space="preserve">
+    <value>Registrarse</value>
+  </data>
+  <data name="Account_RememberMe" xml:space="preserve">
+    <value>Recordarme</value>
+  </data>
+  <data name="Account_ResendConfirmation" xml:space="preserve">
+    <value>Volver a enviar la confirmación</value>
+  </data>
+  <data name="Account_Save" xml:space="preserve">
+    <value>Guardar</value>
+  </data>
+  <data name="Account_TwoFactor" xml:space="preserve">
+    <value>Verificación en dos pasos</value>
+  </data>
+  <data name="Account_UserNotFound" xml:space="preserve">
+    <value>No se encontró ningún usuario con ese correo.</value>
+  </data>
+  <data name="Account_Username" xml:space="preserve">
+    <value>Nombre de usuario</value>
+  </data>
+  <data name="Account_UsernamePlaceholder" xml:space="preserve">
+    <value>Tu nombre de usuario</value>
+  </data>
   <data name="Analyses_BadgeDocumented" xml:space="preserve">
     <value>Documentado</value>
   </data>

@@ -1,20 +1,22 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<UiText> L
 ﻿<ul class="nav nav-pills flex-column">
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">Profile</NavLink>
+        <NavLink class="nav-link" href="Account/Manage" Match="NavLinkMatch.All">@L["Account_Profile"]</NavLink>
     </li>
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Email">Email</NavLink>
+        <NavLink class="nav-link" href="Account/Manage/Email">@L["Account_Email"]</NavLink>
     </li>
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/ChangePassword">Password</NavLink>
+        <NavLink class="nav-link" href="Account/Manage/ChangePassword">@L["Account_Password"]</NavLink>
     </li>
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">Two-factor authentication</NavLink>
+        <NavLink class="nav-link" href="Account/Manage/TwoFactorAuthentication">@L["Account_TwoFactor"]</NavLink>
     </li>
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/Passkeys">Passkeys</NavLink>
+        <NavLink class="nav-link" href="Account/Manage/Passkeys">@L["Account_Passkeys"]</NavLink>
     </li>
     <li class="nav-item">
-        <NavLink class="nav-link" href="Account/Manage/PersonalData">Personal data</NavLink>
+        <NavLink class="nav-link" href="Account/Manage/PersonalData">@L["Account_PersonalData"]</NavLink>
     </li>
 </ul>
