@@ -60,7 +60,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | --- | --- | --- |
 | Claude Code CLI | ✔ | El proyecto se construyó en sesión de pareja con Claude Code. README §8 |
 | Revisión de código con IA | ○ | Fase 1: CodeRabbit sobre los PR |
-| Code scanning y Dependabot | ○ | Fase 1 |
+| Code scanning y Dependabot | ◐ | CodeQL analiza en cada push y semanalmente, con 30 análisis registrados, y `dependabot.yml` cubre NuGet, Actions, Terraform y Docker. Queda a medias por dos cosas concretas: las **alertas de seguridad de Dependabot están desactivadas** en la configuración del repositorio, así que solo llegan actualizaciones de versión y no avisos de vulnerabilidad; y hay **5 alertas de CodeQL abiertas sin triar**, 2 de severidad alta |
 
 ## 05 · Flujo de desarrollo con IA
 
