@@ -18,9 +18,14 @@ tiene que ser la segura, no la cómoda.
 
 ## Decisión
 
-El Container App tiene **identidad asignada por el sistema**, y Terraform le concede dos
-roles: *Cognitive Services OpenAI User* sobre el recurso de OpenAI y *AcrPull* sobre el
-registro. El registro se crea con `admin_enabled = false`.
+El Container App usa una **identidad asignada por el usuario**, creada como recurso
+independiente, y Terraform le concede dos roles: *Cognitive Services OpenAI User* sobre el
+recurso de OpenAI y *AcrPull* sobre el registro. El registro se crea con
+`admin_enabled = false`.
+
+Esta decisión se tomó primero al contrario, con identidad asignada por el sistema, y el
+despliegue demostró que no funcionaba. Queda explicado abajo, en las alternativas, porque el
+motivo es más instructivo que la decisión.
 
 En el código, `AiOptions` decide el mecanismo por ausencia:
 
@@ -49,6 +54,12 @@ recordar: es que no existe el secreto.
   Es un paso más que copiar una clave, y está documentado en el README.
 - `DefaultAzureCredential` prueba varios mecanismos en orden, lo que hace que un fallo de
   autenticación sea algo menos evidente de diagnosticar que una clave incorrecta.
+- Con identidad asignada por el usuario hay que decirle **cuál**: el contenedor recibe
+  `AZURE_CLIENT_ID`. Con identidad de sistema no hacía falta. Es una variable de entorno más
+  que, si falta, produce un fallo de autenticación en SQL y en OpenAI a la vez.
+- El usuario de la base de datos ya no se llama igual que el Container App, sino igual que la
+  identidad. El pipeline lee ese nombre de una salida de Terraform en lugar de darlo por
+  sabido.
 
 ## Alternativas consideradas
 
@@ -60,6 +71,26 @@ eliminar, y porque no aporta nada frente a la identidad.
 existiendo un secreto, y ahora hay que autenticarse contra el Key Vault. Si ya hace falta una
 identidad para leer el Vault, esa misma identidad puede hablar directamente con OpenAI.
 
-**Identidad asignada por el usuario** en lugar de por el sistema. Es preferible cuando varios
-recursos comparten identidad o cuando hay que conceder permisos antes de crear el recurso.
-Aquí hay un único servicio y añadía una pieza sin necesidad.
+**Identidad asignada por el sistema** en lugar de por el usuario. Fue la primera decisión, y
+era la equivocada. La descartamos al revés —esta misma sección decía que la identidad de
+usuario «es preferible cuando hay que conceder permisos antes de crear el recurso, y aquí hay
+un único servicio»— sin darnos cuenta de que este proyecto **es** ese caso.
+
+Una identidad de sistema nace con el recurso, así que su `principal_id` no existe hasta que
+el Container App está creado y los roles solo pueden asignarse después. Pero Azure no termina
+de aprovisionar el Container App hasta poder autenticarse contra el registro de contenedores,
+y para eso necesita *AcrPull*. El ciclo se cierra: el rol espera al recurso y el recurso
+espera al rol.
+
+No falla con un error, que sería más fácil. El aprovisionamiento se queda en `InProgress` sin
+crear ninguna revisión, y `terraform apply` sigue imprimiendo *Still creating…* hasta agotar
+el tiempo. Lo descubrimos a los 19 minutos del primer despliegue real.
+
+Crear la identidad como recurso aparte rompe el ciclo: los dos roles existen antes que la
+aplicación. Hace falta además un `depends_on` explícito, porque los roles cuelgan de la
+identidad y no del Container App, así que Terraform no ve ninguna dependencia entre ellos y
+los crearía en paralelo. Sin él, el ciclo vuelve convertido en carrera: a veces el registro
+estaría autorizado a tiempo y a veces no.
+
+La lección que merece la pena guardar no es sobre Azure, es sobre el propio ADR: la
+alternativa descartada llevaba escrito el criterio exacto que la habría elegido.

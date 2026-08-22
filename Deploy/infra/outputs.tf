@@ -42,10 +42,20 @@ output "container_app_principal_id" {
     de alta como usuario dentro de la base de datos: crear el recurso no basta,
     hay que ejecutar CREATE USER FROM EXTERNAL PROVIDER dentro del propio SQL.
   EOT
-  value       = var.deploy_app ? azurerm_container_app.main[0].identity[0].principal_id : ""
+  value       = var.deploy_app ? azurerm_user_assigned_identity.app[0].principal_id : ""
 }
 
 output "container_app_name" {
-  description = "Nombre del Container App, que es también el del usuario de base de datos."
+  description = "Nombre del Container App, para actualizar la revisión desde el pipeline."
   value       = var.deploy_app ? azurerm_container_app.main[0].name : ""
+}
+
+output "app_identity_name" {
+  description = <<-EOT
+    Nombre de la identidad de la aplicación, que es el del usuario dentro de la
+    base de datos. Al ser una identidad asignada por el usuario ya no coincide
+    con el nombre del Container App, así que el pipeline tiene que leerlo de
+    aquí y no darlo por sabido.
+  EOT
+  value       = var.deploy_app ? azurerm_user_assigned_identity.app[0].name : ""
 }

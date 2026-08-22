@@ -201,6 +201,7 @@ jobs:
       sql_database: ${{ steps.salidas.outputs.sql_database }}
       app_url: ${{ steps.salidas.outputs.app_url }}
       registro: ${{ steps.salidas.outputs.registro }}
+      identidad: ${{ steps.salidas.outputs.identidad }}
 
     steps:
       - uses: actions/checkout@v7
@@ -229,6 +230,7 @@ jobs:
             echo "sql_database=$(terraform output -raw sql_database_name)"
             echo "app_url=$(terraform output -raw app_url)"
             echo "registro=$(terraform output -raw container_registry)"
+            echo "identidad=$(terraform output -raw app_identity_name)"
           } >> "$GITHUB_OUTPUT"
 
   # -------------------------------------------------------------------------
@@ -321,7 +323,7 @@ jobs:
             --server '${{ needs.aplicar-infraestructura.outputs.sql_server }}' \
             --database '${{ needs.aplicar-infraestructura.outputs.sql_database }}' \
             --authentication-method ActiveDirectoryDefault \
-            --variable APP_IDENTITY="$CONTAINER_APP" \
+            --variable APP_IDENTITY='${{ needs.aplicar-infraestructura.outputs.identidad }}' \
             --input-file Deploy/sql/conceder-acceso-identidad.sql \
             --exit-on-error
 
