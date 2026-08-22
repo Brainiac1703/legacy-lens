@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\LegacyLens.Domain\LegacyLens.Domain.csproj" />
+    <ProjectReference Include="..\LegacyLens.Application\LegacyLens.Application.csproj" />
+    <ProjectReference Include="..\LegacyLens.Persistence.EF\LegacyLens.Persistence.EF.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>legacy-lens-mcp</AssemblyName>
+  </PropertyGroup>
+
+</Project>
