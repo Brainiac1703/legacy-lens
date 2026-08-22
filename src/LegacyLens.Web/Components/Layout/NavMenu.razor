@@ -1,6 +1,5 @@
 ﻿@implements IDisposable
 
-@using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject NavigationManager NavigationManager
 @inject IStringLocalizer<UiText> L
@@ -63,38 +62,10 @@
                 </div>
             </NotAuthorized>
         </AuthorizeView>
-
-        @*
-            El cambio de idioma son enlaces normales y no botones de Blazor: fijar
-            la cultura exige recargar la página, porque el circuito ya se creó con
-            la anterior. Un @onclick daría la falsa impresión de cambio inmediato.
-        *@
-        <div class="nav-item px-3 mt-3 border-top pt-2">
-            <span class="nav-link text-secondary small">@L["Nav_Language"]</span>
-            <div class="px-3 pb-2">
-                @foreach (var (code, label) in Languages)
-                {
-                    var isCurrent = CultureInfo.CurrentUICulture.Name.StartsWith(
-                        code.Split('-')[0], StringComparison.OrdinalIgnoreCase);
-
-                    <a class="btn btn-sm @(isCurrent ? "btn-secondary" : "btn-outline-secondary") me-1"
-                       href="@CultureUrl(code)"
-                       aria-current="@(isCurrent ? "true" : null)">
-                        @label
-                    </a>
-                }
-            </div>
-        </div>
     </nav>
 </div>
 
 @code {
-    private static readonly (string Code, string Label)[] Languages =
-    [
-        ("es-ES", "Español"),
-        ("en", "English")
-    ];
-
     private string? currentUrl;
 
     protected override void OnInitialized()
@@ -108,14 +79,6 @@
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         StateHasChanged();
     }
-
-    /// <summary>
-    /// Se vuelve a la misma página tras cambiar de idioma. La ruta se pasa como
-    /// relativa porque el endpoint solo acepta redirecciones locales.
-    /// </summary>
-    private string CultureUrl(string code) =>
-        $"/set-culture?culture={Uri.EscapeDataString(code)}" +
-        $"&redirectUri={Uri.EscapeDataString("/" + (currentUrl ?? string.Empty))}";
 
     public void Dispose()
     {

@@ -36,6 +36,13 @@ main {
         text-overflow: ellipsis;
     }
 
+    /* La regla de arriba separa 1,5 rem cada enlace de la barra, que es lo que
+       se quiere entre elementos distintos. Dentro del grupo de idiomas no: los
+       dos botones tienen que quedar pegados para leerse como un solo control. */
+    .top-row ::deep .culture-selector .btn-group a {
+        margin-left: 0;
+    }
+
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;
