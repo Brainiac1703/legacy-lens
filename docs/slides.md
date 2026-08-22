@@ -9,8 +9,21 @@ title: 'Legacy Lens — TFM Máster de Desarrollo con IA'
 Presentación en formato Marp. Tres formas de usarla:
 
   1. Extensión "Marp for VS Code": vista previa y exportación a PDF o HTML.
-  2. CLI:  npx @marp-team/marp-cli docs/slides.md --pdf
-  3. Copiar y pegar el contenido en Google Slides, una diapositiva por bloque.
+  2. CLI, que es como se generó el PDF entregado. Hacen falta las dos cosas:
+     la ruta a un Chrome o Edge instalado y --allow-local-files, porque las
+     diapositivas cargan recursos del propio repositorio.
+
+       set CHROME_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
+       npx @marp-team/marp-cli@4.5.0 docs/slides.md --pdf --allow-local-files -o docs/slides.pdf
+
+  3. Google Slides importa .pptx, así que si se prefiere ese formato el camino
+     corto es exportar con --pptx --pptx-editable e importarlo, en lugar de
+     copiar y pegar diapositiva a diapositiva.
+
+  El PDF está versionado a propósito: el requisito del TFM admite «documento
+  adjunto junto al código», y GitHub renderiza PDF en el navegador, así que su
+  URL sirve además como enlace público a la presentación. Si se edita este
+  fichero, hay que regenerarlo.
 
 Las notas del presentador van en comentarios HTML como este.
 -->
