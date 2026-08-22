@@ -50,6 +50,16 @@ output "container_app_name" {
   value       = var.deploy_app ? azurerm_container_app.main[0].name : ""
 }
 
+output "app_identity_client_id" {
+  description = <<-EOT
+    client_id de la identidad de la aplicación. El pipeline lo necesita para
+    crear el usuario de base de datos por SID: el SID de una identidad
+    administrada es su client_id. Así el servidor SQL no tiene que resolver el
+    nombre contra Entra, que exigiría concederle el rol Directory Readers.
+  EOT
+  value       = var.deploy_app ? azurerm_user_assigned_identity.app[0].client_id : ""
+}
+
 output "app_identity_name" {
   description = <<-EOT
     Nombre de la identidad de la aplicación, que es el del usuario dentro de la

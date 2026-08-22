@@ -202,6 +202,7 @@ jobs:
       app_url: ${{ steps.collect.outputs.app_url }}
       registry: ${{ steps.collect.outputs.registry }}
       identity: ${{ steps.collect.outputs.identity }}
+      identity_client_id: ${{ steps.collect.outputs.identity_client_id }}
 
     steps:
       - uses: actions/checkout@v7
@@ -235,6 +236,7 @@ jobs:
             echo "app_url=$(terraform output -raw app_url)"
             echo "registry=$(terraform output -raw container_registry)"
             echo "identity=$(terraform output -raw app_identity_name)"
+            echo "identity_client_id=$(terraform output -raw app_identity_client_id)"
           } >> "$GITHUB_OUTPUT"
 
   # -------------------------------------------------------------------------
@@ -330,12 +332,14 @@ jobs:
           SERVER: ${{ needs.apply-infrastructure.outputs.sql_server }}
           DATABASE: ${{ needs.apply-infrastructure.outputs.sql_database }}
           IDENTITY: ${{ needs.apply-infrastructure.outputs.identity }}
+          IDENTITY_CLIENT_ID: ${{ needs.apply-infrastructure.outputs.identity_client_id }}
         run: |
           if ! output=$(sqlcmd \
             --server "$SERVER" \
             --database-name "$DATABASE" \
             --authentication-method ActiveDirectoryDefault \
             --variables APP_IDENTITY="$IDENTITY" \
+            --variables APP_CLIENT_ID="$IDENTITY_CLIENT_ID" \
             --input-file Deploy/sql/grant-identity-access.sql \
             --exit-on-error 2>&1); then
             echo "$output"
