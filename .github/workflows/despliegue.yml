@@ -317,15 +317,40 @@ jobs:
 
       # Terraform no puede hacer esto: conceder acceso dentro de Azure SQL es
       # una operación del plano de datos. Ver el comentario del script.
+      #
+      # Las banderas son las de compatibilidad de go-sqlcmd, y no coinciden con
+      # lo que uno esperaría: la base de datos es --database-name y las
+      # variables son --variables, en plural.
       - name: Dar de alta la identidad de la aplicación
+        env:
+          SERVIDOR: ${{ needs.aplicar-infraestructura.outputs.sql_server }}
+          BASE_DATOS: ${{ needs.aplicar-infraestructura.outputs.sql_database }}
+          IDENTIDAD: ${{ needs.aplicar-infraestructura.outputs.identidad }}
         run: |
-          sqlcmd \
-            --server '${{ needs.aplicar-infraestructura.outputs.sql_server }}' \
-            --database '${{ needs.aplicar-infraestructura.outputs.sql_database }}' \
+          if ! salida=$(sqlcmd \
+            --server "$SERVIDOR" \
+            --database-name "$BASE_DATOS" \
             --authentication-method ActiveDirectoryDefault \
-            --variable APP_IDENTITY='${{ needs.aplicar-infraestructura.outputs.identidad }}' \
+            --variables APP_IDENTITY="$IDENTIDAD" \
             --input-file Deploy/sql/conceder-acceso-identidad.sql \
-            --exit-on-error
+            --exit-on-error 2>&1); then
+            echo "$salida"
+            echo "::error::sqlcmd falló al dar de alta $IDENTIDAD."
+            exit 1
+          fi
+
+          echo "$salida"
+
+          # sqlcmd devuelve 0 aunque no consiga conectarse: --exit-on-error solo
+          # cubre errores de T-SQL, no de conexión. Sin esta comprobación el paso
+          # saldría verde sin haber concedido nada, y el fallo aparecería mucho
+          # más tarde, al arrancar la aplicación.
+          if ! grep -q 'ALTA_CONFIRMADA' <<< "$salida"; then
+            echo "::error::La identidad $IDENTIDAD no quedó dada de alta en $BASE_DATOS."
+            exit 1
+          fi
+
+          echo "Identidad $IDENTIDAD dada de alta con lectura y escritura."
 
       # En always() para que el cortafuegos se cierre también si la migración
       # falla: dejarlo abierto sería peor que el fallo original.
