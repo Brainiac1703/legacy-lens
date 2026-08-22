@@ -75,7 +75,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | APIs de IA | ✔ | Azure OpenAI vía `Microsoft.Extensions.AI` |
 | Multi-proveedor | ◐ | La abstracción `IChatClient` lo permite; solo hay un proveedor conectado |
 | `AGENTS.md` / comportamiento del agente | ✔ | `AGENTS.md` en la raíz |
-| Skills y subagentes | ○ | Fase 2 |
+| Skills y subagentes | ◐ | Tres skills en `.claude/skills/` para las tareas que se repiten en este repositorio: añadir un caso de uso, añadir una página localizada y añadir un test. Cada una recoge las trampas propias del proyecto. **Subagentes no**: no hay ninguna tarea aquí que se beneficie de paralelizar en varios contextos |
 | **MCP (Model Context Protocol)** | ✔ | Servidor propio en `src/LegacyLens.Mcp` con cuatro herramientas sobre las consultas de la capa de aplicación. Transporte stdio, sin infraestructura añadida. [ADR 0008](adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md) |
 
 ## 06 · Calidad
