@@ -175,6 +175,15 @@ else {
 
 # --- Resultado -------------------------------------------------------------
 
+# El servidor SQL se crea con autenticación exclusivamente por Entra, así que
+# necesita un administrador. Es la identidad de infraestructura, porque es la que
+# después aplica las migraciones desde el pipeline.
+#
+# Ojo con el identificador: hace falta el del *service principal*, no el del
+# registro de aplicación. Son distintos, y usar el equivocado hace que Azure
+# rechace el administrador sin decir por qué.
+$infraPrincipalId = az ad sp show --id $infraId --query id --output tsv
+
 Write-Host ''
 Write-Host '=== Configura esto en GitHub ===' -ForegroundColor Green
 Write-Host ''
@@ -184,12 +193,14 @@ Write-Host "  AZURE_TENANT_ID           $tenantId"
 Write-Host "  AZURE_SUBSCRIPTION_ID     $subscriptionId"
 Write-Host "  AZURE_INFRA_CLIENT_ID     $infraId"
 Write-Host "  AZURE_DEPLOY_CLIENT_ID    $deployId"
+Write-Host "  SQL_ADMIN_LOGIN           legacy-lens-infra"
+Write-Host "  SQL_ADMIN_OBJECT_ID       $infraPrincipalId"
 Write-Host ''
 Write-Host 'Y los del estado de Terraform, que imprime bootstrap-tfstate.ps1:' -ForegroundColor Yellow
 Write-Host ''
-Write-Host '  TFSTATE_RESOURCE_GROUP'
 Write-Host '  TFSTATE_STORAGE_ACCOUNT'
 Write-Host '  TFSTATE_CONTAINER'
+Write-Host '  TFSTATE_KEY'
 Write-Host ''
 Write-Host 'Son variables, no secretos: ninguno de estos valores es una credencial.' -ForegroundColor DarkGray
 Write-Host 'Con OIDC no hay secreto que guardar, que es justo la ventaja.' -ForegroundColor DarkGray
@@ -200,3 +211,5 @@ Write-Host "  gh variable set AZURE_TENANT_ID --body $tenantId --repo $Repositor
 Write-Host "  gh variable set AZURE_SUBSCRIPTION_ID --body $subscriptionId --repo $Repository"
 Write-Host "  gh variable set AZURE_INFRA_CLIENT_ID --body $infraId --repo $Repository"
 Write-Host "  gh variable set AZURE_DEPLOY_CLIENT_ID --body $deployId --repo $Repository"
+Write-Host "  gh variable set SQL_ADMIN_LOGIN --body legacy-lens-infra --repo $Repository"
+Write-Host "  gh variable set SQL_ADMIN_OBJECT_ID --body $infraPrincipalId --repo $Repository"
