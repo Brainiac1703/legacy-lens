@@ -42,7 +42,11 @@ param(
 
     [string] $AppResourceGroup = 'rg-legacylens-tfm',
     [string] $StateResourceGroup = 'rg-legacylens-tfstate',
-    [string] $Branch = 'main'
+    [string] $Branch = 'main',
+
+    # Debe coincidir con el 'environment:' de los trabajos de
+    # despliegue.yml. Si se renombra alli, hay que renombrarlo aqui.
+    [string] $Environment = 'produccion'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -157,8 +161,16 @@ function Grant-Role {
 
 Write-Host '=== Identidad de infraestructura ===' -ForegroundColor Green
 
+# Tres sujetos y no uno. Cuando un trabajo se ata a un 'environment:', GitHub
+# cambia el sujeto del token: presenta "environment:nombre" en lugar de
+# "ref:refs/heads/rama". Los trabajos de aplicar infraestructura y de actualizar
+# la base de datos usan entorno, y el de planificar no, asi que esta identidad
+# necesita las dos formas. Faltar una da AADSTS700213 solo en el trabajo
+# afectado, que es lo que lo hace confuso de diagnosticar.
 $infraId = New-OidcIdentity -Name 'legacy-lens-infra' -Subjects (
-    (Get-Subjects "ref:refs/heads/$Branch") + (Get-Subjects 'pull_request')
+    (Get-Subjects "ref:refs/heads/$Branch") +
+    (Get-Subjects 'pull_request') +
+    (Get-Subjects "environment:$Environment")
 )
 
 Write-Host 'Asignando permisos...' -ForegroundColor Cyan
@@ -194,8 +206,11 @@ else {
 Write-Host ''
 Write-Host '=== Identidad de despliegue ===' -ForegroundColor Green
 
+# El trabajo que despliega la web usa entorno. Se mantiene tambien el sujeto de
+# rama para no romper una ejecucion manual sin entorno.
 $deployId = New-OidcIdentity -Name 'legacy-lens-deploy' -Subjects (
-    Get-Subjects "ref:refs/heads/$Branch"
+    (Get-Subjects "ref:refs/heads/$Branch") +
+    (Get-Subjects "environment:$Environment")
 )
 
 Write-Host 'Asignando permisos...' -ForegroundColor Cyan

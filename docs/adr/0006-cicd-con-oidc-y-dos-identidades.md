@@ -84,6 +84,26 @@ como comentario. El `apply` usa **el fichero de plan guardado**, no uno nuevo.
   inevitable —Terraform no puede crear el sitio donde guarda su propio estado— y por eso
   está en scripts versionados y no en instrucciones de un documento.
 
+- **El «subject» de la credencial federada es más frágil de lo que parece**, y esto costó
+  dos ejecuciones fallidas con el mismo error `AADSTS700213`. Azure exige coincidencia
+  exacta, y GitHub cambia el sujeto que presenta según dos ejes independientes:
+
+  | Eje | Formas posibles |
+  | --- | --- |
+  | Identificador del repositorio | `repo:propietario/repo:…` o, con identificadores inmutables, `repo:propietario@1234/repo@5678:…` |
+  | Disparador del trabajo | `ref:refs/heads/main`, `pull_request` o `environment:produccion` |
+
+  Lo segundo es lo que menos se espera: **atar un trabajo a un `environment:` cambia el
+  sujeto del token**. El trabajo de planificación, sin entorno, presentaba
+  `ref:refs/heads/main`; el de aplicar, con entorno, presentaba `environment:produccion`.
+  Con solo la primera credencial creada, el plan pasaba y el `apply` daba 401 en el mismo
+  *commit*, que es un síntoma desconcertante.
+
+  Por eso `scripts/bootstrap-github-oidc.ps1` registra el producto de los dos ejes en lugar
+  de un sujeto por identidad, y lee los identificadores inmutables de la API de GitHub en
+  vez de darlos por sabidos. Una credencial que sobra no hace nada; una que falta rompe un
+  único trabajo del pipeline y el mensaje de error no dice cuál es la que falta.
+
 ## Alternativas consideradas
 
 **Secreto de cliente en los secretos del repositorio.** Descartada por lo dicho: caduca,
