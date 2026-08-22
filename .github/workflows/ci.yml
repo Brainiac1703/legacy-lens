@@ -96,9 +96,22 @@ jobs:
             exit 1
           fi
 
+          # El logo se enlaza a wwwroot desde assets/ con un glob del csproj. Si
+          # el Dockerfile deja de copiar esa carpeta, el glob no encuentra nada y
+          # el fichero desaparece de la imagen sin ningún error: el publish
+          # termina bien y el despliegue sale verde. Pasó de verdad, y lo
+          # descubrió el usuario abriendo la aplicación.
+          for recurso in logo.svg logo-claro.svg; do
+            if ! curl -sf -o /dev/null "http://localhost:8080/$recurso"; then
+              echo "::error::La imagen no sirve $recurso: revisa que el Dockerfile copie assets/."
+              docker rm -f humo
+              exit 1
+            fi
+          done
+
           # Si ha respondido es que las migraciones se aplicaron: la aplicación
           # las ejecuta antes de empezar a servir.
-          echo 'Arranque, migración y runtime de Blazor verificados.'
+          echo 'Arranque, migración, runtime de Blazor y activos de marca verificados.'
           docker rm -f humo
 
   terraform:
