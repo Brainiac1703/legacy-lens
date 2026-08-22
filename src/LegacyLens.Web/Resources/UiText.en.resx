@@ -151,6 +151,9 @@
   <data name="Analyze_SampleButton" xml:space="preserve">
     <value>Analyze the sample</value>
   </data>
+  <data name="Analyze_SampleDownload" xml:space="preserve">
+    <value>Download the script</value>
+  </data>
   <data name="Analyze_SampleMissing" xml:space="preserve">
     <value>The sample script was not found in this deployment.</value>
   </data>
