@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Compilar y probar
+    name: Build and test
     runs-on: ubuntu-latest
 
     # SQL Server efímero para la comprobación de humo de la imagen. La
@@ -38,23 +38,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Instalar .NET
+      - name: Install .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restaurar
+      - name: Restore
         run: dotnet restore LegacyLens.slnx
 
-      - name: Compilar
+      - name: Build
         run: dotnet build LegacyLens.slnx --no-restore --configuration Release
 
       # Los tests cubren el analizador, que es la parte determinista del
       # sistema y por tanto la única que se puede verificar con asserts.
-      - name: Probar
+      - name: Test
         run: dotnet test LegacyLens.slnx --no-build --configuration Release --verbosity normal
 
-      - name: Validar el contenedor
+      - name: Validate the container
         run: docker build -t legacylens:ci .
 
       # Que la imagen se construya y responda 200 no basta: una aplicación de
@@ -62,7 +62,7 @@ jobs:
       # y parece correcta, pero no tiene runtime en el navegador y ningún botón
       # funciona. Pasó de verdad, por publicar con --no-restore, y tardó en
       # detectarse porque todas las comprobaciones anteriores daban verde.
-      - name: Comprobar que la imagen arranca, migra y sirve Blazor
+      - name: Check the image boots, migrates and serves Blazor
         run: |
           # --network host para que el contenedor alcance el servicio de SQL
           # Server en localhost del ejecutor.
@@ -71,12 +71,12 @@ jobs:
             -e 'ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=LegacyLensCi;User Id=sa;Password=Integracion.2026!;TrustServerCertificate=True;Encrypt=True' \
             legacylens:ci
 
-          for intento in $(seq 1 40); do
+          for attempt in $(seq 1 40); do
             if curl -sf -o /dev/null http://localhost:8080/; then
-              echo "La aplicación responde tras $intento intento(s)."
+              echo "La aplicación responde tras $attempt intento(s)."
               break
             fi
-            if [ "$intento" -eq 40 ]; then
+            if [ "$attempt" -eq 40 ]; then
               echo '::error::La imagen no llegó a servir la página de inicio.'
               docker logs humo | tail -40
               docker rm -f humo
@@ -102,7 +102,7 @@ jobs:
           docker rm -f humo
 
   terraform:
-    name: Validar infraestructura
+    name: Validate infrastructure
     runs-on: ubuntu-latest
 
     steps:
@@ -112,15 +112,25 @@ jobs:
         with:
           terraform_version: 1.7.5
 
-      - name: Comprobar formato
+      - name: Check formatting
         run: terraform fmt -check -recursive
         working-directory: Deploy/infra
 
       # init sin backend: valida la sintaxis sin necesitar credenciales.
-      - name: Inicializar
-        run: terraform init -backend=false
+      # Mismo reintento que en la accion de despliegue: el init consulta el
+      # registro de proveedores y un corte de red ahi no es un fallo del codigo.
+      - name: Initialise
         working-directory: Deploy/infra
+        run: |
+          for attempt in 1 2 3; do
+            if terraform init -backend=false; then exit 0; fi
+            espera=$((attempt * 15))
+            echo "El intento $attempt de terraform init ha fallado. Reintento en ${espera}s."
+            sleep "$espera"
+          done
+          echo "::error::terraform init ha fallado tres veces."
+          exit 1
 
-      - name: Validar
+      - name: Validate
         run: terraform validate
         working-directory: Deploy/infra

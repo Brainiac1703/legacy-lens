@@ -1,11 +1,11 @@
-name: Despliegue
+name: Deploy
 
 # ---------------------------------------------------------------------------
 # Camino único a producción, en el orden en que las cosas pueden romperse:
 #
 #   1. Compilar y probar        si los tests fallan, no se toca nada
 #   2. Planificar               qué cambiaría en la infraestructura
-#   3. Revisar y aprobar        parada manual del entorno 'produccion'
+#   3. Revisar y aprobar        parada manual del entorno 'production'
 #   4. Aplicar infraestructura  el plan aprobado, no uno nuevo
 #   5. Actualizar la base de datos
 #   6. Desplegar la web         y comprobar que responde
@@ -15,7 +15,7 @@ name: Despliegue
 # consultar columnas que todavía no existen.
 #
 # Sustituye a los antiguos infra.yml y deploy.yml, que podían pisarse entre sí.
-# ci.yml sigue validando los pull request y seguridad.yml el análisis.
+# ci.yml sigue validando los pull request y security.yml el análisis.
 # ---------------------------------------------------------------------------
 
 on:
@@ -23,8 +23,8 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      solo_infraestructura:
-        description: 'Parar después de aplicar la infraestructura'
+      infrastructure_only:
+        description: 'Stop after applying the infrastructure'
         type: boolean
         default: false
 
@@ -33,16 +33,16 @@ permissions:
   id-token: write
 
 env:
-  GRUPO_RECURSOS: rg-legacylens-tfm
+  RESOURCE_GROUP: rg-legacylens-tfm
   CONTAINER_APP: ca-legacylens-tfm
-  REPOSITORIO_IMAGEN: legacy-lens
+  IMAGE_REPOSITORY: legacy-lens
 
 jobs:
   # -------------------------------------------------------------------------
   # 1. Compilar y probar
   # -------------------------------------------------------------------------
-  compilar:
-    name: Compilar y probar
+  build:
+    name: Build and test
     runs-on: ubuntu-latest
 
     steps:
@@ -52,24 +52,24 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restaurar
+      - name: Restore
         run: dotnet restore LegacyLens.slnx
 
-      - name: Compilar la solución
+      - name: Build the solution
         run: dotnet build LegacyLens.slnx --no-restore --configuration Release
 
       # Los tests cubren el analizador, que es la parte determinista. La parte no
       # determinista se mide con el arnés de evaluación, que no corre aquí porque
       # consume cuota del modelo en cada commit.
-      - name: Ejecutar los tests
+      - name: Run the tests
         run: dotnet test LegacyLens.slnx --no-build --configuration Release
 
   # -------------------------------------------------------------------------
   # 2. Planificar la infraestructura
   # -------------------------------------------------------------------------
-  planificar:
-    name: Planificar infraestructura
-    needs: compilar
+  plan-infrastructure:
+    name: Plan infrastructure
+    needs: build
     runs-on: ubuntu-latest
 
     # Sin las variables de arranque el pipeline no puede funcionar. Se omite en
@@ -101,7 +101,7 @@ jobs:
       TF_IN_AUTOMATION: 'true'
 
     outputs:
-      hay_cambios: ${{ steps.plan.outputs.hay_cambios }}
+      has_changes: ${{ steps.plan.outputs.has_changes }}
 
     steps:
       - uses: actions/checkout@v7
@@ -112,13 +112,13 @@ jobs:
           container: ${{ vars.TFSTATE_CONTAINER }}
           key: ${{ vars.TFSTATE_KEY }}
 
-      - name: Comprobar formato y validar
+      - name: Check formatting and validate
         working-directory: Deploy/infra
         run: |
           terraform fmt -check -recursive
           terraform validate
 
-      - name: Planificar
+      - name: Plan
         id: plan
         working-directory: Deploy/infra
         run: |
@@ -138,7 +138,7 @@ jobs:
             exit 1
           fi
 
-          echo "hay_cambios=$([ "$exit_code" = '2' ] && echo si || echo no)" >> "$GITHUB_OUTPUT"
+          echo "has_changes=$([ "$exit_code" = '2' ] && echo si || echo no)" >> "$GITHUB_OUTPUT"
 
           {
             echo '### Plan de infraestructura'
@@ -165,15 +165,15 @@ jobs:
   # -------------------------------------------------------------------------
   # 3 y 4. Revisar, aprobar y aplicar
   # -------------------------------------------------------------------------
-  aplicar-infraestructura:
-    name: Aplicar infraestructura
-    needs: planificar
+  apply-infrastructure:
+    name: Apply infrastructure
+    needs: plan-infrastructure
     runs-on: ubuntu-latest
 
-    # La parada de revisión: si el entorno 'produccion' tiene revisores
+    # La parada de revisión: si el entorno 'production' tiene revisores
     # requeridos, GitHub espera aquí una aprobación manual antes de continuar.
     # Es el equivalente a las aprobaciones de release de Azure DevOps.
-    environment: produccion
+    environment: production
 
     env:
       ARM_USE_OIDC: 'true'
@@ -197,11 +197,11 @@ jobs:
       TF_IN_AUTOMATION: 'true'
 
     outputs:
-      sql_server: ${{ steps.salidas.outputs.sql_server }}
-      sql_database: ${{ steps.salidas.outputs.sql_database }}
-      app_url: ${{ steps.salidas.outputs.app_url }}
-      registro: ${{ steps.salidas.outputs.registro }}
-      identidad: ${{ steps.salidas.outputs.identidad }}
+      sql_server: ${{ steps.collect.outputs.sql_server }}
+      sql_database: ${{ steps.collect.outputs.sql_database }}
+      app_url: ${{ steps.collect.outputs.app_url }}
+      registry: ${{ steps.collect.outputs.registry }}
+      identity: ${{ steps.collect.outputs.identity }}
 
     steps:
       - uses: actions/checkout@v7
@@ -217,31 +217,35 @@ jobs:
           name: tfplan
           path: Deploy/infra
 
-      - name: Aplicar el plan aprobado
+      # lock-timeout espera si otro apply tiene el estado tomado, en lugar de
+      # fallar al instante. Ojo con lo que NO resuelve: un lease abandonado
+      # —terraform muerto a media ejecucion— es infinito y esperar no lo libera;
+      # eso hay que romperlo a mano.
+      - name: Apply the approved plan
         working-directory: Deploy/infra
-        run: terraform apply -input=false -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve -lock-timeout=5m tfplan
 
-      - name: Recoger las salidas
-        id: salidas
+      - name: Collect the outputs
+        id: collect
         working-directory: Deploy/infra
         run: |
           {
             echo "sql_server=$(terraform output -raw sql_server_fqdn)"
             echo "sql_database=$(terraform output -raw sql_database_name)"
             echo "app_url=$(terraform output -raw app_url)"
-            echo "registro=$(terraform output -raw container_registry)"
-            echo "identidad=$(terraform output -raw app_identity_name)"
+            echo "registry=$(terraform output -raw container_registry)"
+            echo "identity=$(terraform output -raw app_identity_name)"
           } >> "$GITHUB_OUTPUT"
 
   # -------------------------------------------------------------------------
   # 5. Actualizar la base de datos
   # -------------------------------------------------------------------------
-  actualizar-base-de-datos:
-    name: Actualizar base de datos
-    needs: aplicar-infraestructura
-    if: inputs.solo_infraestructura != true
+  update-database:
+    name: Update database
+    needs: apply-infrastructure
+    if: inputs.infrastructure_only != true
     runs-on: ubuntu-latest
-    environment: produccion
+    environment: production
 
     steps:
       - uses: actions/checkout@v7
@@ -253,7 +257,7 @@ jobs:
       # Se autentica con la identidad de infraestructura porque es la que
       # Terraform ha dejado como administradora de Entra del servidor SQL. La
       # identidad de despliegue no puede aplicar migraciones, y es deliberado.
-      - name: Autenticarse en Azure
+      - name: Sign in to Azure
         uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_INFRA_CLIENT_ID }}
@@ -262,18 +266,18 @@ jobs:
 
       # El ejecutor de GitHub tiene IP pública variable, así que hay que abrirle
       # el cortafuegos justo para esta ejecución y cerrarlo después.
-      - name: Abrir el cortafuegos para el ejecutor
-        id: cortafuegos
+      - name: Open the firewall for the runner
+        id: firewall
         run: |
           ip=$(curl -s --max-time 10 https://api.ipify.org)
-          regla="pipeline-${{ github.run_id }}"
+          rule="pipeline-${{ github.run_id }}"
 
-          echo "regla=$regla" >> "$GITHUB_OUTPUT"
+          echo "rule=$rule" >> "$GITHUB_OUTPUT"
 
           az sql server firewall-rule create \
-            --resource-group "$GRUPO_RECURSOS" \
-            --server "$(echo '${{ needs.aplicar-infraestructura.outputs.sql_server }}' | cut -d. -f1)" \
-            --name "$regla" \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$(echo '${{ needs.apply-infrastructure.outputs.sql_server }}' | cut -d. -f1)" \
+            --name "$rule" \
             --start-ip-address "$ip" \
             --end-ip-address "$ip" \
             --output none
@@ -283,22 +287,22 @@ jobs:
       # Version fijada a la misma que los paquetes de EF del proyecto. Sin
       # fijarla se instala la ultima estable, que hoy coincide, pero saltaria
       # sola a EF 11 en cuanto se publique.
-      - name: Instalar la herramienta de EF
+      - name: Install the EF tool
         run: dotnet tool install --global dotnet-ef --version 10.0.11
 
       # Se compila aparte y la migracion se aplica con --no-build. Asi un fallo
       # de compilacion se distingue de un fallo al aplicar la migracion, en vez
       # de quedar los dos mezclados en el mismo paso.
-      - name: Compilar el proyecto de arranque
+      - name: Build the startup project
         run: dotnet build src/LegacyLens.Web --configuration Release
 
       # Authentication=Active Directory Default hace que el cliente pida un token
       # con la sesión de az que acabamos de abrir. Ninguna contraseña.
-      - name: Aplicar migraciones
+      - name: Apply migrations
         env:
           ConnectionStrings__DefaultConnection: >-
-            Server=tcp:${{ needs.aplicar-infraestructura.outputs.sql_server }},1433;
-            Database=${{ needs.aplicar-infraestructura.outputs.sql_database }};
+            Server=tcp:${{ needs.apply-infrastructure.outputs.sql_server }},1433;
+            Database=${{ needs.apply-infrastructure.outputs.sql_database }};
             Authentication=Active Directory Default;Encrypt=True;Connection Timeout=60;
         run: |
           dotnet ef database update \
@@ -308,7 +312,7 @@ jobs:
 
       # Version fijada: 'latest' haria que el pipeline cambiara de herramienta
       # sin que nadie lo decidiera.
-      - name: Instalar sqlcmd
+      - name: Install sqlcmd
         run: |
           curl -fsSL \
             https://github.com/microsoft/go-sqlcmd/releases/download/v1.10.0/sqlcmd-linux-amd64.tar.bz2 \
@@ -321,61 +325,61 @@ jobs:
       # Las banderas son las de compatibilidad de go-sqlcmd, y no coinciden con
       # lo que uno esperaría: la base de datos es --database-name y las
       # variables son --variables, en plural.
-      - name: Dar de alta la identidad de la aplicación
+      - name: Register the application identity
         env:
-          SERVIDOR: ${{ needs.aplicar-infraestructura.outputs.sql_server }}
-          BASE_DATOS: ${{ needs.aplicar-infraestructura.outputs.sql_database }}
-          IDENTIDAD: ${{ needs.aplicar-infraestructura.outputs.identidad }}
+          SERVER: ${{ needs.apply-infrastructure.outputs.sql_server }}
+          DATABASE: ${{ needs.apply-infrastructure.outputs.sql_database }}
+          IDENTITY: ${{ needs.apply-infrastructure.outputs.identity }}
         run: |
-          if ! salida=$(sqlcmd \
-            --server "$SERVIDOR" \
-            --database-name "$BASE_DATOS" \
+          if ! output=$(sqlcmd \
+            --server "$SERVER" \
+            --database-name "$DATABASE" \
             --authentication-method ActiveDirectoryDefault \
-            --variables APP_IDENTITY="$IDENTIDAD" \
-            --input-file Deploy/sql/conceder-acceso-identidad.sql \
+            --variables APP_IDENTITY="$IDENTITY" \
+            --input-file Deploy/sql/grant-identity-access.sql \
             --exit-on-error 2>&1); then
-            echo "$salida"
-            echo "::error::sqlcmd falló al dar de alta $IDENTIDAD."
+            echo "$output"
+            echo "::error::sqlcmd falló al dar de alta $IDENTITY."
             exit 1
           fi
 
-          echo "$salida"
+          echo "$output"
 
           # sqlcmd devuelve 0 aunque no consiga conectarse: --exit-on-error solo
           # cubre errores de T-SQL, no de conexión. Sin esta comprobación el paso
           # saldría verde sin haber concedido nada, y el fallo aparecería mucho
           # más tarde, al arrancar la aplicación.
-          if ! grep -q 'ALTA_CONFIRMADA' <<< "$salida"; then
-            echo "::error::La identidad $IDENTIDAD no quedó dada de alta en $BASE_DATOS."
+          if ! grep -q 'GRANT_CONFIRMED' <<< "$output"; then
+            echo "::error::La identidad $IDENTITY no quedó dada de alta en $DATABASE."
             exit 1
           fi
 
-          echo "Identidad $IDENTIDAD dada de alta con lectura y escritura."
+          echo "Identidad $IDENTITY dada de alta con lectura y escritura."
 
       # En always() para que el cortafuegos se cierre también si la migración
       # falla: dejarlo abierto sería peor que el fallo original.
-      - name: Cerrar el cortafuegos
-        if: always() && steps.cortafuegos.outputs.regla != ''
+      - name: Close the firewall
+        if: always() && steps.firewall.outputs.rule != ''
         run: |
           az sql server firewall-rule delete \
-            --resource-group "$GRUPO_RECURSOS" \
-            --server "$(echo '${{ needs.aplicar-infraestructura.outputs.sql_server }}' | cut -d. -f1)" \
-            --name "${{ steps.cortafuegos.outputs.regla }}" \
+            --resource-group "$RESOURCE_GROUP" \
+            --server "$(echo '${{ needs.apply-infrastructure.outputs.sql_server }}' | cut -d. -f1)" \
+            --name "${{ steps.firewall.outputs.rule }}" \
             --output none || echo "La regla ya no existía."
 
   # -------------------------------------------------------------------------
   # 6. Desplegar la web
   # -------------------------------------------------------------------------
-  desplegar-web:
-    name: Desplegar la web
-    needs: [aplicar-infraestructura, actualizar-base-de-datos]
+  deploy-web:
+    name: Deploy web
+    needs: [apply-infrastructure, update-database]
     runs-on: ubuntu-latest
-    environment: produccion
+    environment: production
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Autenticarse en Azure
+      - name: Sign in to Azure
         uses: azure/login@v3
         with:
           client-id: ${{ vars.AZURE_DEPLOY_CLIENT_ID }}
@@ -385,51 +389,51 @@ jobs:
       # az acr build construye dentro de Azure: el ejecutor no necesita
       # credenciales del registro ni subir capas por la red, y el registro sigue
       # con las credenciales de administrador desactivadas.
-      - name: Construir la imagen en Azure
-        id: imagen
+      - name: Build the image in Azure
+        id: image
         run: |
-          registro='${{ needs.aplicar-infraestructura.outputs.registro }}'
-          etiqueta="${GITHUB_SHA::12}"
+          registry='${{ needs.apply-infrastructure.outputs.registry }}'
+          tag="${GITHUB_SHA::12}"
 
           az acr build \
-            --registry "$(echo "$registro" | cut -d. -f1)" \
-            --image "$REPOSITORIO_IMAGEN:$etiqueta" \
-            --image "$REPOSITORIO_IMAGEN:latest" \
+            --registry "$(echo "$registry" | cut -d. -f1)" \
+            --image "$IMAGE_REPOSITORY:$tag" \
+            --image "$IMAGE_REPOSITORY:latest" \
             --file Dockerfile \
             .
 
-          echo "referencia=$registro/$REPOSITORIO_IMAGEN:$etiqueta" >> "$GITHUB_OUTPUT"
+          echo "reference=$registry/$IMAGE_REPOSITORY:$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Publicar la revisión
+      - name: Publish the revision
         run: |
           az containerapp update \
             --name "$CONTAINER_APP" \
-            --resource-group "$GRUPO_RECURSOS" \
-            --image '${{ steps.imagen.outputs.referencia }}' \
+            --resource-group "$RESOURCE_GROUP" \
+            --image '${{ steps.image.outputs.reference }}' \
             --output none
 
       # No basta con que az devuelva éxito: la revisión puede fallar al arrancar,
       # por ejemplo si no puede conectarse a la base de datos.
-      - name: Comprobar que responde
+      - name: Check it responds
         run: |
-          url='${{ needs.aplicar-infraestructura.outputs.app_url }}'
+          url='${{ needs.apply-infrastructure.outputs.app_url }}'
 
-          for intento in $(seq 1 20); do
+          for attempt in $(seq 1 20); do
             http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
 
             if [ "$http_code" = '200' ]; then
-              echo "La aplicación responde 200 en el intento $intento."
+              echo "La aplicación responde 200 en el intento $attempt."
               exit 0
             fi
 
-            echo "Intento $intento: $http_code. Esperando..."
+            echo "Intento $attempt: $http_code. Esperando..."
             sleep 15
           done
 
           echo "::error::La aplicación no respondió 200 tras 20 intentos."
           exit 1
 
-      - name: Resumen
+      - name: Summary
         if: always()
         run: |
           {
@@ -437,7 +441,7 @@ jobs:
             echo ''
             echo '| | |'
             echo '| --- | --- |'
-            echo "| URL | ${{ needs.aplicar-infraestructura.outputs.app_url }} |"
-            echo "| Imagen | \`${{ steps.imagen.outputs.referencia }}\` |"
+            echo "| URL | ${{ needs.apply-infrastructure.outputs.app_url }} |"
+            echo "| Imagen | \`${{ steps.image.outputs.reference }}\` |"
             echo "| Commit | \`${GITHUB_SHA::12}\` |"
           } >> "$GITHUB_STEP_SUMMARY"

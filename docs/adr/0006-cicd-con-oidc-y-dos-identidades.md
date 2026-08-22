@@ -63,7 +63,7 @@ como comentario. El `apply` usa **el fichero de plan guardado**, no uno nuevo.
   imagen desde el ejecutor.
 - El bloqueo del estado por *blob lease* impide que un `apply` del pipeline y otro de una
   máquina local se pisen.
-- El entorno `produccion` de GitHub permite exigir aprobación manual antes de tocar
+- El entorno `production` de GitHub permite exigir aprobación manual antes de tocar
   infraestructura o publicar una revisión, que es el equivalente de las aprobaciones de
   *release* de Azure DevOps.
 
@@ -91,11 +91,11 @@ como comentario. El `apply` usa **el fichero de plan guardado**, no uno nuevo.
   | Eje | Formas posibles |
   | --- | --- |
   | Identificador del repositorio | `repo:propietario/repo:…` o, con identificadores inmutables, `repo:propietario@1234/repo@5678:…` |
-  | Disparador del trabajo | `ref:refs/heads/main`, `pull_request` o `environment:produccion` |
+  | Disparador del trabajo | `ref:refs/heads/main`, `pull_request` o `environment:production` |
 
   Lo segundo es lo que menos se espera: **atar un trabajo a un `environment:` cambia el
   sujeto del token**. El trabajo de planificación, sin entorno, presentaba
-  `ref:refs/heads/main`; el de aplicar, con entorno, presentaba `environment:produccion`.
+  `ref:refs/heads/main`; el de aplicar, con entorno, presentaba `environment:production`.
   Con solo la primera credencial creada, el plan pasaba y el `apply` daba 401 en el mismo
   *commit*, que es un síntoma desconcertante.
 

@@ -1,4 +1,4 @@
-name: Preparar Terraform
+name: Prepare Terraform
 description: >-
   Instala Terraform e inicializa el backend remoto. Vive en Deploy/actions y no
   en .github porque las composite actions sí pueden estar en cualquier ruta, al
@@ -27,11 +27,29 @@ runs:
       with:
         terraform_version: ${{ inputs.version }}
 
-    - name: Inicializar el backend
+    - name: Initialise the backend
       shell: bash
       working-directory: Deploy/infra
       run: |
-        terraform init \
-          -backend-config="storage_account_name=${{ inputs.storage-account }}" \
-          -backend-config="container_name=${{ inputs.container }}" \
-          -backend-config="key=${{ inputs.key }}"
+        # terraform init sale a registry.terraform.io a resolver el proveedor, y
+        # un corte de red ahi tumba el despliegue completo. Ya paso una vez con
+        # «connection reset by peer»: no es un fallo del proyecto, asi que se
+        # reintenta en lugar de darlo por perdido.
+        #
+        # El fichero .terraform.lock.hcl fija la version y los hashes, asi que
+        # reintentar no puede traer un proveedor distinto al revisado.
+        for attempt in 1 2 3; do
+          if terraform init \
+            -backend-config="storage_account_name=${{ inputs.storage-account }}" \
+            -backend-config="container_name=${{ inputs.container }}" \
+            -backend-config="key=${{ inputs.key }}"; then
+            exit 0
+          fi
+
+          espera=$((attempt * 15))
+          echo "El intento $attempt de terraform init ha fallado. Reintento en ${espera}s."
+          sleep "$espera"
+        done
+
+        echo "::error::terraform init ha fallado tres veces."
+        exit 1

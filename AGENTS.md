@@ -58,6 +58,12 @@ El CI ejecuta exactamente esas comprobaciones. Si pasan en local, pasan en CI.
     `es-ES` es el idioma por omisión e `en` el alternativo.
   - **Mensajes de log: en español y sin localizar.** Decisión consciente del propietario del
     proyecto. Si algún día se quiere agregarlos o alertar sobre ellos, habrá que revisarla.
+  - **En los YAML de pipeline la regla es la misma, y es fácil olvidarla:** nombres de
+    trabajo, de paso, de salida, de entrada, de variable de entorno y de variable de shell
+    **en inglés**, incluido el `name:` que se ve en la interfaz de Actions. Los comentarios
+    siguen en español y los `echo` también, porque son log. El nombre del entorno de GitHub
+    cuenta como identificador: cambiarlo obliga a rehacer las credenciales federadas, cuyo
+    sujeto lo incluye.
   - El script de ejemplo `samples/legacy-erp.sql` está en español porque es **dato**, no
     código: representa un ERP heredado español y eso es parte del realismo del caso.
 - **Comentarios:** explican **por qué**, nunca qué. Si un comentario parafrasea la línea
