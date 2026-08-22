@@ -27,6 +27,18 @@ RUN dotnet restore src/LegacyLens.Web/LegacyLens.Web.csproj
 COPY src/ src/
 COPY samples/ samples/
 
+# assets/ contiene el logo, que el csproj enlaza a wwwroot con un glob. Sin esta
+# línea el glob no encuentra nada dentro del contenedor y el logo desaparece de
+# la imagen SIN NINGÚN ERROR: el publish termina bien, el CI pasa y el despliegue
+# sale verde. Solo se nota abriendo la aplicación y viendo un 404.
+#
+# Es la segunda vez que este Dockerfile se queda corto tras añadir algo al
+# repositorio, y las dos veces por lo mismo: copia carpetas concretas en lugar
+# del árbol entero. Se mantiene así a propósito, porque es lo que permite que la
+# capa de restauración se reutilice, pero cada carpeta nueva hay que añadirla
+# aquí y hay una comprobación en el CI que lo detecta si se olvida.
+COPY assets/ assets/
+
 # Sin --no-restore, y no es un descuido.
 #
 # El restore de arriba se ejecuta con solo los csproj presentes, que es lo que
