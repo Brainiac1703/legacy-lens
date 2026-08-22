@@ -10,7 +10,10 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["LegacyLens.Web.styles.css"]" />
     <ImportMap />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <!-- El SVG escala y es el que usarán los navegadores actuales; el png de
+         la plantilla se queda como reserva para los que no lo admiten. -->
+    <link rel="icon" type="image/svg+xml" href="logo.svg" />
+    <link rel="alternate icon" type="image/png" href="favicon.png" />
     <HeadOutlet />
 </head>
 

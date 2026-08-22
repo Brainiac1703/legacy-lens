@@ -22,6 +22,9 @@
     -->
     <!-- Glob y no una entrada por fichero: añadir un ejemplo no debe obligar a
          tocar el csproj, que es justo el tipo de paso que se olvida. -->
+    <!-- El logo vive una sola vez en assets/ y se enlaza a wwwroot. Copiarlo
+         sería la cuarta copia del mismo dibujo en el repositorio. -->
+    <Content Include="..\..\assets\logo*.svg" Link="wwwroot\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\samples\*.sql" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
