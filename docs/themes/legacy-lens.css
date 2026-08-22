@@ -1,0 +1,239 @@
+/* @theme legacy-lens */
+
+/*
+  Tema propio para las diapositivas del TFM.
+
+  El tema por defecto de Marp es texto negro sobre blanco y nada más, y en un
+  PDF de veinte páginas eso queda plano. Lo que se busca aquí no es decorar:
+  es dar jerarquía —que se vea de un golpe qué es título, qué es dato y qué es
+  la conclusión— y que la portada y los cierres de sección respiren.
+
+  Restricciones que se han respetado a propósito:
+
+    · Dos colores y un gris. Nada de degradados de tres tonos.
+    · Ningún recurso externo. Los fondos son SVG en línea como data URI, así
+      que el PDF se genera sin red y sin --allow-local-files para las imágenes.
+    · El cuerpo no baja de 22 px: esto se va a ver comprimido en un vídeo.
+*/
+
+@import 'default';
+
+:root {
+  --tinta: #1b2431;
+  --tinta-suave: #55606f;
+  --acento: #2b7a8c;
+  --acento-claro: #e8f1f4;
+  --aviso: #b4531f;
+  --linea: #d9dee4;
+
+  font-family: 'Segoe UI', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 23px;
+  color: var(--tinta);
+  padding: 56px 64px;
+}
+
+/* --- Jerarquía ---------------------------------------------------------- */
+
+h1 {
+  font-size: 1.9em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--tinta);
+}
+
+/* El filete a la izquierda del título es lo que más ordena la página: separa
+   el título del cuerpo sin necesidad de una línea horizontal que corte. */
+h2 {
+  font-size: 1.32em;
+  font-weight: 600;
+  color: var(--tinta);
+  border-left: 6px solid var(--acento);
+  padding-left: 16px;
+  margin-bottom: 0.9em;
+}
+
+h3 {
+  font-size: 1.08em;
+  font-weight: 600;
+  color: var(--acento);
+}
+
+h4, h5, h6 {
+  color: var(--tinta-suave);
+}
+
+strong { color: var(--tinta); font-weight: 650; }
+
+/* --- Tablas: son la mitad de esta presentación ------------------------- */
+
+table {
+  border-collapse: collapse;
+  font-size: 0.92em;
+  margin: 0.4em 0;
+}
+
+th {
+  background: var(--acento-claro);
+  color: var(--tinta);
+  font-weight: 650;
+  border: none;
+  border-bottom: 2px solid var(--acento);
+  padding: 0.5em 0.8em;
+  text-align: left;
+}
+
+td {
+  border: none;
+  border-bottom: 1px solid var(--linea);
+  padding: 0.45em 0.8em;
+}
+
+/* La última fila conserva borde: sin él la tabla parece recortada por abajo,
+   que es exactamente el aspecto que tenía antes de mirar el render. */
+tbody tr:last-child td { border-bottom: 2px solid var(--linea); }
+
+/* --- Citas: aquí van las frases que se quieren recordar ---------------- */
+
+blockquote {
+  border: none;
+  border-left: 4px solid var(--aviso);
+  background: #fdf6f1;
+  margin: 0.6em 0;
+  padding: 0.7em 1.1em;
+  font-style: normal;
+  color: var(--tinta);
+}
+
+blockquote::before, blockquote::after { content: none; }
+
+/* --- Código ------------------------------------------------------------ */
+
+code {
+  font-family: 'Cascadia Mono', Consolas, 'SF Mono', monospace;
+  font-size: 0.88em;
+  background: #f2f4f6;
+  color: #1f4d58;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+pre {
+  background: #f7f9fa;
+  border: 1px solid var(--linea);
+  border-left: 4px solid var(--acento);
+  border-radius: 4px;
+  font-size: 0.8em;
+}
+
+pre code { background: none; padding: 0; color: var(--tinta); }
+
+ul > li::marker { color: var(--acento); }
+
+/* --- Paginación y pie -------------------------------------------------- */
+
+section::after {
+  color: var(--tinta-suave);
+  font-size: 0.62em;
+  right: 40px;
+  bottom: 26px;
+}
+
+/*
+  Marca de agua discreta en todas las diapositivas menos las de portada y
+  sección: el logo pequeño abajo a la izquierda. Da continuidad sin robar
+  espacio, y es lo que hace que un PDF suelto siga pareciendo de alguien.
+*/
+section:not(.portada):not(.seccion)::before {
+  content: '';
+  position: absolute;
+  left: 40px;
+  bottom: 22px;
+  width: 22px;
+  height: 22px;
+  opacity: 0.5;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>\
+<circle cx='26' cy='26' r='18' fill='%23e8f1f4'/>\
+<g stroke='%232b7a8c' stroke-width='2.2' stroke-linecap='round'>\
+<line x1='17' y1='33' x2='26' y2='21'/><line x1='26' y1='21' x2='35' y2='31'/></g>\
+<g fill='%232b7a8c'><circle cx='17' cy='33' r='3.4'/><circle cx='26' cy='21' r='3.4'/>\
+<circle cx='35' cy='31' r='3.4'/></g>\
+<circle cx='26' cy='26' r='18' fill='none' stroke='%231b2431' stroke-width='4'/>\
+<line x1='39' y1='39' x2='55' y2='55' stroke='%231b2431' stroke-width='6' stroke-linecap='round'/>\
+</svg>");
+}
+
+/* --- Portada ----------------------------------------------------------- */
+
+/*
+  El fondo es el mismo grafo del logo, repetido muy tenue. Es sutil a
+  propósito: tiene que notarse que la página no está vacía, sin competir con
+  el título. Va como data URI para que el PDF no dependa de ficheros locales.
+*/
+section.portada {
+  background-color: #fbfcfd;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='430' height='360' viewBox='0 0 430 360'>\
+<g stroke='%232b7a8c' stroke-width='1.4' opacity='0.11' stroke-linecap='round'>\
+<line x1='60' y1='250' x2='170' y2='90'/><line x1='170' y1='90' x2='320' y2='200'/>\
+<line x1='60' y1='250' x2='320' y2='200'/><line x1='320' y1='200' x2='380' y2='305'/></g>\
+<g fill='%232b7a8c' opacity='0.15'><circle cx='60' cy='250' r='6'/>\
+<circle cx='170' cy='90' r='6'/><circle cx='320' cy='200' r='6'/>\
+<circle cx='380' cy='305' r='6'/></g></svg>");
+  background-position: top right;
+  justify-content: center;
+}
+
+section.portada h1 {
+  font-size: 2.9em;
+  margin-bottom: 0.1em;
+}
+
+section.portada h3 {
+  color: var(--tinta-suave);
+  font-weight: 400;
+  font-size: 1.15em;
+  margin-top: 0;
+}
+
+section.portada .marca {
+  position: absolute;
+  top: 52px;
+  right: 60px;
+  width: 104px;
+  height: 104px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>\
+<circle cx='26' cy='26' r='18' fill='%23e8f1f4'/>\
+<g stroke='%232b7a8c' stroke-width='2.2' stroke-linecap='round'>\
+<line x1='17' y1='33' x2='26' y2='21'/><line x1='26' y1='21' x2='35' y2='31'/></g>\
+<g fill='%232b7a8c'><circle cx='17' cy='33' r='3.4'/><circle cx='26' cy='21' r='3.4'/>\
+<circle cx='35' cy='31' r='3.4'/></g>\
+<circle cx='26' cy='26' r='18' fill='none' stroke='%231b2431' stroke-width='4'/>\
+<line x1='39' y1='39' x2='55' y2='55' stroke='%231b2431' stroke-width='6' stroke-linecap='round'/>\
+</svg>");
+}
+
+/* --- Diapositiva de sección: la frase que hay que recordar ------------- */
+
+section.seccion {
+  background: var(--tinta);
+  color: #f4f7f8;
+  justify-content: center;
+}
+
+section.seccion h1,
+section.seccion h2 {
+  color: #ffffff;
+  border: none;
+  padding-left: 0;
+  font-size: 1.75em;
+  line-height: 1.35;
+}
+
+section.seccion strong { color: #7ecbdc; }
+section.seccion::after { color: #6b7b8c; }

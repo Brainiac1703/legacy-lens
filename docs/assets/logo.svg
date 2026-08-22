@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="Legacy Lens">
+  <!--
+    Una lente y, dentro, un grafo de dependencias: tres nodos y dos aristas.
+
+    No es una lupa sobre líneas de código a propósito. Lo que hace el producto
+    no es leer texto, es sacar la estructura real del árbol sintáctico, y el
+    grafo es esa idea. El mango en diagonal es lo único que dice «lente» sin
+    tener que dibujar nada más.
+
+    Sin degradados ni sombras: tiene que leerse a 16 píxeles en una pestaña y a
+    pantalla completa en una diapositiva.
+  -->
+  <defs>
+    <clipPath id="lente">
+      <circle cx="26" cy="26" r="18" />
+    </clipPath>
+  </defs>
+
+  <!-- El interior de la lente, apenas teñido -->
+  <circle cx="26" cy="26" r="18" fill="#e8f1f4" />
+
+  <!-- El grafo, recortado por la lente -->
+  <g clip-path="url(#lente)" stroke="#2b7a8c" stroke-width="2.2" stroke-linecap="round">
+    <line x1="17" y1="33" x2="26" y2="21" />
+    <line x1="26" y1="21" x2="35" y2="31" />
+  </g>
+  <g clip-path="url(#lente)" fill="#2b7a8c">
+    <circle cx="17" cy="33" r="3.4" />
+    <circle cx="26" cy="21" r="3.4" />
+    <circle cx="35" cy="31" r="3.4" />
+  </g>
+
+  <!-- El aro y el mango -->
+  <circle cx="26" cy="26" r="18" fill="none" stroke="#1b2431" stroke-width="4" />
+  <line x1="39" y1="39" x2="55" y2="55" stroke="#1b2431" stroke-width="6"
+        stroke-linecap="round" />
+</svg>
