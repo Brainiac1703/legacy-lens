@@ -122,19 +122,28 @@ jobs:
         id: plan
         working-directory: Deploy/infra
         run: |
+          # Nombres de variable en ASCII: bash no admite acentos en un
+          # identificador, asi que "codigo=..." con tilde no era una asignacion
+          # sino un comando inexistente. El efecto era que este paso no podia
+          # fallar: terraform devolvia error y el trabajo salia verde.
           set +e
           terraform plan -no-color -input=false -out=tfplan -detailed-exitcode | tee plan.txt
-          código=${PIPESTATUS[0]}
+          exit_code=${PIPESTATUS[0]}
           set -e
 
-          if [ "$código" -eq 1 ]; then exit 1; fi
+          # 0 sin cambios, 2 con cambios, 1 error. Cualquier otro valor tambien
+          # se trata como fallo en lugar de darlo por bueno.
+          if [ "$exit_code" != '0' ] && [ "$exit_code" != '2' ]; then
+            echo "::error::terraform plan fallo con codigo $exit_code."
+            exit 1
+          fi
 
-          echo "hay_cambios=$([ "$código" -eq 2 ] && echo si || echo no)" >> "$GITHUB_OUTPUT"
+          echo "hay_cambios=$([ "$exit_code" = '2' ] && echo si || echo no)" >> "$GITHUB_OUTPUT"
 
           {
             echo '### Plan de infraestructura'
             echo ''
-            [ "$código" -eq 2 ] && echo 'Hay cambios pendientes de aplicar.' || echo 'Sin cambios.'
+            [ "$exit_code" = '2' ] && echo 'Hay cambios pendientes de aplicar.' || echo 'Sin cambios.'
             echo ''
             echo '<details><summary>Ver el plan</summary>'
             echo ''
@@ -269,8 +278,17 @@ jobs:
 
           echo "Cortafuegos abierto para $ip"
 
+      # Version fijada a la misma que los paquetes de EF del proyecto. Sin
+      # fijarla se instala la ultima estable, que hoy coincide, pero saltaria
+      # sola a EF 11 en cuanto se publique.
       - name: Instalar la herramienta de EF
-        run: dotnet tool install --global dotnet-ef
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+
+      # Se compila aparte y la migracion se aplica con --no-build. Asi un fallo
+      # de compilacion se distingue de un fallo al aplicar la migracion, en vez
+      # de quedar los dos mezclados en el mismo paso.
+      - name: Compilar el proyecto de arranque
+        run: dotnet build src/LegacyLens.Web --configuration Release
 
       # Authentication=Active Directory Default hace que el cliente pida un token
       # con la sesión de az que acabamos de abrir. Ninguna contraseña.
@@ -284,10 +302,7 @@ jobs:
           dotnet ef database update \
             --project src/LegacyLens.Persistence.EF \
             --startup-project src/LegacyLens.Web \
-            --no-build --configuration Release || \
-          dotnet ef database update \
-            --project src/LegacyLens.Persistence.EF \
-            --startup-project src/LegacyLens.Web
+            --no-build --configuration Release
 
       # Version fijada: 'latest' haria que el pipeline cambiara de herramienta
       # sin que nadie lo decidiera.
@@ -373,14 +388,14 @@ jobs:
           url='${{ needs.aplicar-infraestructura.outputs.app_url }}'
 
           for intento in $(seq 1 20); do
-            código=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
+            http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url" || echo 000)
 
-            if [ "$código" = '200' ]; then
+            if [ "$http_code" = '200' ]; then
               echo "La aplicación responde 200 en el intento $intento."
               exit 0
             fi
 
-            echo "Intento $intento: $código. Esperando..."
+            echo "Intento $intento: $http_code. Esperando..."
             sleep 15
           done
 
