@@ -117,9 +117,19 @@ jobs:
         working-directory: Deploy/infra
 
       # init sin backend: valida la sintaxis sin necesitar credenciales.
+      # Mismo reintento que en la accion de despliegue: el init consulta el
+      # registro de proveedores y un corte de red ahi no es un fallo del codigo.
       - name: Initialise
-        run: terraform init -backend=false
         working-directory: Deploy/infra
+        run: |
+          for attempt in 1 2 3; do
+            if terraform init -backend=false; then exit 0; fi
+            espera=$((attempt * 15))
+            echo "El intento $attempt de terraform init ha fallado. Reintento en ${espera}s."
+            sleep "$espera"
+          done
+          echo "::error::terraform init ha fallado tres veces."
+          exit 1
 
       - name: Validate
         run: terraform validate

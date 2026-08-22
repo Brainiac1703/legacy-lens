@@ -217,9 +217,13 @@ jobs:
           name: tfplan
           path: Deploy/infra
 
+      # lock-timeout espera si otro apply tiene el estado tomado, en lugar de
+      # fallar al instante. Ojo con lo que NO resuelve: un lease abandonado
+      # —terraform muerto a media ejecucion— es infinito y esperar no lo libera;
+      # eso hay que romperlo a mano.
       - name: Apply the approved plan
         working-directory: Deploy/infra
-        run: terraform apply -input=false -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve -lock-timeout=5m tfplan
 
       - name: Collect the outputs
         id: collect
