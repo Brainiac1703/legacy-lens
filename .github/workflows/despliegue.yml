@@ -74,7 +74,10 @@ jobs:
 
     # Sin las variables de arranque el pipeline no puede funcionar. Se omite en
     # lugar de fallar, para no dejar un aspa roja permanente en el repositorio.
-    if: vars.TFSTATE_STORAGE_ACCOUNT != '' && vars.AZURE_INFRA_CLIENT_ID != ''
+    if: >-
+      vars.TFSTATE_STORAGE_ACCOUNT != ''
+      && vars.AZURE_INFRA_CLIENT_ID != ''
+      && vars.SQL_ADMIN_OBJECT_ID != ''
 
     env:
       ARM_USE_OIDC: 'true'
@@ -84,6 +87,17 @@ jobs:
       ARM_ACCESS_KEY: ${{ secrets.TFSTATE_ACCESS_KEY }}
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_deploy_app: 'true'
+
+      # La identidad que administra el servidor SQL. Es la misma que aplica la
+      # infraestructura, porque es la que despues tiene que ejecutar las
+      # migraciones: el servidor no admite usuario y contrasena, solo Entra.
+      #
+      # object_id es el del service principal, no el del registro de aplicacion.
+      # Son distintos y usar el equivocado hace que Azure rechace el
+      # administrador sin explicar por que.
+      TF_VAR_sql_admin: >-
+        {"login":"${{ vars.SQL_ADMIN_LOGIN }}",
+         "object_id":"${{ vars.SQL_ADMIN_OBJECT_ID }}"}
       TF_IN_AUTOMATION: 'true'
 
     outputs:
@@ -160,6 +174,17 @@ jobs:
       ARM_ACCESS_KEY: ${{ secrets.TFSTATE_ACCESS_KEY }}
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_deploy_app: 'true'
+
+      # La identidad que administra el servidor SQL. Es la misma que aplica la
+      # infraestructura, porque es la que despues tiene que ejecutar las
+      # migraciones: el servidor no admite usuario y contrasena, solo Entra.
+      #
+      # object_id es el del service principal, no el del registro de aplicacion.
+      # Son distintos y usar el equivocado hace que Azure rechace el
+      # administrador sin explicar por que.
+      TF_VAR_sql_admin: >-
+        {"login":"${{ vars.SQL_ADMIN_LOGIN }}",
+         "object_id":"${{ vars.SQL_ADMIN_OBJECT_ID }}"}
       TF_IN_AUTOMATION: 'true'
 
     outputs:
