@@ -8,7 +8,7 @@ Autor: Nacho Tovar
 | Recurso | Enlace |
 | --- | --- |
 | Repositorio | https://github.com/Brainiac1703/legacy-lens |
-| Aplicación desplegada | _(pendiente: URL de Azure Container Apps)_ |
+| Aplicación desplegada | https://ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io |
 | Presentación | _(pendiente: URL de las slides)_ |
 | Vídeo explicativo | _(pendiente: URL del vídeo)_ |
 | Usuario de prueba | `demo@legacylens.dev` / `Demo.1234!` |
