@@ -29,7 +29,7 @@ El núcleo del producto, funcionando y desplegado.
 - Aplicación web con autenticación, progreso en tiempo real, grafos y exportación del
   paquete de documentación en Markdown.
 - Infraestructura como código, contenedor e integración continua.
-- 15 tests sobre la capa determinista.
+- 33 tests sobre la capa determinista: analizador, puntuación de riesgo y recorridos del grafo.
 
 **Criterio de aceptación (cumplido):** analizar `samples/legacy-erp.sql` de principio a fin
 y descargar un documento entregable, con la aplicación publicada en una URL pública.
@@ -188,7 +188,7 @@ pasó a ser una migración: quitar `xunit.runner.visualstudio` y `Microsoft.NET.
 activar la nueva experiencia de `dotnet test`. Hasta hacerla, el mayor de `xunit.v3` está
 bloqueado en `dependabot.yml` para no arrastrar una propuesta en rojo permanente.
 
-*Criterio de aceptación:* los 15 tests siguen pasando y el CI no necesita `--no-build` ni
+*Criterio de aceptación:* los 33 tests siguen pasando y el CI no necesita `--no-build` ni
 banderas de compatibilidad.
 
 ### 3.3 Pruebas de extremo a extremo
