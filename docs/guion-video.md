@@ -5,11 +5,13 @@ opcional.
 
 ## Antes de grabar (10 minutos de preparación que ahorran tres tomas)
 
-- [ ] Ejecuta el análisis del ejemplo **una vez antes de grabar**. Así la caché está
-      caliente y en la toma real no esperas a las llamadas al modelo. Deja ese análisis ya
-      hecho en «Mis análisis» como red de seguridad por si la demo en vivo falla.
+- [ ] Ejecuta el análisis de **los dos ejemplos una vez antes de grabar**. Así la caché está
+      caliente y en la toma real no esperas a las llamadas al modelo. Deja los dos análisis
+      hechos en «Mis análisis» como red de seguridad por si la demo en vivo falla.
 - [ ] Ten abiertas y ordenadas estas pestañas: la app desplegada, el repositorio en GitHub,
-      el fichero `samples/legacy-erp.sql` y `TSqlAnalyzerTests.cs`.
+      `samples/legacy-erp.sql`, `samples/legacy-almacen.sql` y `TSqlAnalyzerTests.cs`.
+- [ ] Deja el servidor MCP construido y dado de alta en tu cliente, con una sesión de agente
+      abierta y probada. Es la parte más frágil de la demo porque depende de otro programa.
 - [ ] Sube el zoom del navegador al 125 % y el del editor a un tamaño legible en vídeo.
       Lo que se lee bien en tu monitor no se lee en un vídeo comprimido.
 - [ ] Silencia notificaciones de Teams, Slack y correo.
@@ -25,14 +27,14 @@ Abre `samples/legacy-erp.sql` y baja hasta `usp_CerrarPedido`.
 > valida crédito, genera la factura, descuenta el stock. La lógica de negocio de la empresa
 > está aquí dentro, no en el código de la aplicación.
 >
-> Ahora imagina cuarenta y siete procedimientos como este, escritos hace quince años, sin
+> Ahora imagina cuarenta procedimientos como este, escritos hace quince años, sin
 > documentación, y que te piden migrarlos a .NET. El primer problema no es técnico: es que
 > nadie sabe qué hace este código ni por dónde se puede empezar sin romper producción.
 >
 > Eso hoy se resuelve con un consultor leyendo procedimientos a mano durante semanas. Legacy
 > Lens automatiza ese primer paso.»
 
-## 0:45 – 1:45 · La decisión de diseño
+## 0:45 – 1:40 · La decisión de diseño
 
 Ve a la página de inicio de la aplicación, al recuadro azul.
 
@@ -51,17 +53,18 @@ Ve a la página de inicio de la aplicación, al recuadro azul.
 > solo hace lo que un parser jamás podrá — entender la intención de negocio y proponer un
 > diseño — y lo hace ya alimentado con esos hechos verificados.»
 
-## 1:45 – 3:30 · La demo
+## 1:40 – 3:15 · La demo
 
-Pulsa **«Analizar el ejemplo»**. Deja que se vea el progreso.
+En la página de análisis hay dos ejemplos. Pulsa **«Analizar»** en el **ERP de facturación**.
+Deja que se vea el progreso.
 
 > «Fase uno, análisis estático: instantáneo. Fase dos, documentación: una llamada por
 > objeto, en paralelo. Fase tres, el plan de migración: una sola llamada.»
 
-Cuando termine, recorre las cuatro tarjetas del resumen.
+Cuando termine, recorre las tarjetas del resumen.
 
-> «Diecinueve objetos, veinte dependencias detectadas, y de los ocho objetos programables
-> tres están en riesgo alto.»
+> «Diecinueve objetos, veintiuna dependencias detectadas, y de los ocho objetos programables
+> uno está en riesgo alto. Ese es el que vamos a mirar.»
 
 **Pestaña Plan.** Lee el diagnóstico general y una fase.
 
@@ -72,7 +75,7 @@ Cuando termine, recorre las cuatro tarjetas del resumen.
 
 > «El color es el riesgo. Y estas aristas no son una opinión del modelo: salen del AST.»
 
-## 3:30 – 5:00 · El momento fuerte: riesgo explicable
+## 3:15 – 4:35 · El momento fuerte: riesgo explicable
 
 **Pestaña Objetos**, despliega `usp_CerrarPedido`.
 
@@ -99,53 +102,86 @@ Baja a `usp_InformeVentas`.
 > no se pueden conocer sin ejecutarlo. En lugar de fingir que la lista está completa, lo
 > dice. Un límite del análisis estático que hay que señalar, no disimular.»
 
-## 5:00 – 6:00 · Que no es una demo con truco
+## 4:35 – 5:00 · Que no mide siempre lo mismo
+
+Abre el análisis ya hecho del segundo ejemplo, **Almacén y expediciones**, y ve a
+`usp_ConsolidarExpediciones`.
+
+> «Con un solo ejemplo la herramienta parecería medir siempre lo mismo, así que hay un
+> segundo con la deuda en otro sitio. Aquí no hay **ni un solo cursor**.
+>
+> Es el proceso nocturno que nadie se atreve a tocar: cinco tablas temporales como etapas,
+> doce parámetros, la lógica repartida entre seis procedimientos que se llaman en cadena, y
+> once tablas tocadas sin transacción y sin manejo de errores. Riesgo 80, crítico, con siete
+> factores distintos.
+>
+> Mismo analizador, diagnóstico completamente distinto.»
+
+## 5:00 – 6:05 · Que no es una demo con truco
 
 Cambia a la terminal y ejecuta `dotnet test`.
 
-> «Quince tests sobre el analizador. Verifican que distingue lecturas de escrituras, que
-> detecta el SQL dinámico en sus dos formas, que no confunde `sp_executesql` con una llamada
-> a procedimiento, y que la suma de los factores de riesgo siempre cuadra con el total.
+> «Treinta y tres tests sobre las partes deterministas. Verifican que distingue lecturas de
+> escrituras, que detecta el SQL dinámico en sus dos formas, que no confunde `sp_executesql`
+> con una llamada a procedimiento, que la suma de los factores de riesgo cuadra con el total,
+> y que el recorrido del grafo aguanta ciclos: dos procedimientos que se llaman mutuamente
+> colgarían un recorrido ingenuo, y en un sistema heredado eso no es una rareza.
 >
 > Se puede testear con asserts precisamente porque esa parte es determinista. Es la otra cara
 > de la decisión de diseño del principio: al separar lo calculado de lo interpretado, la
 > mitad del sistema se vuelve verificable.»
 
-Ejecuta el arnés de evaluación, o abre `docs/evals/informe.md` si prefieres no esperar.
+Abre `docs/evals/informe.md`.
 
 > «Y para la otra mitad, la que genera el modelo, los asserts no sirven. Así que hay un arnés
 > de evaluación con un conjunto dorado: las reglas de negocio que **sé** que están en el
 > código, porque el script de ejemplo lo escribí yo.
 >
-> Mide tres cosas. Cobertura de reglas. Si advierte del SQL dinámico donde debe. Y objetos
-> inventados — y esta última se detecta **sola**: como el parser me da el inventario exacto
-> del esquema, cualquier objeto que el modelo mencione y no esté ahí es inventado por
-> definición. Sin juicio humano y sin otro modelo de juez. Es la decisión de arquitectura del
-> principio cobrando intereses.
+> Mide cobertura de reglas, si advierte del SQL dinámico donde debe, y objetos inventados — y
+> esta última se detecta **sola**: como el parser me da el inventario exacto del esquema,
+> cualquier objeto que el modelo mencione y no esté ahí es inventado por definición. Sin
+> juicio humano y sin otro modelo de juez.
 >
 > Y aquí me llevé una sorpresa. Yo había elegido el modelo económico para documentar por
 > coste, dando por hecho que perdía algo de calidad. Al medirlo, `gpt-4.1-mini` cubre el cien
 > por cien de las reglas y `gpt-4o` el ochenta y ocho: se dejó que el procedimiento crítico
 > puede dejar datos inconsistentes. El modelo pequeño documenta mejor.
 >
-> La explicación que me parece razonable es que, cuando los hechos ya van verificados en el
-> prompt, documentar no es una tarea de razonamiento: es redactar sin dejarse nada, y ahí la
-> verbosidad del modelo pequeño juega a favor.
->
 > Dicho con honestidad: es una ejecución por modelo y la medida es por presencia de términos.
-> No demuestro una ley universal. Pero he convertido una corazonada en un dato, y eso es
-> exactamente lo que no tenía antes.»
+> No demuestro una ley universal. Pero he convertido una corazonada en un dato.»
 
-Muestra el botón de descarga de documentación y abre el `.md` resultante.
+## 6:05 – 6:55 · El análisis dentro del agente
 
-> «Y el resultado es entregable: un documento Markdown con el plan, el grafo y una ficha por
-> objeto, listo para meter en el repositorio del cliente.»
+Cambia a tu cliente de agente, con el servidor MCP ya dado de alta.
 
-## 6:00 – 7:30 · Arquitectura e infraestructura
+> «Y esto es lo que más ha cambiado el proyecto. Todo lo que acabas de ver vive en una página
+> web, pero el trabajo real de migrar no se hace en una página web: se hace en un editor, con
+> un agente al lado que **no sabe nada del sistema heredado**.
+>
+> Así que el análisis se expone como servidor MCP.»
+
+Pide al agente algo concreto, por ejemplo: *«¿qué se rompe si cambio `usp_CerrarPedido`?»*
+
+> «Cuatro herramientas, que son las cuatro preguntas que uno se hace de verdad antes de tocar
+> un sistema heredado: qué hace esto, quién toca esta tabla, qué se rompe si lo cambio, y qué
+> habría que migrar antes.
+>
+> Y no gasta ni una llamada al modelo ni un recurso nuevo: lee la misma base de datos y
+> reutiliza las mismas consultas de la capa de aplicación que usa la web. El servidor no
+> tiene lógica; si la tuviera, estaría en el sitio equivocado.
+>
+> Deja de ser una herramienta que consultas y pasa a ser el contexto que tu agente tiene
+> mientras escribe la migración.»
+
+## 6:55 – 8:05 · Arquitectura e infraestructura
 
 Abre la estructura del repositorio.
 
-> «Cuatro proyectos. `Domain` no conoce a nadie. `Analysis` y `Ai` solo conocen a `Domain`.
+> «Siete proyectos, con las dependencias apuntando siempre hacia dentro. `Domain` no conoce a
+> nadie. `Application` tiene los casos de uso y los puertos, con CQRS sobre MediatR.
+> `Persistence`, `Analysis` y `Ai` son adaptadores que implementan esos puertos. La web solo
+> conoce `ISender`, y el servidor MCP tampoco conoce nada más.
+>
 > Y algo importante: **`Analysis` no depende de `Ai`**. Por eso, si Azure OpenAI se cae o no
 > está configurado, el análisis estático se sigue entregando y la aplicación sigue siendo
 > útil.»
@@ -153,51 +189,55 @@ Abre la estructura del repositorio.
 Abre `Deploy/infra/`.
 
 > «La infraestructura es Terraform: Azure OpenAI con sus dos despliegues de modelo, el
-> registro de contenedores y el Container App. Y no hay ni un secreto: la aplicación llama a
-> OpenAI y lee el registro con su identidad administrada, mediante asignaciones de rol.»
+> registro de contenedores, el Container App y la base de datos. Y no hay ni un secreto: la
+> aplicación llama a OpenAI, lee el registro y entra en la base de datos con su identidad
+> administrada.
+>
+> Eso último costó más de lo que parece. La identidad tuvo que pasar a ser asignada por el
+> usuario, y no por el sistema, porque una identidad de sistema no existe hasta que el
+> recurso está creado — y Azure no termina de crear el Container App hasta poder autenticarse
+> contra el registro, que necesita ese permiso. El ciclo se cierra y el despliegue se queda
+> esperando sin dar ningún error. Está contado en el ADR 0005.»
 
 Abre `variables.tf` en los dos modelos.
 
 > «Dos modelos con papeles distintos. Documentar cincuenta objetos es trabajo repetitivo y
 > de contexto corto, así que va con el modelo económico. El plan de migración es una sola
-> decisión que necesita ver el grafo entero, y ahí sí compensa el modelo capaz. Pagar el
-> grande cincuenta veces no habría mejorado el resultado, solo la factura.»
+> decisión que necesita ver el grafo entero, y ahí compensa el modelo capaz. Pagar el grande
+> cincuenta veces no habría mejorado el resultado, solo la factura.»
 
-## 7:30 – 8:30 · Cómo lo construí con IA
+## 8:05 – 8:45 · Cómo lo construí con IA
 
 > «Como es un máster de desarrollo con IA, digo también cómo se hizo.
 >
-> Delegué la exploración de la API del parser, que es enorme y verbosa, el script de ejemplo
-> y el código repetitivo de la interfaz. Decidí yo la separación entre lo determinista y lo
-> interpretado, el modelo de dominio y la elección de los dos modelos.
+> Delegué la exploración de la API del parser, que es enorme y verbosa, los scripts de
+> ejemplo y el código repetitivo de la interfaz. Decidí yo la separación entre lo determinista
+> y lo interpretado, el modelo de dominio y la elección de los dos modelos.
 >
-> Y hubo dos fallos que tuve que corregir a mano. El analizador perdía las funciones
-> escalares invocadas dentro de expresiones, porque no se llaman con `EXEC`. Y la primera
-> versión confundía «objetos a los que nadie llama» con «objetos que no llaman a nadie», que
-> son cosas distintas y llevan a órdenes de migración opuestos.
+> Y hubo fallos que tuve que corregir a mano. El analizador perdía las funciones escalares
+> invocadas dentro de expresiones, porque no se llaman con `EXEC`. La primera versión
+> confundía «objetos a los que nadie llama» con «objetos que no llaman a nadie», que llevan a
+> órdenes de migración opuestos. Y en el servidor MCP, los logs iban a la salida estándar,
+> que en ese protocolo **es el canal de mensajes**: el servidor no respondía y no había
+> ningún error que mirar.
 >
-> Ninguno de los dos lo detectó la IA. Los detectó el volcado de diagnóstico de los tests.
-> Esa es mi conclusión práctica del máster: la IA acelera muchísimo la parte mecánica, y los
-> tests siguen siendo lo que separa "compila" de "funciona".»
+> Ninguno de los tres lo detectó la IA. Los dos primeros los detectó el volcado de
+> diagnóstico de los tests, y el tercero, arrancar el servidor y hablarle. Esa es mi
+> conclusión práctica del máster: la IA acelera muchísimo la parte mecánica, y lo que separa
+> "compila" de "funciona" sigue siendo ejecutarlo.»
 
-## 8:30 – 8:50 · Que el proyecto continúa
+## 8:45 – 8:55 · Que el proyecto continúa
 
 Abre `docs/hoja-de-ruta.md`.
 
-> «Lo que entrego es el núcleo funcionando, y el resto está planificado, no olvidado.
+> «Durante el desarrollo se entregaron la fase uno —evaluación y DevSecOps— y el servidor MCP
+> de la fase dos. Lo que queda está planificado, no olvidado: RAG sobre el corpus, más
+> dialectos, observabilidad y análisis encolado.
 >
-> La siguiente fase es medir: un arnés de evaluación con un conjunto dorado, porque hoy la
-> mitad no determinista del sistema no se mide y quiero que la elección de los dos modelos
-> deje de ser un criterio razonable para ser un dato.
->
-> Y la fase dos es la que cambia la naturaleza del producto: exponer el análisis como
-> servidor MCP. Ahí Legacy Lens deja de ser una herramienta que consultas y pasa a ser el
-> contexto que tu agente tiene mientras escribe el código de la migración.
->
-> También hay cosas descartadas a propósito: microservicios, Kubernetes y fine-tuning. No son
-> pendientes, son decisiones, y están razonadas en el documento.»
+> Y hay cosas descartadas a propósito: microservicios, Kubernetes y fine-tuning. No son
+> pendientes, son decisiones, y están razonadas.»
 
-## 8:50 – 9:00 · Cierre
+## 8:55 – 9:00 · Cierre
 
 > «Legacy Lens no sustituye al arquitecto que decide la migración. Le ahorra las dos primeras
 > semanas de leer procedimientos a mano y le da un mapa con el que empezar a discutir.
@@ -211,6 +251,9 @@ Abre `docs/hoja-de-ruta.md`.
 - **No leas esto palabra por palabra.** Ten los puntos delante y habla.
 - **Si la demo en vivo falla, no la repares en cámara.** Di «tengo un análisis ya hecho» y
   abre el de «Mis análisis». Se ve profesional, no lo contrario.
+- **El tramo del MCP es el más frágil**, porque depende de otro programa y de una
+  configuración que vive fuera del repositorio. Si el agente no responde, no lo depures en
+  cámara: enseña la tabla de herramientas en las diapositivas y sigue.
 - **No prometas lo que no hace.** La sección de limitaciones del README es un punto a favor,
   no algo que esconder. Si mencionas el SQL dinámico como límite reconocido, ganas
   credibilidad.
