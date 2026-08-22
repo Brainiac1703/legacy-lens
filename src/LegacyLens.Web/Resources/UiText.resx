@@ -145,20 +145,29 @@
   <data name="Analyze_Retry" xml:space="preserve">
     <value>Volver a intentarlo</value>
   </data>
-  <data name="Analyze_SampleBody" xml:space="preserve">
-    <value>Una base de datos de ERP sintética que reproduce los patrones habituales de un sistema heredado: cursores, SQL dinámico, escrituras sin transacción y procedimientos encadenados.</value>
-  </data>
   <data name="Analyze_SampleButton" xml:space="preserve">
-    <value>Analizar el ejemplo</value>
+    <value>Analizar</value>
   </data>
   <data name="Analyze_SampleDownload" xml:space="preserve">
     <value>Descargar el script</value>
   </data>
+  <data name="Analyze_SamplesTitle" xml:space="preserve">
+    <value>O probar con un script de ejemplo</value>
+  </data>
+  <data name="Analyze_SampleErpName" xml:space="preserve">
+    <value>ERP de facturación</value>
+  </data>
+  <data name="Analyze_SampleErpBody" xml:space="preserve">
+    <value>Una base de datos de ERP sintética que reproduce los patrones habituales de un sistema heredado: cursores, SQL dinámico, escrituras sin transacción y procedimientos encadenados.</value>
+  </data>
+  <data name="Analyze_SampleWarehouseName" xml:space="preserve">
+    <value>Gestión de almacén y expediciones</value>
+  </data>
+  <data name="Analyze_SampleWarehouseBody" xml:space="preserve">
+    <value>Un perfil de deuda distinto, sin un solo cursor: un proceso nocturno por etapas con tablas temporales, doce parámetros y la lógica repartida entre seis procedimientos que se llaman en cadena, sin transacción ni manejo de errores.</value>
+  </data>
   <data name="Analyze_SampleMissing" xml:space="preserve">
     <value>No se encontró el script de ejemplo en el despliegue.</value>
-  </data>
-  <data name="Analyze_SampleTitle" xml:space="preserve">
-    <value>O probar con el script de ejemplo</value>
   </data>
   <data name="Analyze_Title" xml:space="preserve">
     <value>Analizar un script T-SQL</value>

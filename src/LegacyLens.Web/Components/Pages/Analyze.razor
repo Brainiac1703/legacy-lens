@@ -42,14 +42,23 @@
 
     <div class="card">
         <div class="card-body">
-            <h5 class="card-title">@L["Analyze_SampleTitle"]</h5>
-            <p class="card-text text-secondary">@L["Analyze_SampleBody"]</p>
-            <button class="btn btn-outline-primary" @onclick="RunSampleAsync" disabled="@running">
-                @L["Analyze_SampleButton"]
-            </button>
-            <a class="btn btn-link" href="/samples/legacy-erp.sql" download>
-                @L["Analyze_SampleDownload"]
-            </a>
+            <h5 class="card-title">@L["Analyze_SamplesTitle"]</h5>
+
+            @foreach (var sample in SampleScript.All)
+            {
+                <div class="border-top pt-3 mt-3">
+                    <h6>@L[sample.NameKey]</h6>
+                    <p class="card-text text-secondary">@L[sample.BodyKey]</p>
+                    <button class="btn btn-outline-primary"
+                            @onclick="() => RunSampleAsync(sample)"
+                            disabled="@running">
+                        @L["Analyze_SampleButton"]
+                    </button>
+                    <a class="btn btn-link" href="@($"/samples/{sample.FileName}")" download>
+                        @L["Analyze_SampleDownload"]
+                    </a>
+                </div>
+            }
         </div>
     </div>
 }
@@ -156,17 +165,15 @@
         }
     }
 
-    private async Task RunSampleAsync()
+    private async Task RunSampleAsync(SampleScript sample)
     {
-        var path = SampleScript.FullPath;
-
-        if (!File.Exists(path))
+        if (!File.Exists(sample.FullPath))
         {
             errors.Add(L["Analyze_SampleMissing"]);
             return;
         }
 
-        await RunAnalysisAsync(await File.ReadAllTextAsync(path), SampleScript.FileName);
+        await RunAnalysisAsync(await File.ReadAllTextAsync(sample.FullPath), sample.FileName);
     }
 
     /// <summary>
