@@ -290,7 +290,7 @@ legacy-lens/
 │   ├── LegacyLens.Mcp/            Servidor MCP. Solo traduce a MediatR, sin lógica.
 │   └── LegacyLens.Web/            Presentación. Solo ISender y composición de DI.
 │
-├── tests/LegacyLens.Analysis.Tests/  15 tests sobre el analizador
+├── tests/LegacyLens.Analysis.Tests/  33 tests sobre el analizador y el grafo
 ├── tools/LegacyLens.Evals/          Arnés de evaluación del modelo
 │
 ├── Deploy/
