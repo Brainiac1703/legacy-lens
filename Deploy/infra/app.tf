@@ -28,11 +28,17 @@ resource "azurerm_container_registry" "main" {
 resource "azurerm_container_app_environment" "main" {
   count = var.deploy_app ? 1 : 0
 
-  name                       = "cae-${var.project}-tfm"
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
+  name                = "cae-${var.project}-tfm"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  tags                = var.tags
+
+  # Los dos argumentos van juntos: enlazar el workspace sin declarar el destino
+  # hace que el proveedor rechace el recurso. Omitir logs_destination no
+  # significa "por defecto", significa "solo streaming, sin persistir".
+  # El plan no lo detecta porque la comprobacion esta en la creacion.
+  logs_destination           = "log-analytics"
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main[0].id
-  tags                       = var.tags
 }
 
 resource "azurerm_container_app" "main" {
