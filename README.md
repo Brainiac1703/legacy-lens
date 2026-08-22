@@ -1,3 +1,5 @@
+<img src="docs/assets/logo.svg" alt="" width="72" align="left" hspace="16" />
+
 # Legacy Lens
 
 **De un script de SQL Server heredado a documentación y un plan de migración.**

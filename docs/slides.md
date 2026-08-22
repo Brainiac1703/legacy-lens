@@ -1,6 +1,6 @@
 ---
 marp: true
-theme: default
+theme: legacy-lens
 paginate: true
 title: 'Legacy Lens — TFM Máster de Desarrollo con IA'
 ---
@@ -28,12 +28,43 @@ Presentación en formato Marp. Tres formas de usarla:
 Las notas del presentador van en comentarios HTML como este.
 -->
 
+<!-- _class: portada -->
+<!-- _paginate: false -->
+
+<div class="marca"></div>
+
 # Legacy Lens
 
 ### De un script de SQL Server heredado a documentación y un plan de migración
 
-**Nacho Tovar**
+**Nacho Tovar**<br>
 Trabajo de Fin de Máster — Máster de Desarrollo con IA
+
+---
+
+## Quién presenta esto
+
+**Nacho Tovar** — desarrollador senior en **Pronet-ISE**
+
+Trabajo a diario con **.NET, Azure, Terraform y Azure DevOps**, manteniendo y evolucionando
+productos propietarios de gestión empresarial.
+
+<br>
+
+### Por qué este proyecto y no otro
+
+Legacy Lens **no es un ejercicio**. Resuelve un problema que tengo delante: sistemas con la
+lógica de negocio enterrada en procedimientos almacenados que alguien va a pedir migrar.
+
+Quería un TFM que usara lo que sé hacer —arquitectura, cloud, infraestructura como código— y
+que además me obligara a lo que vine a aprender: **dónde encaja un modelo de lenguaje y,
+sobre todo, dónde no**.
+
+<!--
+Ajustar a gusto antes de exportar. Dos cosas que no invento y conviene añadir si
+se quieren: los años de experiencia y la formación. Y decidir si se nombran los
+productos concretos de la empresa o se dejan en genérico, como están ahora.
+-->
 
 ---
 
@@ -52,9 +83,7 @@ Hoy se resuelve con un consultor leyendo procedimientos a mano durante semanas.
 
 ---
 
-## La idea
-
-<br>
+<!-- _class: seccion -->
 
 # Lo que se puede saber con certeza, se **calcula**.
 
@@ -88,12 +117,12 @@ El parser es `Microsoft.SqlServer.TransactSql.ScriptDom`: el mismo que usa SSMS.
 
 Se le da un `.sql` generado con *Generate Scripts* de SSMS y devuelve:
 
-- **Inventario** de tablas, vistas, funciones, procedimientos y disparadores
-- **Grafo de dependencias** real: qué lee, qué escribe, a quién invoca
-- **Riesgo de migración** con el desglose completo de por qué
-- **Documentación** de cada objeto en lenguaje de negocio
-- **Plan de migración por fases** (patrón *strangler fig*)
-- Todo **exportable como Markdown**
+- 📋 **Inventario** de tablas, vistas, funciones, procedimientos y disparadores
+- 🔗 **Grafo de dependencias** real: qué lee, qué escribe, a quién invoca
+- ⚖️ **Riesgo de migración** con el desglose completo de por qué
+- 📝 **Documentación** de cada objeto en lenguaje de negocio
+- 🗺️ **Plan de migración por fases** (patrón *strangler fig*)
+- ⬇️ Todo **exportable como Markdown**
 
 ---
 
@@ -329,11 +358,11 @@ web, porque quien las recibe necesita saber en qué puede confiar sin verificar.
 
 ## Limitaciones reconocidas
 
-- **El SQL dinámico es un límite infranqueable** del análisis estático
-- **Afinidad de sesión**: `azurerm` no expone `stickySessions`; con una réplica no aplica,
+- ⛔ **El SQL dinámico es un límite infranqueable** del análisis estático
+- ⚠️ **Afinidad de sesión**: `azurerm` no expone `stickySessions`; con una réplica no aplica,
   pero hay que resolverlo antes de escalar
-- **Una réplica**: el circuito de Blazor Server tiene estado y escalar exige afinidad de sesión
-- **La documentación generada hay que revisarla**: es interpretación fundamentada, no
+- ⚠️ **Una réplica**: el circuito de Blazor Server tiene estado y escalar exige afinidad de sesión
+- 👁️ **La documentación generada hay que revisarla**: es interpretación fundamentada, no
   verdad demostrada
 
 ---
@@ -346,8 +375,8 @@ Resuelve un problema que tengo delante en el trabajo. Va a seguir.
 | --- | --- | --- |
 | **0** | Núcleo del producto | **Entregado** |
 | **1** | Evaluación de LLM, DevSecOps, coste visible | **Entregado** |
-| **2** | **Servidor MCP** | **Entregado** |
-| **2** | **RAG** vectorial, PL/SQL y Delphi | Planificado |
+| **2.1** | **Servidor MCP** | **Entregado** |
+| **2.2–2.4** | **RAG** vectorial, más dialectos, skills | Planificado |
 | **3** | OpenTelemetry, Playwright, PostgreSQL | Planificado |
 | **4** | Análisis encolado con patrón Outbox | Planificado |
 
@@ -373,12 +402,10 @@ empezar a discutir.
 
 <br>
 
-| | |
+| Recurso | Enlace |
 | --- | --- |
 | Repositorio | `github.com/Brainiac1703/legacy-lens` |
-| Aplicación | `https://ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io` |
+| Aplicación | `ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io` |
 | Usuario de prueba | `demo@legacylens.dev` / `Demo.1234!` |
 
-<br>
-
-### Gracias
+# Gracias

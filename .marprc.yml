@@ -1,0 +1,19 @@
+# Configuración de Marp para las diapositivas del TFM.
+#
+# options.markdown.breaks es la razón principal de que este fichero exista.
+# Marp Core lo trae en true, así que cada salto de línea del markdown se
+# convertía en un <br> y el texto salía cortado por donde estaba plegado el
+# fuente, no por donde toca: «...por gente / que ya no / trabaja allí».
+#
+# Ojo con el anidamiento: la clave va bajo options, que es lo que marp-cli pasa
+# al constructor del motor. En el nivel superior se lee sin error y no hace nada.
+#
+# Con breaks en false los párrafos se reflujan solos y el fuente puede seguir
+# plegado a 95 columnas, que es lo que lo hace legible al editarlo y en los diff.
+options:
+  markdown:
+    breaks: false
+
+# El tema propio vive en docs/themes. Sin esto habría que pasar --theme en cada
+# invocación y se acabaría generando el PDF con el tema por defecto sin querer.
+themeSet: docs/themes
