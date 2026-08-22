@@ -1,4 +1,4 @@
-name: Preparar Terraform
+name: Prepare Terraform
 description: >-
   Instala Terraform e inicializa el backend remoto. Vive en Deploy/actions y no
   en .github porque las composite actions sí pueden estar en cualquier ruta, al
@@ -27,7 +27,7 @@ runs:
       with:
         terraform_version: ${{ inputs.version }}
 
-    - name: Inicializar el backend
+    - name: Initialise the backend
       shell: bash
       working-directory: Deploy/infra
       run: |

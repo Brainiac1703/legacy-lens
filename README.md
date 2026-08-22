@@ -519,7 +519,7 @@ corporativa compartida—, no se le pueden asignar roles desde este proyecto y e
 tiene que autenticarse con clave. Está anotado como desviación consciente en el
 [ADR 0006](docs/adr/0006-cicd-con-oidc-y-dos-identidades.md).
 
-Si además configuras una regla de protección en el entorno `produccion`, GitHub exigirá
+Si además configuras una regla de protección en el entorno `production`, GitHub exigirá
 aprobación manual antes de tocar infraestructura o publicar una revisión — el equivalente a
 las aprobaciones de *release* de Azure DevOps.
 

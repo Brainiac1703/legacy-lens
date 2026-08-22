@@ -127,7 +127,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Componentes vulnerables | ✔ | Detectado y corregido `SQLitePCLRaw` con CVE conocido durante el desarrollo; ahora el CI lo impide de forma automática |
 | Costes y su control | ✔ | Coste estimado por análisis, desglosado por modelo, visible en la interfaz |
 | Validación de entradas | ◐ | Límite de tamaño y extensión en la subida; sin validación de contenido más profunda |
-| DevSecOps en el pipeline | ✔ | `.github/workflows/seguridad.yml`: CodeQL y comprobación de dependencias vulnerables que **falla la compilación**. `dependabot.yml` sobre NuGet, Actions, Terraform y Docker |
+| DevSecOps en el pipeline | ✔ | `.github/workflows/security.yml`: CodeQL y comprobación de dependencias vulnerables que **falla la compilación**. `dependabot.yml` sobre NuGet, Actions, Terraform y Docker |
 | Shift-left security | ✔ | El análisis de seguridad corre en cada *pull request*, no antes de desplegar |
 | Mapeo OWASP Top 10 explícito | ✔ | [`docs/seguridad.md`](seguridad.md), las diez categorías de la edición 2025 |
 | Logging y monitorización | ◐ | Logging estructurado; sin alertas |

@@ -80,7 +80,7 @@ argumento razonable para convertirse en una decisión medida.
 
 ### 1.2 DevSecOps en el pipeline — **ENTREGADO**
 
-`.github/workflows/seguridad.yml` con CodeQL y comprobación de dependencias vulnerables que
+`.github/workflows/security.yml` con CodeQL y comprobación de dependencias vulnerables que
 **falla la compilación**. `dependabot.yml` vigilando NuGet, Actions, Terraform y Docker.
 Mapeo completo de OWASP Top 10 2025 en [`seguridad.md`](seguridad.md).
 

@@ -46,7 +46,7 @@ param(
 
     # Debe coincidir con el 'environment:' de los trabajos de
     # despliegue.yml. Si se renombra alli, hay que renombrarlo aqui.
-    [string] $Environment = 'produccion'
+    [string] $Environment = 'production'
 )
 
 $ErrorActionPreference = 'Stop'

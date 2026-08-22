@@ -1,4 +1,4 @@
-name: Seguridad
+name: Security
 
 on:
   push:
@@ -26,12 +26,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Instalar .NET
+      - name: Install .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
-      - name: Inicializar CodeQL
+      - name: Initialise CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: csharp
@@ -39,25 +39,25 @@ jobs:
 
       # CodeQL necesita observar una compilación real para construir su base de
       # datos, así que aquí no vale con restaurar.
-      - name: Compilar
+      - name: Build
         run: dotnet build LegacyLens.slnx --configuration Release
 
-      - name: Analizar
+      - name: Analyse
         uses: github/codeql-action/analyze@v3
 
-  dependencias:
-    name: Dependencias vulnerables
+  dependencies:
+    name: Vulnerable dependencies
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v7
 
-      - name: Instalar .NET
+      - name: Install .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restaurar
+      - name: Restore
         run: dotnet restore LegacyLens.slnx
 
       # Falla la ejecución si aparece cualquier paquete con vulnerabilidad
@@ -68,18 +68,18 @@ jobs:
       # forma parte de ella para que aparezca en Visual Studio, y su SDK solo
       # existe dentro de Visual Studio. 'restore', 'build' y 'test' lo ignoran sin
       # problema, pero 'dotnet list package' intenta evaluarlo y falla.
-      - name: Buscar paquetes vulnerables
+      - name: Scan for vulnerable packages
         run: |
-          : > vulnerables.txt
+          : > vulnerable.txt
 
-          for proyecto in $(find src tests tools -name '*.csproj' | sort); do
-            echo "--- $proyecto" >> vulnerables.txt
-            dotnet list "$proyecto" package --vulnerable --include-transitive >> vulnerables.txt 2>&1
+          for project in $(find src tests tools -name '*.csproj' | sort); do
+            echo "--- $project" >> vulnerable.txt
+            dotnet list "$project" package --vulnerable --include-transitive >> vulnerable.txt 2>&1
           done
 
-          cat vulnerables.txt
+          cat vulnerable.txt
 
-          if grep -q -E "Crítica|Critical|Alta|High|Moderada|Moderate" vulnerables.txt; then
+          if grep -q -E "Crítica|Critical|Alta|High|Moderada|Moderate" vulnerable.txt; then
             echo "::error::Se han detectado dependencias con vulnerabilidades conocidas"
             exit 1
           fi
@@ -88,9 +88,9 @@ jobs:
 
       # Los paquetes obsoletos no rompen nada hoy, pero dejan de recibir
       # correcciones de seguridad. Se avisa sin fallar.
-      - name: Buscar paquetes obsoletos
+      - name: Scan for outdated packages
         continue-on-error: true
         run: |
-          for proyecto in $(find src tests tools -name '*.csproj' | sort); do
-            dotnet list "$proyecto" package --deprecated
+          for project in $(find src tests tools -name '*.csproj' | sort); do
+            dotnet list "$project" package --deprecated
           done

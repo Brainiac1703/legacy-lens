@@ -71,6 +71,6 @@ BEGIN
     -- Testigo para el pipeline. sqlcmd devuelve 0 aunque no consiga conectarse
     -- —-b solo cubre errores de T-SQL— asi que el paso comprueba que esta
     -- linea aparece en la salida. Si no aparece, no se concedio nada.
-    SELECT 'ALTA_CONFIRMADA' AS resultado;
+    SELECT 'GRANT_CONFIRMED' AS resultado;
 END
 GO
