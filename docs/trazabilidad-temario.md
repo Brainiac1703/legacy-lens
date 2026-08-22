@@ -76,7 +76,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 | Multi-proveedor | ◐ | La abstracción `IChatClient` lo permite; solo hay un proveedor conectado |
 | `AGENTS.md` / comportamiento del agente | ✔ | `AGENTS.md` en la raíz |
 | Skills y subagentes | ○ | Fase 2 |
-| **MCP (Model Context Protocol)** | ○ | **Fase 2**: exponer el análisis como servidor MCP |
+| **MCP (Model Context Protocol)** | ✔ | Servidor propio en `src/LegacyLens.Mcp` con cuatro herramientas sobre las consultas de la capa de aplicación. Transporte stdio, sin infraestructura añadida. [ADR 0008](adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md) |
 
 ## 06 · Calidad
 

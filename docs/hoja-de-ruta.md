@@ -109,7 +109,24 @@ inventarse una cifra.
 
 ## Fase 2 · Ampliar lo que la herramienta sabe hacer
 
-### 2.1 Servidor MCP
+### 2.1 Servidor MCP — **ENTREGADO**
+
+Implementado en [`src/LegacyLens.Mcp`](../src/LegacyLens.Mcp), con las cuatro herramientas
+previstas. Las consultas viven en la capa de aplicación y el recorrido del grafo en el
+dominio, con tests propios: el servidor solo traduce de MCP a MediatR. Decisión y
+consecuencias en el [ADR 0008](adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md).
+
+**Lo que enseñó implementarlo,** y ninguna de las tres se ve compilando: en transporte stdio
+la salida estándar es el canal del protocolo y un log ahí lo corrompe en silencio; la raíz de
+contenido no puede ser el directorio de trabajo, porque al servidor lo lanza el agente desde
+donde le conviene; y las enumeraciones serializadas como número dejan al modelo adivinando si
+una relación es lectura o escritura.
+
+Queda pendiente del alcance original el transporte HTTP, que exigiría resolver autenticación
+de verdad y no hay necesidad que lo pida.
+
+#### Alcance original
+
 
 Exponer el análisis como herramientas de Model Context Protocol, para que cualquier agente
 —Claude Code, Copilot, un agente propio— pueda consultar la base de conocimiento del

@@ -15,3 +15,4 @@ Formato: contexto, decisión, consecuencias y alternativas consideradas.
 | [0005](0005-identidad-administrada-sin-secretos.md) | Identidad administrada en lugar de claves | Aceptada |
 | [0006](0006-cicd-con-oidc-y-dos-identidades.md) | CI/CD con OIDC y dos identidades separadas | Aceptada |
 | [0007](0007-capas-cqrs-y-repositorios.md) | Separación en capas con CQRS y repositorios | Aceptada |
+| [0008](0008-servidor-mcp-sobre-la-capa-de-aplicacion.md) | Servidor MCP sobre la capa de aplicación | Aceptada |

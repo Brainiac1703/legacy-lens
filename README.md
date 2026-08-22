@@ -221,6 +221,46 @@ cd ..
 `deploy.ps1` construye la imagen **dentro de Azure** con `az acr build`, así que no hace
 falta autenticarse contra el registro ni subir la imagen desde casa.
 
+### 3.4 Servidor MCP: consultar el sistema heredado desde tu agente
+
+El análisis también se expone como servidor de **Model Context Protocol**, para que un agente
+—Claude Code, por ejemplo— pueda consultar el sistema heredado mientras escribe el código de
+la migración, sin abrir la aplicación web.
+
+```bash
+dotnet build src/LegacyLens.Mcp --configuration Release
+```
+
+Y en la configuración MCP del cliente:
+
+```json
+{
+  "mcpServers": {
+    "legacy-lens": {
+      "command": "ruta/al/repositorio/src/LegacyLens.Mcp/bin/Release/net10.0/legacy-lens-mcp.exe",
+      "env": {
+        "ConnectionStrings__DefaultConnection": "Server=localhost,14330;Database=LegacyLens;User Id=sa;Password=...;TrustServerCertificate=True",
+        "Mcp__OwnerEmail": "demo@legacylens.dev"
+      }
+    }
+  }
+}
+```
+
+Cuatro herramientas, que son las cuatro preguntas que uno se hace de verdad antes de tocar un
+sistema heredado:
+
+| Herramienta | Responde a |
+| --- | --- |
+| `list_analyses` | qué sistemas hay analizados |
+| `find_object` | qué hace esto, cuánto riesgo tiene y de qué depende |
+| `where_used` | quién toca esta tabla, y si la lee o la escribe |
+| `change_risk` | qué se rompe si lo cambio, y qué habría que migrar antes |
+
+El servidor **se ejecuta en local y no autentica a nadie**: lo lanza tu propio agente con las
+credenciales que le das, y está acotado a los análisis del correo configurado. No es un
+servicio desplegado, y la razón está en el [ADR 0008](docs/adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md).
+
 ---
 
 ## 4. Estructura del proyecto
@@ -234,6 +274,7 @@ legacy-lens/
 │   │   ├── Abstractions/          Los puertos: repositorio, analizador, IA
 │   │   ├── Analyses/              Comandos, queries, handlers y validadores
 │   │   ├── Common/Behaviours/     Log y validación en la pipeline de MediatR
+│   │   ├── Knowledge/            Consultas sobre el grafo, que usa el servidor MCP
 │   │   ├── Documentation/         Exportador a Markdown y grafos Mermaid
 │   │   └── Costing/               Precios y consumo por modelo
 │   │
@@ -246,6 +287,7 @@ legacy-lens/
 │   │
 │   ├── LegacyLens.Analysis/       Adaptador de parseo. Implementa ITSqlAnalyzer.
 │   ├── LegacyLens.Ai/             Adaptador de IA. Implementa IAiEnrichmentService.
+│   ├── LegacyLens.Mcp/            Servidor MCP. Solo traduce a MediatR, sin lógica.
 │   └── LegacyLens.Web/            Presentación. Solo ISender y composición de DI.
 │
 ├── tests/LegacyLens.Analysis.Tests/  15 tests sobre el analizador
