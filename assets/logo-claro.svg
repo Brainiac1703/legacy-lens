@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="Legacy Lens">
+  <!--
+    Variante para fondo oscuro. Es el mismo logo de logo.svg con el aro y el
+    mango invertidos: en la barra lateral de la aplicación, que es casi negra,
+    la tinta original desaparecía.
+
+    Si se cambia logo.svg hay que cambiar este también, y la copia en línea del
+    tema de las diapositivas. Son tres sitios y no hay forma de generarlos de
+    uno solo sin meter un paso de construcción que este proyecto no necesita.
+  -->
+  <defs>
+    <clipPath id="lente-claro">
+      <circle cx="26" cy="26" r="18" />
+    </clipPath>
+  </defs>
+
+  <circle cx="26" cy="26" r="18" fill="#0f2b33" />
+
+  <g clip-path="url(#lente-claro)" stroke="#7ecbdc" stroke-width="2.2" stroke-linecap="round">
+    <line x1="17" y1="33" x2="26" y2="21" />
+    <line x1="26" y1="21" x2="35" y2="31" />
+  </g>
+  <g clip-path="url(#lente-claro)" fill="#7ecbdc">
+    <circle cx="17" cy="33" r="3.4" />
+    <circle cx="26" cy="21" r="3.4" />
+    <circle cx="35" cy="31" r="3.4" />
+  </g>
+
+  <circle cx="26" cy="26" r="18" fill="none" stroke="#f4f7f8" stroke-width="4" />
+  <line x1="39" y1="39" x2="55" y2="55" stroke="#f4f7f8" stroke-width="6"
+        stroke-linecap="round" />
+</svg>

@@ -3,17 +3,17 @@ html, body {
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: #23636f;
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: #2b7a8c;
+    border-color: #23636f;
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #5aa8b8;
 }
 
 .content {
@@ -58,3 +58,36 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* ---------------------------------------------------------------------------
+   Estados y utilidades de la paleta del producto.
+
+   Los colores base están arriba, en las reglas que traía la plantilla: se
+   cambiaron ahí a propósito. Añadir un bloque nuevo más abajo no habría
+   funcionado, porque la plantilla fija background-color como propiedad directa
+   sobre .btn-primary y eso gana a cualquier variable de Bootstrap declarada
+   después. Lo comprobé del modo tonto: cambiándolo y viendo el botón azul.
+
+   Aquí queda solo lo que la plantilla no cubre.
+   --------------------------------------------------------------------------- */
+
+.btn-primary {
+    --bs-btn-hover-bg: #23636f;
+    --bs-btn-hover-border-color: #1c4f59;
+    --bs-btn-active-bg: #1c4f59;
+    --bs-btn-active-border-color: #1c4f59;
+    --bs-btn-disabled-bg: #2b7a8c;
+    --bs-btn-disabled-border-color: #23636f;
+}
+
+.btn-outline-primary {
+    --bs-btn-color: #2b7a8c;
+    --bs-btn-border-color: #2b7a8c;
+    --bs-btn-hover-bg: #2b7a8c;
+    --bs-btn-hover-border-color: #2b7a8c;
+    --bs-btn-active-bg: #23636f;
+    --bs-btn-active-border-color: #23636f;
+}
+
+.bg-primary { background-color: #2b7a8c !important; }
+.border-primary { border-color: #2b7a8c !important; }
+.text-primary { color: #2b7a8c !important; }
