@@ -46,9 +46,16 @@ public static class DemoDataSeeder
 
         var users = sp.GetRequiredService<UserManager<ApplicationUser>>();
 
+        // Los mensajes de abajo no incluyen el correo. Aquí es el del usuario de
+        // demostración, publicado en el README, así que registrarlo no filtraría
+        // nada — pero el patrón sí es malo: este método solo sabe que le han dado
+        // un correo, no de quién es, y basta reutilizarlo con datos reales para
+        // acabar volcando direcciones a un registro que suele guardarse más
+        // tiempo y con menos control que la base de datos. Tampoco aporta nada al
+        // diagnóstico: el correo ya está en la configuración.
         if (await users.FindByEmailAsync(email) is not null)
         {
-            logger.LogInformation("El usuario de demo {Email} ya existe", email);
+            logger.LogInformation("El usuario de demo ya existe");
             return;
         }
 
@@ -62,7 +69,7 @@ public static class DemoDataSeeder
         var result = await users.CreateAsync(user, password);
 
         if (result.Succeeded)
-            logger.LogInformation("Usuario de demo {Email} creado", email);
+            logger.LogInformation("Usuario de demo creado");
         else
             logger.LogError("No se pudo crear el usuario de demo: {Errores}",
                 string.Join("; ", result.Errors.Select(e => e.Description)));
