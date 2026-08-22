@@ -139,6 +139,17 @@ app.MapAdditionalIdentityEndpoints();
 
 // Cambio de idioma. Va como endpoint y no como componente porque cambiar la
 // cultura exige recargar: el circuito de Blazor ya se creó con la anterior.
+// La cookie de idioma se marca Secure salvo en desarrollo. No se usa
+// Request.IsHttps, que sería lo natural, por dos motivos: en producción la
+// aplicación no reconoce el TLS del proxy de Container Apps —hay un problema
+// abierto con las cabeceras reenviadas— así que IsHttps daría false justo donde
+// la marca importa; y en compose se sirve por HTTP, donde Secure a secas dejaría
+// el cambio de idioma sin funcionar y sin decir por qué.
+//
+// Con el entorno la decisión es determinista: producción es siempre HTTPS,
+// porque la entrada de Container Apps no admite otra cosa.
+var cookieSegura = !app.Environment.IsDevelopment();
+
 app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext http) =>
 {
     if (!culture.Equals("es-ES", StringComparison.OrdinalIgnoreCase) &&
@@ -155,7 +166,16 @@ app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext htt
         {
             Expires = DateTimeOffset.UtcNow.AddYears(1),
             IsEssential = true,
-            Path = "/"
+            Path = "/",
+            Secure = cookieSegura,
+
+            // El idioma no viaja en peticiones de otro sitio, así que no hay
+            // razón para que la cookie salga en ellas.
+            SameSite = SameSiteMode.Lax,
+
+            // Nada de JavaScript la necesita: la fija el servidor y la lee el
+            // proveedor de cultura, también en el servidor.
+            HttpOnly = true
         });
 
     // La ruta de vuelta tiene que ser local, o esto sería una redirección
