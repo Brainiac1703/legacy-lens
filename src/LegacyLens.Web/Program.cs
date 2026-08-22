@@ -4,6 +4,7 @@ using LegacyLens.Application;
 using LegacyLens.Application.Analyses;
 using LegacyLens.Persistence.EF;
 using LegacyLens.Persistence.EF.Entities;
+using LegacyLens.Web;
 using LegacyLens.Web.Components;
 using LegacyLens.Web.Components.Account;
 using MediatR;
@@ -171,6 +172,20 @@ app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext htt
 // El endpoint no construye el documento: solo traduce HTTP a una consulta y la
 // respuesta a un fichero. Generar el informe es trabajo de la capa de
 // aplicación, y así el mismo documento saldría igual desde una API o una CLI.
+// El script de ejemplo, para quien quiera contrastar el análisis con la
+// entrada. Es un endpoint y no un fichero estático porque así comparte la
+// resolución de ruta con el botón que lo analiza: se descarga exactamente lo
+// que se ha analizado, no una copia que podría divergir.
+app.MapGet("/samples/legacy-erp.sql", () =>
+    {
+        var path = SampleScript.FullPath;
+
+        return File.Exists(path)
+            ? Results.File(path, "text/plain; charset=utf-8", SampleScript.FileName)
+            : Results.NotFound();
+    })
+    .RequireAuthorization();
+
 app.MapGet("/analyses/{id:guid}/markdown", async (
         Guid id,
         ClaimsPrincipal user,

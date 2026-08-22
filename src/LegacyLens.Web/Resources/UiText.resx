@@ -151,6 +151,9 @@
   <data name="Analyze_SampleButton" xml:space="preserve">
     <value>Analizar el ejemplo</value>
   </data>
+  <data name="Analyze_SampleDownload" xml:space="preserve">
+    <value>Descargar el script</value>
+  </data>
   <data name="Analyze_SampleMissing" xml:space="preserve">
     <value>No se encontró el script de ejemplo en el despliegue.</value>
   </data>
