@@ -68,10 +68,14 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
+// DefaultSignInScheme apuntaba al esquema externo, que es lo que la plantilla
+// necesita para guardar la identidad que devuelve un proveedor externo. Al no
+// haber ningún proveedor, era configuración que solo despistaba. El inicio de
+// sesión con contraseña firma con el esquema de aplicación explícitamente, así
+// que no depende de este valor.
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
     .AddIdentityCookies();
 
