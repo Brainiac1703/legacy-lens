@@ -570,9 +570,23 @@ las aprobaciones de *release* de Azure DevOps.
 ### Idiomas
 
 La aplicación está en **español de España** por omisión y en **inglés** como alternativa. El
-selector está al final del menú lateral.
+selector está arriba a la derecha.
 
-Ningún texto que ve el usuario está escrito en el código: todo vive en ficheros de recursos.
+**En las páginas del producto, ningún texto que ve el usuario está escrito en el código:
+todo vive en ficheros de recursos.** El área de cuenta es distinta y conviene decirlo con
+precisión, porque viene del andamiaje de la plantilla de Identity y trae su propio texto en
+inglés incrustado.
+
+Están localizadas las pantallas que cualquiera va a ver: inicio de sesión, registro, la
+confirmación de la cuenta, y la cabecera y el menú de la gestión del perfil. Siguen en inglés
+las de flujos que un usuario de demostración no llega a abrir —doble factor, claves de acceso,
+recuperación de contraseña, datos personales— y las de error. Son unas 140 cadenas en 25
+componentes, y está en la hoja de ruta.
+
+Un límite que no se arregla con recursos: los mensajes de validación de esas páginas los
+genera `DataAnnotations` a partir de los atributos del modelo, así que salen en inglés aunque
+la etiqueta del campo esté traducida. Las páginas del producto no tienen ese problema porque
+validan con FluentValidation desde la capa de aplicación, que sí lee los recursos.
 
 | Recurso | Qué contiene |
 | --- | --- |
