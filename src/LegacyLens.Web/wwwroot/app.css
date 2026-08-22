@@ -91,3 +91,14 @@ h1:focus {
 .bg-primary { background-color: #2b7a8c !important; }
 .border-primary { border-color: #2b7a8c !important; }
 .text-primary { color: #2b7a8c !important; }
+
+/* El árbol lateral de la cuenta usa nav-pills, y Bootstrap le pone su azul en
+   la opción activa y en el texto de las demás. Son variables distintas de las
+   de los botones, así que la paleta de arriba no las tocaba: quedaba un azul
+   fuerte en medio de una página teal. */
+.nav-pills {
+    --bs-nav-pills-link-active-bg: #2b7a8c;
+    --bs-nav-pills-link-active-color: #fff;
+    --bs-nav-link-color: #23636f;
+    --bs-nav-link-hover-color: #1c4f59;
+}

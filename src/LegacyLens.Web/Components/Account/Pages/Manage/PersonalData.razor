@@ -5,24 +5,26 @@
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<UiText> L
 
-<PageTitle>Personal Data</PageTitle>
+<PageTitle>@L["Account_PersonalDataTitle"]</PageTitle>
 
 <StatusMessage />
-<h3>Personal Data</h3>
+<h3>@L["Account_PersonalDataTitle"]</h3>
 
 <div class="row">
     <div class="col-md-6">
-        <p>Your account contains personal data that you have given us. This page allows you to download or delete that data.</p>
+        <p>@L["Account_PersonalDataBody"]</p>
         <p>
-            <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+            <strong>@L["Account_PersonalDataWarning"]</strong>
         </p>
         <form action="Account/Manage/DownloadPersonalData" method="post">
             <AntiforgeryToken />
-            <button class="btn btn-primary" type="submit">Download</button>
+            <button class="btn btn-primary" type="submit">@L["Account_Download"]</button>
         </form>
         <p>
-            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">Delete</a>
+            <a href="Account/Manage/DeletePersonalData" class="btn btn-danger">@L["Account_Delete"]</a>
         </p>
     </div>
 </div>

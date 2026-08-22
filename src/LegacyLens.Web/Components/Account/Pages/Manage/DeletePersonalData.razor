@@ -8,16 +8,18 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<UiText> L
 
-<PageTitle>Delete Personal Data</PageTitle>
+<PageTitle>@L["Account_DeleteDataTitle"]</PageTitle>
 
-<StatusMessage Message="@message" />
+<StatusMessage Message="@message" IsError="true" />
 
-<h3>Delete Personal Data</h3>
+<h3>@L["Account_DeleteDataTitle"]</h3>
 
 <div class="alert alert-warning" role="alert">
     <p>
-        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
+        <strong>@L["Account_PersonalDataWarning"]</strong>
     </p>
 </div>
 
@@ -28,12 +30,12 @@
         @if (requirePassword)
         {
             <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
-                <label for="Input.Password" class="form-label">Password</label>
+                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="@L["Account_PasswordToConfirm"]" />
+                <label for="Input.Password" class="form-label">@L["Account_Password"]</label>
                 <ValidationMessage For="() => Input.Password" class="text-danger" />
             </div>
         }
-        <button class="w-100 btn btn-lg btn-danger" type="submit">Delete data and close my account</button>
+        <button class="w-100 btn btn-lg btn-danger" type="submit">@L["Account_DeleteDataButton"]</button>
     </EditForm>
 </div>
 
@@ -71,7 +73,7 @@
 
         if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
         {
-            message = "Error: Incorrect password.";
+            message = L["Account_WrongPassword"];
             return;
         }
 

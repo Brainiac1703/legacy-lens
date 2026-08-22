@@ -58,6 +58,11 @@ El CI ejecuta exactamente esas comprobaciones. Si pasan en local, pasan en CI.
     `es-ES` es el idioma por omisión e `en` el alternativo.
   - **Mensajes de log: en español y sin localizar.** Decisión consciente del propietario del
     proyecto. Si algún día se quiere agregarlos o alertar sobre ellos, habrá que revisarla.
+  - **Los tests son código, y sus nombres son identificadores: en inglés.** Es la parte
+    donde más se escurre, porque un nombre de test se lee como una frase y apetece
+    escribirla en el idioma en que se piensa. `The_nightly_process_is_the_riskiest_object`,
+    no `El_proceso_nocturno_es_el_objeto_de_mayor_riesgo`. Vale también para las variables
+    locales del test.
   - **En los YAML de pipeline la regla es la misma, y es fácil olvidarla:** nombres de
     trabajo, de paso, de salida, de entrada, de variable de entorno y de variable de shell
     **en inglés**, incluido el `name:` que se ve en la interfaz de Actions. Los comentarios

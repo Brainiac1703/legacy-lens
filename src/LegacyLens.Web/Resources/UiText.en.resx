@@ -58,6 +58,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Account_AddAuthenticator" xml:space="preserve">
+    <value>Add authenticator app</value>
+  </data>
+  <data name="Account_AddPasskey" xml:space="preserve">
+    <value>Add a passkey</value>
+  </data>
+  <data name="Account_AuthenticatorApp" xml:space="preserve">
+    <value>Authenticator app</value>
+  </data>
+  <data name="Account_BrowserForgotten" xml:space="preserve">
+    <value>This browser has been forgotten. Next time you log in from it you will be asked for your code.</value>
+  </data>
+  <data name="Account_CanGenerateCodes" xml:space="preserve">
+    <value>You can generate new codes.</value>
+  </data>
+  <data name="Account_ChangeEmail" xml:space="preserve">
+    <value>Change email</value>
+  </data>
+  <data name="Account_ChangePasswordTitle" xml:space="preserve">
+    <value>Change password</value>
+  </data>
   <data name="Account_CheckYourEmail" xml:space="preserve">
     <value>Check your email to confirm your account.</value>
   </data>
@@ -73,14 +94,53 @@
   <data name="Account_ConfirmLink" xml:space="preserve">
     <value>Click here to confirm your account</value>
   </data>
+  <data name="Account_ConfirmNewPassword" xml:space="preserve">
+    <value>Confirm new password</value>
+  </data>
   <data name="Account_ConfirmPassword" xml:space="preserve">
     <value>Confirm password</value>
+  </data>
+  <data name="Account_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Account_DeleteDataButton" xml:space="preserve">
+    <value>Delete my data and close my account</value>
+  </data>
+  <data name="Account_DeleteDataTitle" xml:space="preserve">
+    <value>Delete personal data</value>
+  </data>
+  <data name="Account_DeleteThisPasskey" xml:space="preserve">
+    <value>Remove this passkey from your account</value>
+  </data>
+  <data name="Account_Disable2fa" xml:space="preserve">
+    <value>Disable two-factor authentication</value>
+  </data>
+  <data name="Account_Download" xml:space="preserve">
+    <value>Download</value>
   </data>
   <data name="Account_Email" xml:space="preserve">
     <value>Email</value>
   </data>
+  <data name="Account_EmailChangeSent" xml:space="preserve">
+    <value>A link to confirm the change has been sent. Check your email.</value>
+  </data>
+  <data name="Account_EmailPlaceholder" xml:space="preserve">
+    <value>Your email</value>
+  </data>
+  <data name="Account_EmailUnchanged" xml:space="preserve">
+    <value>Your email is unchanged.</value>
+  </data>
+  <data name="Account_FewRecoveryCodes" xml:space="preserve">
+    <value>You have {0} recovery codes left.</value>
+  </data>
+  <data name="Account_ForgetBrowser" xml:space="preserve">
+    <value>Forget this browser</value>
+  </data>
   <data name="Account_ForgotPassword" xml:space="preserve">
     <value>Forgot your password?</value>
+  </data>
+  <data name="Account_GenerateCodesLink" xml:space="preserve">
+    <value>generate a new set of codes</value>
   </data>
   <data name="Account_InvalidLogin" xml:space="preserve">
     <value>The email or password is incorrect.</value>
@@ -97,29 +157,101 @@
   <data name="Account_LoginWithPasskey" xml:space="preserve">
     <value>Log in with a passkey</value>
   </data>
+  <data name="Account_ManageEmailTitle" xml:space="preserve">
+    <value>Manage email</value>
+  </data>
   <data name="Account_ManageSubtitle" xml:space="preserve">
     <value>Account settings</value>
   </data>
   <data name="Account_ManageTitle" xml:space="preserve">
     <value>Your account</value>
   </data>
+  <data name="Account_MaxPasskeys" xml:space="preserve">
+    <value>You have reached the maximum number of passkeys. Delete one before adding another.</value>
+  </data>
+  <data name="Account_MustAcceptPolicy" xml:space="preserve">
+    <value>You must accept the policy before enabling two-factor authentication.</value>
+  </data>
+  <data name="Account_MustGenerateCodes" xml:space="preserve">
+    <value>You must generate new codes before you can log in with one.</value>
+  </data>
+  <data name="Account_NewEmail" xml:space="preserve">
+    <value>New email</value>
+  </data>
+  <data name="Account_NewEmailHint" xml:space="preserve">
+    <value>Enter a new email</value>
+  </data>
+  <data name="Account_NewPassword" xml:space="preserve">
+    <value>New password</value>
+  </data>
+  <data name="Account_NewPasswordHint" xml:space="preserve">
+    <value>Enter the new password</value>
+  </data>
   <data name="Account_NoEmailSender" xml:space="preserve">
     <value>This application has no email service configured, so the confirmation link is shown here instead of being sent.</value>
+  </data>
+  <data name="Account_NoPasskeys" xml:space="preserve">
+    <value>You have no passkeys registered.</value>
+  </data>
+  <data name="Account_NoRecoveryCodes" xml:space="preserve">
+    <value>You have no recovery codes left.</value>
+  </data>
+  <data name="Account_OldPassword" xml:space="preserve">
+    <value>Current password</value>
+  </data>
+  <data name="Account_OldPasswordHint" xml:space="preserve">
+    <value>Enter your current password</value>
+  </data>
+  <data name="Account_OneRecoveryCode" xml:space="preserve">
+    <value>You have one recovery code left.</value>
   </data>
   <data name="Account_Or" xml:space="preserve">
     <value>or</value>
   </data>
+  <data name="Account_PasskeyBadId" xml:space="preserve">
+    <value>The passkey identifier has an invalid format.</value>
+  </data>
+  <data name="Account_PasskeyDeleted" xml:space="preserve">
+    <value>Passkey deleted.</value>
+  </data>
+  <data name="Account_PasskeyNotAdded" xml:space="preserve">
+    <value>The passkey could not be added to your account.</value>
+  </data>
+  <data name="Account_PasskeyNotDeleted" xml:space="preserve">
+    <value>The passkey could not be deleted.</value>
+  </data>
+  <data name="Account_PasskeyNotProvided" xml:space="preserve">
+    <value>The browser did not provide a passkey.</value>
+  </data>
   <data name="Account_Passkeys" xml:space="preserve">
     <value>Passkeys</value>
+  </data>
+  <data name="Account_PasskeysTitle" xml:space="preserve">
+    <value>Manage your passkeys</value>
   </data>
   <data name="Account_Password" xml:space="preserve">
     <value>Password</value>
   </data>
+  <data name="Account_PasswordChanged" xml:space="preserve">
+    <value>Password changed.</value>
+  </data>
   <data name="Account_PasswordPlaceholder" xml:space="preserve">
     <value>password</value>
   </data>
+  <data name="Account_PasswordToConfirm" xml:space="preserve">
+    <value>Enter your password to confirm</value>
+  </data>
   <data name="Account_PersonalData" xml:space="preserve">
     <value>Personal data</value>
+  </data>
+  <data name="Account_PersonalDataBody" xml:space="preserve">
+    <value>Your account holds personal data you gave us. From here you can download or delete it.</value>
+  </data>
+  <data name="Account_PersonalDataTitle" xml:space="preserve">
+    <value>Personal data</value>
+  </data>
+  <data name="Account_PersonalDataWarning" xml:space="preserve">
+    <value>Deleting this data permanently removes your account and cannot be undone.</value>
   </data>
   <data name="Account_PhoneNumber" xml:space="preserve">
     <value>Phone number</value>
@@ -129,6 +261,9 @@
   </data>
   <data name="Account_PhonePlaceholder" xml:space="preserve">
     <value>Enter your phone number</value>
+  </data>
+  <data name="Account_PolicyNotAccepted" xml:space="preserve">
+    <value>The privacy and cookie policy have not been accepted.</value>
   </data>
   <data name="Account_Profile" xml:space="preserve">
     <value>Profile</value>
@@ -151,14 +286,44 @@
   <data name="Account_RememberMe" xml:space="preserve">
     <value>Remember me</value>
   </data>
+  <data name="Account_Rename" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="Account_RenameThisPasskey" xml:space="preserve">
+    <value>Rename this passkey</value>
+  </data>
   <data name="Account_ResendConfirmation" xml:space="preserve">
     <value>Resend email confirmation</value>
+  </data>
+  <data name="Account_ResetAuthenticator" xml:space="preserve">
+    <value>Reset authenticator app</value>
+  </data>
+  <data name="Account_ResetRecoveryCodes" xml:space="preserve">
+    <value>Reset recovery codes</value>
   </data>
   <data name="Account_Save" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="Account_SendVerification" xml:space="preserve">
+    <value>Send verification email</value>
+  </data>
+  <data name="Account_SetUpAuthenticator" xml:space="preserve">
+    <value>Set up authenticator app</value>
+  </data>
+  <data name="Account_ShouldGenerateCodes" xml:space="preserve">
+    <value>You should generate new codes.</value>
+  </data>
   <data name="Account_TwoFactor" xml:space="preserve">
     <value>Two-factor authentication</value>
+  </data>
+  <data name="Account_TwoFactorTitle" xml:space="preserve">
+    <value>Two-factor authentication</value>
+  </data>
+  <data name="Account_UnnamedPasskey" xml:space="preserve">
+    <value>Unnamed passkey</value>
+  </data>
+  <data name="Account_UpdatePassword" xml:space="preserve">
+    <value>Update password</value>
   </data>
   <data name="Account_UserNotFound" xml:space="preserve">
     <value>No user was found with that email.</value>
@@ -168,6 +333,12 @@
   </data>
   <data name="Account_UsernamePlaceholder" xml:space="preserve">
     <value>Your username</value>
+  </data>
+  <data name="Account_VerificationSent" xml:space="preserve">
+    <value>Verification email sent. Check your inbox.</value>
+  </data>
+  <data name="Account_WrongPassword" xml:space="preserve">
+    <value>The password is incorrect.</value>
   </data>
   <data name="Analyses_BadgeDocumented" xml:space="preserve">
     <value>Documented</value>

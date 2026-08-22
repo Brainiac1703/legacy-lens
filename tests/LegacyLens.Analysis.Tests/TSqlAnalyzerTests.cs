@@ -32,7 +32,7 @@ public class TSqlAnalyzerTests
         _result.Objects.Single(o => o.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     [Fact]
-    public void Volcado_diagnostico()
+    public void Diagnostic_dump()
     {
         var sb = new StringBuilder();
         sb.AppendLine($"Errores de parseo: {_result.ParseErrors.Count}");
@@ -73,13 +73,13 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void Parsea_el_script_sin_errores()
+    public void Parses_the_script_without_errors()
     {
         Assert.Empty(_result.ParseErrors);
     }
 
     [Fact]
-    public void Detecta_todos_los_tipos_de_objeto()
+    public void Detects_every_object_kind()
     {
         Assert.Equal(10, _result.Objects.Count(o => o.Kind == SqlObjectKind.Table));
         Assert.Equal(1, _result.Objects.Count(o => o.Kind == SqlObjectKind.View));
@@ -89,45 +89,45 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void Distingue_lecturas_de_escrituras()
+    public void Tells_reads_from_writes()
     {
-        var cerrar = Object("usp_CerrarPedido");
+        var closeOrder = Object("usp_CerrarPedido");
 
-        var escrituras = _result.Dependencies
-            .Where(d => d.From == cerrar.FullName && d.Kind == DependencyKind.Writes)
+        var writes = _result.Dependencies
+            .Where(d => d.From == closeOrder.FullName && d.Kind == DependencyKind.Writes)
             .Select(d => d.To)
             .ToList();
 
-        Assert.Contains("dbo.Facturas", escrituras);
-        Assert.Contains("dbo.LineasFactura", escrituras);
-        Assert.Contains("dbo.Pedidos", escrituras);
-        Assert.Contains("dbo.Auditoria", escrituras);
+        Assert.Contains("dbo.Facturas", writes);
+        Assert.Contains("dbo.LineasFactura", writes);
+        Assert.Contains("dbo.Pedidos", writes);
+        Assert.Contains("dbo.Auditoria", writes);
 
-        var lecturas = _result.Dependencies
-            .Where(d => d.From == cerrar.FullName && d.Kind == DependencyKind.Reads)
+        var reads = _result.Dependencies
+            .Where(d => d.From == closeOrder.FullName && d.Kind == DependencyKind.Reads)
             .Select(d => d.To)
             .ToList();
 
         // Lee de LineasPedido y Clientes, pero nunca escribe en ellas.
-        Assert.Contains("dbo.LineasPedido", lecturas);
-        Assert.Contains("dbo.Clientes", lecturas);
-        Assert.DoesNotContain("dbo.LineasPedido", escrituras);
+        Assert.Contains("dbo.LineasPedido", reads);
+        Assert.Contains("dbo.Clientes", reads);
+        Assert.DoesNotContain("dbo.LineasPedido", writes);
     }
 
     [Fact]
-    public void Detecta_llamadas_entre_procedimientos()
+    public void Detects_calls_between_procedures()
     {
-        var llamadas = _result.Dependencies.Where(d => d.Kind == DependencyKind.Calls).ToList();
+        var calls = _result.Dependencies.Where(d => d.Kind == DependencyKind.Calls).ToList();
 
-        Assert.Contains(llamadas, d =>
+        Assert.Contains(calls, d =>
             d.From == "dbo.usp_CerrarPedido" && d.To == "dbo.usp_RegistrarMovimientoStock");
 
-        Assert.Contains(llamadas, d =>
+        Assert.Contains(calls, d =>
             d.From == "dbo.usp_FacturarPedidosPendientes" && d.To == "dbo.usp_CerrarPedido");
     }
 
     [Fact]
-    public void Detecta_funciones_escalares_usadas_en_expresiones()
+    public void Detects_scalar_functions_used_inside_expressions()
     {
         // La función no se invoca con EXEC, sino dentro de un SET. Sigue siendo
         // una dependencia real y tiene que estar en el grafo.
@@ -141,7 +141,7 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void No_confunde_funciones_del_motor_con_dependencias()
+    public void Does_not_mistake_builtin_functions_for_dependencies()
     {
         // El script usa GETDATE, COUNT, ISNULL, DATEDIFF, CAST y SUSER_SNAME.
         // Ninguna es un objeto del esquema.
@@ -151,7 +151,7 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void Detecta_cursores()
+    public void Detects_cursors()
     {
         Assert.Equal(1, Object("usp_CerrarPedido").Metrics.CursorCount);
         Assert.Equal(1, Object("usp_FacturarPedidosPendientes").Metrics.CursorCount);
@@ -159,7 +159,7 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void Detecta_sql_dinamico_en_sus_dos_formas()
+    public void Detects_dynamic_sql_in_both_forms()
     {
         // EXEC (@sql)
         Assert.True(Object("usp_InformeVentas").Metrics.DynamicSqlCount > 0);
@@ -169,50 +169,50 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void No_confunde_sp_executesql_con_una_llamada_a_procedimiento()
+    public void Does_not_mistake_sp_executesql_for_a_procedure_call()
     {
-        var purgar = Object("usp_PurgarAuditoria");
+        var purge = Object("usp_PurgarAuditoria");
 
         Assert.DoesNotContain(_result.Dependencies,
-            d => d.From == purgar.FullName && d.Kind == DependencyKind.Calls);
+            d => d.From == purge.FullName && d.Kind == DependencyKind.Calls);
     }
 
     [Fact]
-    public void Detecta_escrituras_sin_transaccion()
+    public void Detects_writes_outside_a_transaction()
     {
         // El procedimiento crítico: escribe en cuatro tablas sin transacción.
-        var cerrar = Object("usp_CerrarPedido");
-        Assert.True(cerrar.Metrics.WritesWithoutTransaction);
-        Assert.Contains(cerrar.Risk.Factors, f => f.Code == "NO_TRANSACTION");
+        var closeOrder = Object("usp_CerrarPedido");
+        Assert.True(closeOrder.Metrics.WritesWithoutTransaction);
+        Assert.Contains(closeOrder.Risk.Factors, f => f.Code == "NO_TRANSACTION");
 
         // El que está bien escrito no debe penalizarse.
-        var movimiento = Object("usp_RegistrarMovimientoStock");
-        Assert.False(movimiento.Metrics.WritesWithoutTransaction);
-        Assert.DoesNotContain(movimiento.Risk.Factors, f => f.Code == "NO_TRANSACTION");
+        var movement = Object("usp_RegistrarMovimientoStock");
+        Assert.False(movement.Metrics.WritesWithoutTransaction);
+        Assert.DoesNotContain(movement.Risk.Factors, f => f.Code == "NO_TRANSACTION");
     }
 
     [Fact]
-    public void Cuenta_tablas_temporales_sin_meterlas_en_el_grafo()
+    public void Counts_temp_tables_without_adding_them_to_the_graph()
     {
-        var recalcular = Object("usp_RecalcularTarifas");
+        var recalculate = Object("usp_RecalcularTarifas");
 
-        Assert.True(recalcular.Metrics.TempTableCount > 0);
+        Assert.True(recalculate.Metrics.TempTableCount > 0);
 
         Assert.DoesNotContain(_result.Dependencies, d => d.To.Contains('#'));
     }
 
     [Fact]
-    public void El_procedimiento_bien_escrito_puntua_menos_que_el_critico()
+    public void The_well_written_procedure_scores_lower_than_the_critical_one()
     {
-        var bueno = Object("usp_RegistrarMovimientoStock");
-        var critico = Object("usp_CerrarPedido");
+        var wellWritten = Object("usp_RegistrarMovimientoStock");
+        var critical = Object("usp_CerrarPedido");
 
-        Assert.True(bueno.Risk.Value < critico.Risk.Value,
-            $"bueno={bueno.Risk.Value} critico={critico.Risk.Value}");
+        Assert.True(wellWritten.Risk.Value < critical.Risk.Value,
+            $"wellWritten={wellWritten.Risk.Value} critical={critical.Risk.Value}");
     }
 
     [Fact]
-    public void Cada_punto_de_riesgo_tiene_su_justificacion()
+    public void Every_risk_point_carries_its_reason()
     {
         foreach (var o in _result.Objects.Where(o => o.Risk.Value > 0))
         {
@@ -222,7 +222,7 @@ public class TSqlAnalyzerTests
     }
 
     [Fact]
-    public void Identifica_hojas_puntos_de_entrada_y_nudos()
+    public void Identifies_leaves_entry_points_and_hubs()
     {
         // Hoja: no llama a nadie, así que se puede migrar de forma aislada.
         Assert.Contains(_result.Leaves, o => o.Name == "usp_RegistrarMovimientoStock");

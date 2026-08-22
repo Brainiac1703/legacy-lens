@@ -1,29 +1,57 @@
-﻿@if (!string.IsNullOrEmpty(DisplayMessage))
+﻿@if (!string.IsNullOrEmpty(TextoVisible))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="alert alert-@statusMessageClass" role="alert">
-        @DisplayMessage
+    <div class="alert alert-@(EsError ? "danger" : "success")" role="alert">
+        @TextoVisible
     </div>
 }
 
 @code {
-    private string? messageFromCookie;
+    private string? mensajeDeCookie;
+    private bool errorDeCookie;
 
     [Parameter]
     public string? Message { get; set; }
 
+    /// <summary>
+    /// Severidad del mensaje pasado por parámetro. La plantilla la deducía
+    /// comprobando si el texto empezaba por «Error», y eso deja de funcionar en
+    /// cuanto se traduce: «El correo o la contraseña no son correctos» no empieza
+    /// por Error, así que un fallo se pintaba en verde.
+    /// </summary>
+    [Parameter]
+    public bool IsError { get; set; }
+
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
 
-    private string? DisplayMessage => Message ?? messageFromCookie;
+    private string? TextoVisible => Message ?? mensajeDeCookie;
+
+    private bool EsError => Message is not null
+        ? IsError
+        : errorDeCookie;
 
     protected override void OnInitialized()
     {
-        messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
+        var crudo = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
 
-        if (messageFromCookie is not null)
+        if (crudo is not null)
         {
             HttpContext.Response.Cookies.Delete(IdentityRedirectManager.StatusCookieName);
+
+            // La cookie lleva la severidad en la primera letra: E de error, S de
+            // correcto. Las páginas que aún no se han localizado siguen pasando
+            // mensajes que empiezan por «Error», así que se mantiene esa lectura
+            // como respaldo en lugar de romperlas.
+            if (crudo.Length > 0 && (crudo[0] == 'E' || crudo[0] == 'S'))
+            {
+                errorDeCookie = crudo[0] == 'E';
+                mensajeDeCookie = crudo[1..];
+            }
+            else
+            {
+                errorDeCookie = crudo.StartsWith("Error", StringComparison.Ordinal);
+                mensajeDeCookie = crudo;
+            }
         }
     }
 }
