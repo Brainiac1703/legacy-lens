@@ -577,11 +577,14 @@ todo vive en ficheros de recursos.** El área de cuenta es distinta y conviene d
 precisión, porque viene del andamiaje de la plantilla de Identity y trae su propio texto en
 inglés incrustado.
 
-Están localizadas las pantallas que cualquiera va a ver: inicio de sesión, registro, la
-confirmación de la cuenta, y la cabecera y el menú de la gestión del perfil. Siguen en inglés
-las de flujos que un usuario de demostración no llega a abrir —doble factor, claves de acceso,
-recuperación de contraseña, datos personales— y las de error. Son unas 140 cadenas en 25
-componentes, y está en la hoja de ruta.
+Están localizadas las pantallas a las que se llega navegando: inicio de sesión, registro,
+confirmación de la cuenta, y toda la gestión del perfil —correo, contraseña, verificación en
+dos pasos, claves de acceso y datos personales— con su menú lateral.
+
+Siguen en inglés las que solo aparecen dentro de un flujo ya empezado o ante un error:
+recuperación de contraseña, entrada con segundo factor o con código de recuperación,
+configuración de la aplicación de autenticación, y las páginas de cuenta bloqueada, acceso
+denegado o enlace caducado. Son unas 90 cadenas en 19 componentes, y está en la hoja de ruta.
 
 Un límite que no se arregla con recursos: los mensajes de validación de esas páginas los
 genera `DataAnnotations` a partir de los atributos del modelo, así que salen en inglés aunque

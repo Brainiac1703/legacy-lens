@@ -35,7 +35,7 @@ public class WarehouseSampleTests
         _result.Objects.Single(o => o.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
 
     [Fact]
-    public void Volcado_diagnostico()
+    public void Diagnostic_dump()
     {
         var sb = new StringBuilder();
         sb.AppendLine($"Errores de parseo: {_result.ParseErrors.Count}");
@@ -59,13 +59,13 @@ public class WarehouseSampleTests
     }
 
     [Fact]
-    public void El_script_parsea_sin_errores()
+    public void The_script_parses_without_errors()
     {
         Assert.Empty(_result.ParseErrors);
     }
 
     [Fact]
-    public void Contiene_los_tipos_de_objeto_esperados()
+    public void Contains_the_expected_object_kinds()
     {
         Assert.Contains(_result.Objects, o => o.Kind == SqlObjectKind.Function);
         Assert.Contains(_result.Objects, o => o.Kind == SqlObjectKind.View);
@@ -74,50 +74,50 @@ public class WarehouseSampleTests
     }
 
     [Fact]
-    public void No_usa_cursores_a_proposito_para_diferenciarse_del_otro_ejemplo()
+    public void Uses_no_cursors_on_purpose_to_differ_from_the_other_sample()
     {
         Assert.All(_result.Objects, o => Assert.Equal(0, o.Metrics.CursorCount));
     }
 
     [Fact]
-    public void El_proceso_nocturno_dispara_los_factores_que_el_otro_ejemplo_no_tiene()
+    public void The_nightly_process_triggers_the_factors_the_other_sample_lacks()
     {
-        var codigos = Object("usp_ConsolidarExpediciones").Risk.Factors.Select(f => f.Code).ToList();
+        var codes = Object("usp_ConsolidarExpediciones").Risk.Factors.Select(f => f.Code).ToList();
 
-        Assert.Contains("TEMP_TABLES", codigos);
-        Assert.Contains("CHAINED_CALLS", codigos);
-        Assert.Contains("WIDE_SURFACE", codigos);
-        Assert.Contains("NO_ERROR_HANDLING", codigos);
-        Assert.Contains("NO_TRANSACTION", codigos);
+        Assert.Contains("TEMP_TABLES", codes);
+        Assert.Contains("CHAINED_CALLS", codes);
+        Assert.Contains("WIDE_SURFACE", codes);
+        Assert.Contains("NO_ERROR_HANDLING", codes);
+        Assert.Contains("NO_TRANSACTION", codes);
     }
 
     [Fact]
-    public void El_proceso_nocturno_es_el_objeto_de_mayor_riesgo()
+    public void The_nightly_process_is_the_riskiest_object()
     {
-        var mayor = _result.Objects.OrderByDescending(o => o.Risk.Value).First();
+        var riskiest = _result.Objects.OrderByDescending(o => o.Risk.Value).First();
 
-        Assert.Equal("usp_ConsolidarExpediciones", mayor.Name);
-        Assert.Equal(RiskLevel.Critical, mayor.Risk.Level);
+        Assert.Equal("usp_ConsolidarExpediciones", riskiest.Name);
+        Assert.Equal(RiskLevel.Critical, riskiest.Risk.Level);
     }
 
     [Fact]
-    public void La_funcion_de_peso_es_una_hoja_del_grafo()
+    public void The_weight_function_is_a_graph_leaf()
     {
         // No llama a nada, así que es candidata natural a migrar primero.
         Assert.Contains(_result.Leaves, o => o.Name == "fn_PesoVolumetrico");
     }
 
     [Fact]
-    public void La_cadena_de_llamadas_tiene_profundidad_real()
+    public void The_call_chain_has_real_depth()
     {
         // Consolidar -> Reservar -> RegistrarMovimiento son tres niveles, y es el
         // patrón que este ejemplo quiere representar: lógica repartida.
-        var alcance = DependencyGraph.TransitiveClosure(
+        var reach = DependencyGraph.TransitiveClosure(
             _result.Dependencies,
             "dbo.usp_ConsolidarExpediciones",
             DependencyGraph.Direction.Downstream);
 
-        Assert.Contains("dbo.usp_ReservarStock", alcance);
-        Assert.Contains("dbo.usp_RegistrarMovimiento", alcance);
+        Assert.Contains("dbo.usp_ReservarStock", reach);
+        Assert.Contains("dbo.usp_RegistrarMovimiento", reach);
     }
 }

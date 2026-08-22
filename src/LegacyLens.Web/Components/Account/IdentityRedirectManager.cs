@@ -36,9 +36,19 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
         RedirectTo(newUri);
     }
 
-    public void RedirectToWithStatus(string uri, string message, HttpContext context)
+    /// <summary>
+    /// La severidad viaja como una letra al principio de la cookie —E de error,
+    /// S de correcto— y no se deduce del texto.
+    ///
+    /// La plantilla la deducía comprobando si el mensaje empezaba por «Error».
+    /// Eso deja de funcionar en cuanto los mensajes se traducen: «No se pudo
+    /// guardar el teléfono» no empieza por Error, así que un fallo se pintaba en
+    /// verde. La letra es invariante y no la ve nadie: se quita al leerla.
+    /// </summary>
+    public void RedirectToWithStatus(string uri, string message, HttpContext context, bool isError = false)
     {
-        context.Response.Cookies.Append(StatusCookieName, message, StatusCookieBuilder.Build(context));
+        var conMarca = (isError ? 'E' : 'S') + message;
+        context.Response.Cookies.Append(StatusCookieName, conMarca, StatusCookieBuilder.Build(context));
         RedirectTo(uri);
     }
 
@@ -46,9 +56,9 @@ internal sealed class IdentityRedirectManager(NavigationManager navigationManage
 
     public void RedirectToCurrentPage() => RedirectTo(CurrentPath);
 
-    public void RedirectToCurrentPageWithStatus(string message, HttpContext context)
-        => RedirectToWithStatus(CurrentPath, message, context);
+    public void RedirectToCurrentPageWithStatus(string message, HttpContext context, bool isError = false)
+        => RedirectToWithStatus(CurrentPath, message, context, isError);
 
     public void RedirectToInvalidUser(UserManager<ApplicationUser> userManager, HttpContext context)
-        => RedirectToWithStatus("Account/InvalidUser", $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
+        => RedirectToWithStatus("Account/InvalidUser", $"No se pudo cargar el usuario '{userManager.GetUserId(context.User)}'.", context, isError: true);
 }

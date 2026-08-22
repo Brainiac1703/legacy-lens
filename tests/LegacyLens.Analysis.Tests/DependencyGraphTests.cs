@@ -15,7 +15,7 @@ public class DependencyGraphTests
     //   Informe -> Facturar -> CalcularIva -> Config
     //                       -> Auditar -----> Facturar   (ciclo)
     //   Pantalla -> Facturar
-    private static readonly Dependency[] Grafo =
+    private static readonly Dependency[] Graph =
     [
         new("dbo.Informe", "dbo.Facturar", DependencyKind.Calls),
         new("dbo.Pantalla", "dbo.Facturar", DependencyKind.Calls),
@@ -27,103 +27,103 @@ public class DependencyGraphTests
     ];
 
     [Fact]
-    public void Vecinos_directos_hacia_abajo_son_lo_que_el_objeto_necesita()
+    public void Direct_downstream_neighbours_are_what_the_object_needs()
     {
-        var vecinos = DependencyGraph.DirectNeighbours(
-            Grafo, "dbo.Facturar", DependencyGraph.Direction.Downstream);
+        var neighbours = DependencyGraph.DirectNeighbours(
+            Graph, "dbo.Facturar", DependencyGraph.Direction.Downstream);
 
-        Assert.Equal(3, vecinos.Count);
-        Assert.Contains(vecinos, d => d.To == "dbo.CalcularIva" && d.Kind == DependencyKind.Calls);
-        Assert.Contains(vecinos, d => d.To == "dbo.Facturas" && d.Kind == DependencyKind.Writes);
+        Assert.Equal(3, neighbours.Count);
+        Assert.Contains(neighbours, d => d.To == "dbo.CalcularIva" && d.Kind == DependencyKind.Calls);
+        Assert.Contains(neighbours, d => d.To == "dbo.Facturas" && d.Kind == DependencyKind.Writes);
     }
 
     [Fact]
-    public void Vecinos_directos_hacia_arriba_son_quien_lo_usa()
+    public void Direct_upstream_neighbours_are_who_uses_it()
     {
-        var vecinos = DependencyGraph.DirectNeighbours(
-            Grafo, "dbo.Facturar", DependencyGraph.Direction.Upstream);
+        var neighbours = DependencyGraph.DirectNeighbours(
+            Graph, "dbo.Facturar", DependencyGraph.Direction.Upstream);
 
-        Assert.Equal(3, vecinos.Count);
-        Assert.All(vecinos, d => Assert.Equal("dbo.Facturar", d.To));
+        Assert.Equal(3, neighbours.Count);
+        Assert.All(neighbours, d => Assert.Equal("dbo.Facturar", d.To));
     }
 
     [Fact]
-    public void El_filtro_por_tipo_de_relacion_descarta_las_demas()
+    public void Filtering_by_dependency_kind_discards_the_rest()
     {
-        var escrituras = DependencyGraph.DirectNeighbours(
-            Grafo, "dbo.Facturar", DependencyGraph.Direction.Downstream, DependencyKind.Writes);
+        var writes = DependencyGraph.DirectNeighbours(
+            Graph, "dbo.Facturar", DependencyGraph.Direction.Downstream, DependencyKind.Writes);
 
-        Assert.Single(escrituras);
-        Assert.Equal("dbo.Facturas", escrituras[0].To);
+        Assert.Single(writes);
+        Assert.Equal("dbo.Facturas", writes[0].To);
     }
 
     [Fact]
-    public void El_nombre_no_distingue_mayusculas()
+    public void Name_matching_ignores_case()
     {
-        var vecinos = DependencyGraph.DirectNeighbours(
-            Grafo, "DBO.FACTURAR", DependencyGraph.Direction.Downstream);
+        var neighbours = DependencyGraph.DirectNeighbours(
+            Graph, "DBO.FACTURAR", DependencyGraph.Direction.Downstream);
 
-        Assert.Equal(3, vecinos.Count);
+        Assert.Equal(3, neighbours.Count);
     }
 
     [Fact]
-    public void El_cierre_transitivo_hacia_arriba_es_el_radio_de_impacto()
+    public void Upstream_transitive_closure_is_the_impact_radius()
     {
-        var afectados = DependencyGraph.TransitiveClosure(
-            Grafo, "dbo.CalcularIva", DependencyGraph.Direction.Upstream);
+        var affected = DependencyGraph.TransitiveClosure(
+            Graph, "dbo.CalcularIva", DependencyGraph.Direction.Upstream);
 
         // Cambiar CalcularIva puede romper a quien lo llama, y a quien llama a
         // aquel, hasta los puntos de entrada.
-        Assert.Contains("dbo.Facturar", afectados);
-        Assert.Contains("dbo.Informe", afectados);
-        Assert.Contains("dbo.Pantalla", afectados);
-        Assert.Contains("dbo.Auditar", afectados);
+        Assert.Contains("dbo.Facturar", affected);
+        Assert.Contains("dbo.Informe", affected);
+        Assert.Contains("dbo.Pantalla", affected);
+        Assert.Contains("dbo.Auditar", affected);
     }
 
     [Fact]
-    public void El_objeto_de_partida_no_se_incluye_en_su_propio_cierre()
+    public void The_starting_object_is_not_part_of_its_own_closure()
     {
-        var afectados = DependencyGraph.TransitiveClosure(
-            Grafo, "dbo.Facturar", DependencyGraph.Direction.Upstream);
+        var affected = DependencyGraph.TransitiveClosure(
+            Graph, "dbo.Facturar", DependencyGraph.Direction.Upstream);
 
-        Assert.DoesNotContain("dbo.Facturar", afectados);
+        Assert.DoesNotContain("dbo.Facturar", affected);
     }
 
     [Fact]
-    public void Un_ciclo_no_cuelga_el_recorrido_ni_duplica_nodos()
+    public void A_cycle_neither_hangs_the_walk_nor_duplicates_nodes()
     {
         // Facturar y Auditar se llaman mutuamente. Un recorrido ingenuo se
         // quedaría dando vueltas, y en un sistema heredado esto no es raro.
-        var afectados = DependencyGraph.TransitiveClosure(
-            Grafo, "dbo.Facturar", DependencyGraph.Direction.Upstream);
+        var affected = DependencyGraph.TransitiveClosure(
+            Graph, "dbo.Facturar", DependencyGraph.Direction.Upstream);
 
-        Assert.Equal(afectados.Distinct().Count(), afectados.Count);
+        Assert.Equal(affected.Distinct().Count(), affected.Count);
     }
 
     [Fact]
-    public void La_profundidad_maxima_acota_el_recorrido()
+    public void Max_depth_bounds_the_walk()
     {
-        var unNivel = DependencyGraph.TransitiveClosure(
-            Grafo, "dbo.CalcularIva", DependencyGraph.Direction.Upstream, maxDepth: 1);
+        var oneLevel = DependencyGraph.TransitiveClosure(
+            Graph, "dbo.CalcularIva", DependencyGraph.Direction.Upstream, maxDepth: 1);
 
-        Assert.Equal(["dbo.Facturar"], unNivel);
+        Assert.Equal(["dbo.Facturar"], oneLevel);
     }
 
     [Fact]
-    public void Un_objeto_que_no_esta_en_el_grafo_devuelve_vacio()
+    public void An_object_absent_from_the_graph_returns_empty()
     {
         Assert.Empty(DependencyGraph.DirectNeighbours(
-            Grafo, "dbo.NoExiste", DependencyGraph.Direction.Downstream));
+            Graph, "dbo.NoExiste", DependencyGraph.Direction.Downstream));
 
         Assert.Empty(DependencyGraph.TransitiveClosure(
-            Grafo, "dbo.NoExiste", DependencyGraph.Direction.Upstream));
+            Graph, "dbo.NoExiste", DependencyGraph.Direction.Upstream));
     }
 
     [Fact]
-    public void Una_profundidad_no_positiva_es_un_error_de_programacion()
+    public void A_non_positive_depth_is_a_programming_error()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             DependencyGraph.TransitiveClosure(
-                Grafo, "dbo.Facturar", DependencyGraph.Direction.Upstream, maxDepth: 0));
+                Graph, "dbo.Facturar", DependencyGraph.Direction.Upstream, maxDepth: 0));
     }
 }

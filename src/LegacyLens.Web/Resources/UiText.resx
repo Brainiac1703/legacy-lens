@@ -58,6 +58,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Account_AddAuthenticator" xml:space="preserve">
+    <value>Añadir aplicación de autenticación</value>
+  </data>
+  <data name="Account_AddPasskey" xml:space="preserve">
+    <value>Añadir una clave de acceso</value>
+  </data>
+  <data name="Account_AuthenticatorApp" xml:space="preserve">
+    <value>Aplicación de autenticación</value>
+  </data>
+  <data name="Account_BrowserForgotten" xml:space="preserve">
+    <value>Este navegador se ha olvidado. La próxima vez que entres desde aquí se te pedirá el código.</value>
+  </data>
+  <data name="Account_CanGenerateCodes" xml:space="preserve">
+    <value>Puedes generar códigos nuevos.</value>
+  </data>
+  <data name="Account_ChangeEmail" xml:space="preserve">
+    <value>Cambiar el correo</value>
+  </data>
+  <data name="Account_ChangePasswordTitle" xml:space="preserve">
+    <value>Cambiar la contraseña</value>
+  </data>
   <data name="Account_CheckYourEmail" xml:space="preserve">
     <value>Revisa tu correo para confirmar la cuenta.</value>
   </data>
@@ -73,14 +94,53 @@
   <data name="Account_ConfirmLink" xml:space="preserve">
     <value>Pulsa aquí para confirmar tu cuenta</value>
   </data>
+  <data name="Account_ConfirmNewPassword" xml:space="preserve">
+    <value>Repetir la contraseña nueva</value>
+  </data>
   <data name="Account_ConfirmPassword" xml:space="preserve">
     <value>Repetir la contraseña</value>
+  </data>
+  <data name="Account_Delete" xml:space="preserve">
+    <value>Borrar</value>
+  </data>
+  <data name="Account_DeleteDataButton" xml:space="preserve">
+    <value>Borrar los datos y cerrar mi cuenta</value>
+  </data>
+  <data name="Account_DeleteDataTitle" xml:space="preserve">
+    <value>Borrar los datos personales</value>
+  </data>
+  <data name="Account_DeleteThisPasskey" xml:space="preserve">
+    <value>Quitar esta clave de tu cuenta</value>
+  </data>
+  <data name="Account_Disable2fa" xml:space="preserve">
+    <value>Desactivar la verificación en dos pasos</value>
+  </data>
+  <data name="Account_Download" xml:space="preserve">
+    <value>Descargar</value>
   </data>
   <data name="Account_Email" xml:space="preserve">
     <value>Correo electrónico</value>
   </data>
+  <data name="Account_EmailChangeSent" xml:space="preserve">
+    <value>Te hemos enviado un enlace para confirmar el cambio. Revisa tu correo.</value>
+  </data>
+  <data name="Account_EmailPlaceholder" xml:space="preserve">
+    <value>Tu correo</value>
+  </data>
+  <data name="Account_EmailUnchanged" xml:space="preserve">
+    <value>El correo no ha cambiado.</value>
+  </data>
+  <data name="Account_FewRecoveryCodes" xml:space="preserve">
+    <value>Te quedan {0} códigos de recuperación.</value>
+  </data>
+  <data name="Account_ForgetBrowser" xml:space="preserve">
+    <value>Olvidar este navegador</value>
+  </data>
   <data name="Account_ForgotPassword" xml:space="preserve">
     <value>¿Has olvidado la contraseña?</value>
+  </data>
+  <data name="Account_GenerateCodesLink" xml:space="preserve">
+    <value>generar un juego nuevo de códigos</value>
   </data>
   <data name="Account_InvalidLogin" xml:space="preserve">
     <value>El correo o la contraseña no son correctos.</value>
@@ -97,29 +157,101 @@
   <data name="Account_LoginWithPasskey" xml:space="preserve">
     <value>Entrar con una clave de acceso</value>
   </data>
+  <data name="Account_ManageEmailTitle" xml:space="preserve">
+    <value>Gestionar el correo</value>
+  </data>
   <data name="Account_ManageSubtitle" xml:space="preserve">
     <value>Ajustes de la cuenta</value>
   </data>
   <data name="Account_ManageTitle" xml:space="preserve">
     <value>Tu cuenta</value>
   </data>
+  <data name="Account_MaxPasskeys" xml:space="preserve">
+    <value>Has llegado al máximo de claves permitidas. Borra una antes de añadir otra.</value>
+  </data>
+  <data name="Account_MustAcceptPolicy" xml:space="preserve">
+    <value>Hay que aceptar la política antes de poder activar la verificación en dos pasos.</value>
+  </data>
+  <data name="Account_MustGenerateCodes" xml:space="preserve">
+    <value>Tienes que generar códigos nuevos antes de poder entrar con uno.</value>
+  </data>
+  <data name="Account_NewEmail" xml:space="preserve">
+    <value>Correo nuevo</value>
+  </data>
+  <data name="Account_NewEmailHint" xml:space="preserve">
+    <value>Escribe el correo nuevo</value>
+  </data>
+  <data name="Account_NewPassword" xml:space="preserve">
+    <value>Contraseña nueva</value>
+  </data>
+  <data name="Account_NewPasswordHint" xml:space="preserve">
+    <value>Escribe la contraseña nueva</value>
+  </data>
   <data name="Account_NoEmailSender" xml:space="preserve">
     <value>Esta aplicación no tiene configurado ningún servicio de correo, así que el enlace de confirmación se muestra aquí en lugar de enviarse.</value>
+  </data>
+  <data name="Account_NoPasskeys" xml:space="preserve">
+    <value>No tienes ninguna clave de acceso registrada.</value>
+  </data>
+  <data name="Account_NoRecoveryCodes" xml:space="preserve">
+    <value>No te queda ningún código de recuperación.</value>
+  </data>
+  <data name="Account_OldPassword" xml:space="preserve">
+    <value>Contraseña actual</value>
+  </data>
+  <data name="Account_OldPasswordHint" xml:space="preserve">
+    <value>Escribe la contraseña actual</value>
+  </data>
+  <data name="Account_OneRecoveryCode" xml:space="preserve">
+    <value>Te queda un código de recuperación.</value>
   </data>
   <data name="Account_Or" xml:space="preserve">
     <value>o</value>
   </data>
+  <data name="Account_PasskeyBadId" xml:space="preserve">
+    <value>El identificador de la clave no tiene un formato válido.</value>
+  </data>
+  <data name="Account_PasskeyDeleted" xml:space="preserve">
+    <value>Clave borrada.</value>
+  </data>
+  <data name="Account_PasskeyNotAdded" xml:space="preserve">
+    <value>No se pudo añadir la clave a tu cuenta.</value>
+  </data>
+  <data name="Account_PasskeyNotDeleted" xml:space="preserve">
+    <value>No se pudo borrar la clave.</value>
+  </data>
+  <data name="Account_PasskeyNotProvided" xml:space="preserve">
+    <value>El navegador no ha proporcionado ninguna clave.</value>
+  </data>
   <data name="Account_Passkeys" xml:space="preserve">
     <value>Claves de acceso</value>
+  </data>
+  <data name="Account_PasskeysTitle" xml:space="preserve">
+    <value>Gestionar tus claves de acceso</value>
   </data>
   <data name="Account_Password" xml:space="preserve">
     <value>Contraseña</value>
   </data>
+  <data name="Account_PasswordChanged" xml:space="preserve">
+    <value>Contraseña cambiada.</value>
+  </data>
   <data name="Account_PasswordPlaceholder" xml:space="preserve">
     <value>contraseña</value>
   </data>
+  <data name="Account_PasswordToConfirm" xml:space="preserve">
+    <value>Escribe tu contraseña para confirmar</value>
+  </data>
   <data name="Account_PersonalData" xml:space="preserve">
     <value>Datos personales</value>
+  </data>
+  <data name="Account_PersonalDataBody" xml:space="preserve">
+    <value>Tu cuenta contiene datos personales que nos has dado. Desde aquí puedes descargarlos o borrarlos.</value>
+  </data>
+  <data name="Account_PersonalDataTitle" xml:space="preserve">
+    <value>Datos personales</value>
+  </data>
+  <data name="Account_PersonalDataWarning" xml:space="preserve">
+    <value>Borrar estos datos elimina tu cuenta de forma permanente y no se puede recuperar.</value>
   </data>
   <data name="Account_PhoneNumber" xml:space="preserve">
     <value>Teléfono</value>
@@ -129,6 +261,9 @@
   </data>
   <data name="Account_PhonePlaceholder" xml:space="preserve">
     <value>Escribe tu teléfono</value>
+  </data>
+  <data name="Account_PolicyNotAccepted" xml:space="preserve">
+    <value>No se han aceptado la política de privacidad y la de cookies.</value>
   </data>
   <data name="Account_Profile" xml:space="preserve">
     <value>Perfil</value>
@@ -151,14 +286,44 @@
   <data name="Account_RememberMe" xml:space="preserve">
     <value>Recordarme</value>
   </data>
+  <data name="Account_Rename" xml:space="preserve">
+    <value>Cambiar el nombre</value>
+  </data>
+  <data name="Account_RenameThisPasskey" xml:space="preserve">
+    <value>Cambiar el nombre de esta clave</value>
+  </data>
   <data name="Account_ResendConfirmation" xml:space="preserve">
     <value>Volver a enviar la confirmación</value>
+  </data>
+  <data name="Account_ResetAuthenticator" xml:space="preserve">
+    <value>Restablecer la aplicación de autenticación</value>
+  </data>
+  <data name="Account_ResetRecoveryCodes" xml:space="preserve">
+    <value>Regenerar los códigos de recuperación</value>
   </data>
   <data name="Account_Save" xml:space="preserve">
     <value>Guardar</value>
   </data>
+  <data name="Account_SendVerification" xml:space="preserve">
+    <value>Enviar correo de verificación</value>
+  </data>
+  <data name="Account_SetUpAuthenticator" xml:space="preserve">
+    <value>Configurar la aplicación de autenticación</value>
+  </data>
+  <data name="Account_ShouldGenerateCodes" xml:space="preserve">
+    <value>Conviene generar códigos nuevos.</value>
+  </data>
   <data name="Account_TwoFactor" xml:space="preserve">
     <value>Verificación en dos pasos</value>
+  </data>
+  <data name="Account_TwoFactorTitle" xml:space="preserve">
+    <value>Verificación en dos pasos</value>
+  </data>
+  <data name="Account_UnnamedPasskey" xml:space="preserve">
+    <value>Clave sin nombre</value>
+  </data>
+  <data name="Account_UpdatePassword" xml:space="preserve">
+    <value>Actualizar la contraseña</value>
   </data>
   <data name="Account_UserNotFound" xml:space="preserve">
     <value>No se encontró ningún usuario con ese correo.</value>
@@ -168,6 +333,12 @@
   </data>
   <data name="Account_UsernamePlaceholder" xml:space="preserve">
     <value>Tu nombre de usuario</value>
+  </data>
+  <data name="Account_VerificationSent" xml:space="preserve">
+    <value>Correo de verificación enviado. Revisa tu bandeja.</value>
+  </data>
+  <data name="Account_WrongPassword" xml:space="preserve">
+    <value>La contraseña no es correcta.</value>
   </data>
   <data name="Analyses_BadgeDocumented" xml:space="preserve">
     <value>Documentado</value>

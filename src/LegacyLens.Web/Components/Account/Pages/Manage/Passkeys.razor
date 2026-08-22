@@ -8,10 +8,12 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<UiText> L
 
-<PageTitle>Manage your passkeys</PageTitle>
+<PageTitle>@L["Account_PasskeysTitle"]</PageTitle>
 
-<h3>Manage your passkeys</h3>
+<h3>@L["Account_PasskeysTitle"]</h3>
 
 <StatusMessage />
 
@@ -22,7 +24,7 @@
             @foreach (var passkey in currentPasskeys)
             {
                 <tr>
-                    <td>@(passkey.Name ?? "Unnamed passkey")</td>
+                    <td>@(passkey.Name ?? L["Account_UnnamedPasskey"].Value)</td>
                     <td>
                         @{
                             var credentialId = Base64Url.EncodeToString(passkey.CredentialId);
@@ -31,8 +33,8 @@
                             <AntiforgeryToken />
                             <div>
                                 <input type="hidden" name="CredentialId" value="@credentialId" />
-                                <button type="submit" name="Action" value="rename" class="btn btn-primary" title="Rename this passkey">Rename</button>
-                                <button type="submit" name="Action" value="delete" class="btn btn-danger" title="Remove this passkey from your account">Delete</button>
+                                <button type="submit" name="Action" value="rename" class="btn btn-primary" title="@L["Account_RenameThisPasskey"]">@L["Account_Rename"]</button>
+                                <button type="submit" name="Action" value="delete" class="btn btn-danger" title="@L["Account_DeleteThisPasskey"]">@L["Account_Delete"]</button>
                             </div>
                         </form>
                     </td>
@@ -43,18 +45,18 @@
 }
 else
 {
-    <p>No passkeys are registered.</p>
+    <p>@L["Account_NoPasskeys"]</p>
 }
 
 <form @formname="add-passkey" @onsubmit="AddPasskey" method="post">
     <AntiforgeryToken />
     @if (currentPasskeys is { Count: >= MaxPasskeyCount })
     {
-        <p class="text-danger">You have reached the maximum number of allowed passkeys. Please delete one before adding a new one.</p>
+        <p class="text-danger">@L["Account_MaxPasskeys"]</p>
     }
     else
     {
-        <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">Add a new passkey</PasskeySubmit>
+        <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">@L["Account_AddPasskey"]</PasskeySubmit>
     }
 
 </form>
@@ -106,7 +108,7 @@ else
 
         if (string.IsNullOrEmpty(Input.CredentialJson))
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The browser did not provide a passkey.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(L["Account_PasskeyNotProvided"], HttpContext, isError: true);
             return;
         }
 
@@ -126,7 +128,7 @@ else
         var addPasskeyResult = await UserManager.AddOrUpdatePasskeyAsync(user, attestationResult.Passkey);
         if (!addPasskeyResult.Succeeded)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The passkey could not be added to your account.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(L["Account_PasskeyNotAdded"], HttpContext, isError: true);
             return;
         }
 
@@ -166,17 +168,17 @@ else
         }
         catch (FormatException)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The specified passkey ID had an invalid format.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(L["Account_PasskeyBadId"], HttpContext, isError: true);
             return;
         }
 
         var result = await UserManager.RemovePasskeyAsync(user, credentialId);
         if (!result.Succeeded)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The passkey could not be deleted.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(L["Account_PasskeyNotDeleted"], HttpContext, isError: true);
             return;
         }
 
-        RedirectManager.RedirectToCurrentPageWithStatus("Passkey deleted successfully.", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(L["Account_PasskeyDeleted"], HttpContext);
     }
 }
