@@ -6,8 +6,13 @@
     </div>
 
     <main>
+        @*
+            La barra superior traía un enlace «About» a la documentación de
+            ASP.NET Core, resto de la plantilla. No tenía nada que ver con este
+            producto, así que se va con el selector de idioma que ocupa su sitio.
+        *@
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <CultureSelector />
         </div>
 
         <article class="content px-4">

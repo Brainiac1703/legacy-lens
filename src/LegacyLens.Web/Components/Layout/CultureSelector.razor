@@ -1,0 +1,70 @@
+@implements IDisposable
+
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject NavigationManager NavigationManager
+@inject IStringLocalizer<UiText> L
+
+@*
+    Vive en la barra superior y no en la lateral por dos razones. Una de fondo:
+    la barra lateral son destinos a los que ir, y el idioma no es un destino,
+    es una preferencia. Y otra práctica: por debajo de 641 px la lateral se
+    colapsa detrás de un botón, así que ahí el cambio de idioma quedaba a dos
+    clics; la barra superior no se colapsa.
+
+    El cambio son enlaces normales y no botones de Blazor: fijar la cultura
+    exige recargar la página, porque el circuito ya se creó con la anterior.
+    Un @onclick daría la falsa impresión de un cambio inmediato.
+*@
+<div class="culture-selector">
+    <span class="text-secondary small me-2">@L["Nav_Language"]</span>
+
+    <div class="btn-group btn-group-sm" role="group" aria-label="@L["Nav_Language"]">
+        @foreach (var (code, label) in Languages)
+        {
+            var isCurrent = CultureInfo.CurrentUICulture.Name.StartsWith(
+                code.Split('-')[0], StringComparison.OrdinalIgnoreCase);
+
+            <a class="btn @(isCurrent ? "btn-secondary" : "btn-outline-secondary")"
+               href="@CultureUrl(code)"
+               aria-current="@(isCurrent ? "true" : null)">
+                @label
+            </a>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly (string Code, string Label)[] Languages =
+    [
+        ("es-ES", "Español"),
+        ("en", "English")
+    ];
+
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Se vuelve a la misma página tras cambiar de idioma. La ruta se pasa como
+    /// relativa porque el endpoint solo acepta redirecciones locales.
+    /// </summary>
+    private string CultureUrl(string code) =>
+        $"/set-culture?culture={Uri.EscapeDataString(code)}" +
+        $"&redirectUri={Uri.EscapeDataString("/" + (currentUrl ?? string.Empty))}";
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}
