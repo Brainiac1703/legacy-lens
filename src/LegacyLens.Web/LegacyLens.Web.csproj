@@ -20,7 +20,9 @@
       El script de ejemplo viaja con el despliegue para que la demo pueda
       ejecutarse sin subir ningún fichero, también en el contenedor.
     -->
-    <Content Include="..\..\samples\legacy-erp.sql" Link="Samples\legacy-erp.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Glob y no una entrada por fichero: añadir un ejemplo no debe obligar a
+         tocar el csproj, que es justo el tipo de paso que se olvida. -->
+    <Content Include="..\..\samples\*.sql" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

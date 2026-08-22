@@ -176,12 +176,17 @@ app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext htt
 // entrada. Es un endpoint y no un fichero estático porque así comparte la
 // resolución de ruta con el botón que lo analiza: se descarga exactamente lo
 // que se ha analizado, no una copia que podría divergir.
-app.MapGet("/samples/legacy-erp.sql", () =>
+app.MapGet("/samples/{fileName}", (string fileName) =>
     {
-        var path = SampleScript.FullPath;
+        // El nombre llega de la petición, así que no se sanea: se compara con la
+        // lista de ejemplos conocidos y se rechaza si no está. Un
+        // «../../appsettings.json» no coincide con ninguno y no hay ruta que
+        // construir.
+        var sample = SampleScript.Find(fileName);
+        if (sample is null) return Results.NotFound();
 
-        return File.Exists(path)
-            ? Results.File(path, "text/plain; charset=utf-8", SampleScript.FileName)
+        return File.Exists(sample.FullPath)
+            ? Results.File(sample.FullPath, "text/plain; charset=utf-8", sample.FileName)
             : Results.NotFound();
     })
     .RequireAuthorization();

@@ -145,20 +145,29 @@
   <data name="Analyze_Retry" xml:space="preserve">
     <value>Try again</value>
   </data>
-  <data name="Analyze_SampleBody" xml:space="preserve">
-    <value>A synthetic ERP database reproducing the usual patterns of a legacy system: cursors, dynamic SQL, writes without a transaction, and chained procedures.</value>
-  </data>
   <data name="Analyze_SampleButton" xml:space="preserve">
-    <value>Analyze the sample</value>
+    <value>Analyse</value>
   </data>
   <data name="Analyze_SampleDownload" xml:space="preserve">
     <value>Download the script</value>
   </data>
+  <data name="Analyze_SamplesTitle" xml:space="preserve">
+    <value>Or try a sample script</value>
+  </data>
+  <data name="Analyze_SampleErpName" xml:space="preserve">
+    <value>Invoicing ERP</value>
+  </data>
+  <data name="Analyze_SampleErpBody" xml:space="preserve">
+    <value>A synthetic ERP database reproducing the usual patterns of a legacy system: cursors, dynamic SQL, writes outside transactions and chained procedures.</value>
+  </data>
+  <data name="Analyze_SampleWarehouseName" xml:space="preserve">
+    <value>Warehouse and shipping</value>
+  </data>
+  <data name="Analyze_SampleWarehouseBody" xml:space="preserve">
+    <value>A different debt profile, without a single cursor: a staged nightly process with temp tables, twelve parameters and logic spread across six procedures calling each other, with no transaction and no error handling.</value>
+  </data>
   <data name="Analyze_SampleMissing" xml:space="preserve">
     <value>The sample script was not found in this deployment.</value>
-  </data>
-  <data name="Analyze_SampleTitle" xml:space="preserve">
-    <value>Or try the sample script</value>
   </data>
   <data name="Analyze_Title" xml:space="preserve">
     <value>Analyze a T-SQL script</value>
