@@ -9,7 +9,7 @@ Autor: Nacho Tovar
 | --- | --- |
 | Repositorio | https://github.com/Brainiac1703/legacy-lens |
 | Aplicación desplegada | https://ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io |
-| Presentación | _(pendiente: URL de las slides)_ |
+| Presentación | [docs/slides.pdf](docs/slides.pdf) · https://github.com/Brainiac1703/legacy-lens/blob/main/docs/slides.pdf |
 | Vídeo explicativo | _(pendiente: URL del vídeo)_ |
 | Usuario de prueba | `demo@legacylens.dev` / `Demo.1234!` |
 
