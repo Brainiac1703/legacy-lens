@@ -41,6 +41,24 @@ resource "azurerm_container_app_environment" "main" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main[0].id
 }
 
+# Identidad asignada por el usuario, no asignada por el sistema. La diferencia
+# no es estetica: una identidad de sistema nace con el Container App, asi que su
+# principal_id no existe hasta que el recurso esta creado, y los roles solo se
+# pueden asignar despues. Pero Azure no termina de aprovisionar el Container App
+# hasta poder autenticarse contra el registro, que necesita AcrPull. El ciclo se
+# cierra y el aprovisionamiento se queda esperando indefinidamente.
+#
+# Creando la identidad por separado, los dos roles existen antes que la
+# aplicacion y el ciclo desaparece.
+resource "azurerm_user_assigned_identity" "app" {
+  count = var.deploy_app ? 1 : 0
+
+  name                = "id-${var.project}-tfm"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  tags                = var.tags
+}
+
 resource "azurerm_container_app" "main" {
   count = var.deploy_app ? 1 : 0
 
@@ -51,12 +69,13 @@ resource "azurerm_container_app" "main" {
   tags                         = var.tags
 
   identity {
-    type = "SystemAssigned"
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.app[0].id]
   }
 
   registry {
     server   = azurerm_container_registry.main[0].login_server
-    identity = "system"
+    identity = azurerm_user_assigned_identity.app[0].id
   }
 
   template {
@@ -102,6 +121,15 @@ resource "azurerm_container_app" "main" {
         ])
       }
 
+      # Con una identidad asignada por el usuario hay que decir cual es:
+      # DefaultAzureCredential no la adivina, y sin esta variable pediria un
+      # token para la identidad de sistema, que ya no existe. Afecta tanto a
+      # SQL como a OpenAI, porque las dos usan la misma cadena de credenciales.
+      env {
+        name  = "AZURE_CLIENT_ID"
+        value = azurerm_user_assigned_identity.app[0].client_id
+      }
+
       # Tampoco hay clave de OpenAI: al no configurarse Ai__ApiKey, la
       # aplicación usa esa misma identidad administrada.
     }
@@ -122,6 +150,23 @@ resource "azurerm_container_app" "main" {
       percentage      = 100
     }
   }
+
+  # Los roles se asignan a la identidad, no a la aplicacion, asi que Terraform
+  # no ve ninguna dependencia entre ellos y crearia las tres cosas en paralelo.
+  # Sin esto el ciclo vuelve convertido en carrera: a veces el registro estaria
+  # autorizado a tiempo y a veces no.
+  depends_on = [
+    azurerm_role_assignment.acr_pull,
+    azurerm_role_assignment.openai_user,
+  ]
+
+  lifecycle {
+    # La imagen la sustituye el pipeline con az containerapp update en cada
+    # despliegue, y no se le pasa de vuelta a Terraform. Sin ignorarla, el
+    # siguiente apply de infraestructura devolveria la aplicacion a la imagen
+    # de arranque publica y tumbaria lo desplegado.
+    ignore_changes = [template[0].container[0].image]
+  }
 }
 
 # La aplicación lee el registro con su identidad, sin credenciales de admin.
@@ -130,7 +175,7 @@ resource "azurerm_role_assignment" "acr_pull" {
 
   scope                = azurerm_container_registry.main[0].id
   role_definition_name = "AcrPull"
-  principal_id         = azurerm_container_app.main[0].identity[0].principal_id
+  principal_id         = azurerm_user_assigned_identity.app[0].principal_id
 }
 
 # Y llama a Azure OpenAI con esa misma identidad, sin clave en configuración.
@@ -139,5 +184,5 @@ resource "azurerm_role_assignment" "openai_user" {
 
   scope                = azurerm_cognitive_account.openai.id
   role_definition_name = "Cognitive Services OpenAI User"
-  principal_id         = azurerm_container_app.main[0].identity[0].principal_id
+  principal_id         = azurerm_user_assigned_identity.app[0].principal_id
 }
