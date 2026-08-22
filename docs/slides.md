@@ -87,7 +87,6 @@ Se le da un `.sql` generado con *Generate Scripts* de SSMS y devuelve:
 ## Demo
 
 <br>
-<br>
 
 ### `usp_CerrarPedido` — riesgo 55/100
 
@@ -100,6 +99,26 @@ Se le da un `.sql` generado con *Generate Scripts* de SSMS y devuelve:
 <br>
 
 **Ninguna puntuación es un número suelto.** Tiene que poder discutirse con el cliente.
+
+---
+
+## Dos ejemplos, dos formas de estar mal
+
+| | Riesgo máximo | Dónde está la deuda |
+| --- | --- | --- |
+| ERP de facturación | **55** · alto | cursores, SQL dinámico, transacciones |
+| Almacén y expediciones | **80** · crítico | proceso por etapas, lógica repartida, cero garantías |
+
+<br>
+
+El segundo no tiene **ni un solo cursor**. Con un único ejemplo la herramienta parecía
+medir siempre lo mismo.
+
+<!--
+El de almacén es el proceso nocturno que nadie se atreve a tocar: cinco tablas
+temporales, doce parámetros, seis procedimientos en cadena, once tablas, sin
+transacción y sin TRY/CATCH. Su riesgo son siete factores distintos.
+-->
 
 ---
 
@@ -123,12 +142,13 @@ Un límite del análisis estático que hay que **señalar, no disimular**.
 ## Arquitectura
 
 ```
-Domain          entidades. No conoce a nadie.
+Domain          entidades y recorridos del grafo. No conoce a nadie.
 Application     casos de uso, puertos y behaviours (CQRS con MediatR)
 Persistence.EF  ─┐
 Analysis         ├─ adaptadores: implementan los puertos
 Ai              ─┘
 Web             presentación. Solo ISender.
+Mcp             servidor MCP. Solo traduce a MediatR.
 ```
 
 Las dependencias apuntan **siempre hacia dentro**. Y `Analysis` no depende de `Ai`.
@@ -195,27 +215,42 @@ Sin juicio humano. Sin otro modelo de juez.
 Terraform  →  Azure OpenAI (2 despliegues de modelo)
               Container Registry
               Container Apps
+              Azure SQL Database (serverless, solo Entra)
               Log Analytics
 ```
 
 <br>
 
-**Sin un solo secreto.** La aplicación llama a OpenAI y lee el registro con su **identidad
-administrada**, mediante asignaciones de rol.
+**La aplicación no tiene ningún secreto.** Llama a OpenAI, lee el registro y entra en la base
+de datos con su **identidad administrada**. El servidor SQL no admite usuario y contraseña.
 
-Nada que guardar. Nada que rotar.
+Un único secreto en todo el proyecto, y está razonado: la clave de la cuenta que guarda el
+estado de Terraform, que vive en otra suscripción donde no se pueden asignar roles.
+
+<!--
+Decirlo así y no «sin un solo secreto» es deliberado: es lo que el ADR 0006
+documenta, y la diferencia entre una afirmación defendible y una que se cae en
+cuanto alguien abre el fichero de secretos del repositorio.
+
+La identidad tuvo que pasar a asignada por el usuario: una de sistema no existe
+hasta que el recurso está creado, y Azure no termina de crear el Container App
+hasta poder autenticarse contra el registro, que necesita ese permiso. El ciclo
+se cierra y el despliegue se queda esperando sin error. ADR 0005.
+-->
 
 ---
 
 ## Que no es una demo con truco
 
-### 15 tests sobre el analizador
+### 33 tests sobre las partes deterministas
 
 - Distingue lecturas de escrituras
 - Detecta SQL dinámico en sus dos formas
 - No confunde `sp_executesql` con una llamada a procedimiento
 - Detecta funciones escalares usadas dentro de expresiones
 - La suma de los factores de riesgo siempre cuadra con el total
+- El recorrido del grafo aguanta **ciclos**: dos procedimientos que se llaman
+  mutuamente colgarían un recorrido ingenuo
 
 <br>
 
@@ -254,6 +289,31 @@ elección de los dos modelos.
 
 ---
 
+## El análisis, dentro de tu agente
+
+Servidor **MCP** sobre las mismas consultas de la capa de aplicación.
+
+| Herramienta | Responde a |
+| --- | --- |
+| `list_analyses` | qué sistemas hay analizados |
+| `find_object` | qué hace esto, cuánto riesgo tiene, de qué depende |
+| `where_used` | quién toca esta tabla, y si la lee o la escribe |
+| `change_risk` | qué se rompe si lo cambio, y qué migrar antes |
+
+<br>
+
+Deja de ser una herramienta que **consultas** y pasa a ser contexto que tu agente **tiene
+mientras migra**.
+
+<!--
+Sin infraestructura añadida: lee la misma base de datos y no gasta ni una llamada
+al modelo. El servidor no tiene lógica; si apareciera, estaría en el sitio
+equivocado. Las respuestas separan lo calculado de lo interpretado, igual que la
+web, porque quien las recibe necesita saber en qué puede confiar sin verificar.
+-->
+
+---
+
 ## Limitaciones reconocidas
 
 - **El SQL dinámico es un límite infranqueable** del análisis estático
@@ -272,8 +332,9 @@ Resuelve un problema que tengo delante en el trabajo. Va a seguir.
 | Fase | | |
 | --- | --- | --- |
 | **0** | Núcleo del producto | **Entregado** |
-| **1** | Evaluación de LLM, DevSecOps, coste visible | Siguiente |
-| **2** | **Servidor MCP**, **RAG** vectorial, PL/SQL y Delphi | Planificado |
+| **1** | Evaluación de LLM, DevSecOps, coste visible | **Entregado** |
+| **2** | **Servidor MCP** | **Entregado** |
+| **2** | **RAG** vectorial, PL/SQL y Delphi | Planificado |
 | **3** | OpenTelemetry, Playwright, PostgreSQL | Planificado |
 | **4** | Análisis encolado con patrón Outbox | Planificado |
 
@@ -281,9 +342,11 @@ Resuelve un problema que tengo delante en el trabajo. Va a seguir.
 No son pendientes: son decisiones.
 
 <!--
-La fase 2 es la que cambia la naturaleza del producto: con un servidor MCP,
-deja de ser una herramienta que consultas y pasa a ser contexto que tu agente
-tiene mientras migra el código.
+Las fases 1 y 2.1 se entregaron durante el desarrollo, y merece decir qué
+enseñaron. La evaluación tumbó una decisión que creía tomada por buen criterio:
+el modelo económico documenta mejor. Y el servidor MCP trajo tres fallos que no
+se ven compilando, entre ellos que en stdio la salida estándar ES el canal del
+protocolo, así que un log ahí lo corrompe en silencio.
 -->
 
 ---
@@ -299,8 +362,8 @@ empezar a discutir.
 
 | | |
 | --- | --- |
-| Repositorio | _(URL)_ |
-| Aplicación | _(URL)_ |
+| Repositorio | `github.com/Brainiac1703/legacy-lens` |
+| Aplicación | `https://ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io` |
 | Usuario de prueba | `demo@legacylens.dev` / `Demo.1234!` |
 
 <br>
