@@ -13,6 +13,8 @@
     · Dos colores y un gris. Nada de degradados de tres tonos.
     · Ningún recurso externo. Los fondos son SVG en línea como data URI, así
       que el PDF se genera sin red y sin --allow-local-files para las imágenes.
+      El precio es que el logo está copiado aquí: si se cambia assets/logo.svg,
+      hay que cambiarlo también en este fichero y en assets/logo-claro.svg.
     · El cuerpo no baja de 22 px: esto se va a ver comprimido en un vídeo.
 */
 

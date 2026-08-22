@@ -8,8 +8,11 @@ main {
     flex: 1;
 }
 
+/* El degradado azul a púrpura venía de la plantilla de Blazor y no tenía nada
+   que ver con la identidad del producto. Con las diapositivas en tinta y teal,
+   enseñar las dos cosas en el vídeo parecería dos productos distintos. */
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background-image: linear-gradient(180deg, #1b2431 0%, #123640 70%);
 }
 
 .top-row {

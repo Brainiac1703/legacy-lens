@@ -1,4 +1,4 @@
-<img src="docs/assets/logo.svg" alt="" width="72" align="left" hspace="16" />
+<img src="assets/logo.svg" alt="" width="72" align="left" hspace="16" />
 
 # Legacy Lens
 
