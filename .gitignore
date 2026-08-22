@@ -486,6 +486,10 @@ $RECYCLE.BIN/
 *.tfstate
 *.tfstate.*
 *.tfplan
+# El patron de arriba no cubre un fichero llamado tfplan a secas, que es
+# justo el nombre que usa el pipeline. Un fichero de plan lleva dentro los
+# valores de todas las variables.
+tfplan
 crash.log
 crash.*.log
 # Contiene el identificador de suscripción: nunca al repositorio.

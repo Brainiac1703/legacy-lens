@@ -54,6 +54,44 @@ Write-Host "Suscripción: $subscriptionId" -ForegroundColor Cyan
 Write-Host "Repositorio: $Repository" -ForegroundColor Cyan
 Write-Host ''
 
+# GitHub puede emitir el «subject» del token de dos formas, y Azure exige que la
+# credencial federada coincida **exactamente** con la que reciba:
+#
+#   repo:propietario/repositorio:ref:refs/heads/main
+#   repo:propietario@idPropietario/repositorio@idRepositorio:ref:refs/heads/main
+#
+# La segunda es la de identificadores inmutables, que sobrevive a renombrar el
+# repositorio o la organización. Cuál se use depende de la configuración de la
+# cuenta, así que se registran las dos: sobra una y no molesta, mientras que
+# faltar la correcta produce un 401 con AADSTS700213 que no dice qué falta.
+#
+# Los identificadores se consultan a la API pública de GitHub. Si no se pueden
+# obtener, se registran solo las clásicas y se avisa.
+$repoInfo = $null
+try {
+    $repoInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository" `
+        -Headers @{ 'User-Agent' = 'legacy-lens-bootstrap' } -ErrorAction Stop
+}
+catch {
+    Write-Host 'AVISO: no se pudieron leer los identificadores del repositorio.' -ForegroundColor Yellow
+    Write-Host 'Se registrarán solo los sujetos clásicos. Si el pipeline falla con' -ForegroundColor Yellow
+    Write-Host 'AADSTS700213, copia el sujeto que aparece en el error y créalo a mano.' -ForegroundColor Yellow
+}
+
+function Get-Subjects {
+    param([string] $Suffix)
+
+    $subjects = @("repo:${Repository}:$Suffix")
+
+    if ($repoInfo) {
+        $owner = $Repository.Split('/')[0]
+        $name = $Repository.Split('/')[1]
+        $subjects += "repo:$owner@$($repoInfo.owner.id)/$name@$($repoInfo.id):$Suffix"
+    }
+
+    return $subjects
+}
+
 function New-OidcIdentity {
     param([string] $Name, [string[]] $Subjects)
 
@@ -119,9 +157,8 @@ function Grant-Role {
 
 Write-Host '=== Identidad de infraestructura ===' -ForegroundColor Green
 
-$infraId = New-OidcIdentity -Name 'legacy-lens-infra' -Subjects @(
-    "repo:${Repository}:ref:refs/heads/$Branch",
-    "repo:${Repository}:pull_request"
+$infraId = New-OidcIdentity -Name 'legacy-lens-infra' -Subjects (
+    (Get-Subjects "ref:refs/heads/$Branch") + (Get-Subjects 'pull_request')
 )
 
 Write-Host 'Asignando permisos...' -ForegroundColor Cyan
@@ -157,8 +194,8 @@ else {
 Write-Host ''
 Write-Host '=== Identidad de despliegue ===' -ForegroundColor Green
 
-$deployId = New-OidcIdentity -Name 'legacy-lens-deploy' -Subjects @(
-    "repo:${Repository}:ref:refs/heads/$Branch"
+$deployId = New-OidcIdentity -Name 'legacy-lens-deploy' -Subjects (
+    Get-Subjects "ref:refs/heads/$Branch"
 )
 
 Write-Host 'Asignando permisos...' -ForegroundColor Cyan
