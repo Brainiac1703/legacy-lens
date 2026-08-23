@@ -48,11 +48,6 @@ Abre `samples/legacy-erp.sql` y baja hasta `usp_CerrarPedido`.
 > te piden migrarlos a .NET. El primer problema no es técnico: es que nadie sabe qué hace este
 > código ni por dónde empezar sin romper producción. Legacy Lens automatiza ese primer paso.»
 
-> **Por qué está recortado respecto a la versión anterior:** la apertura ya dice que esto se
-> resuelve leyendo código a mano durante semanas, y la diapositiva 2 lo dice por escrito.
-> Repetirlo treinta segundos después es el error más común en una presentación corta. El
-> tramo total sigue siendo de 45 segundos.
-
 ## 0:45 – 1:40 · La decisión de diseño
 
 Ve a la página de inicio de la aplicación, al recuadro azul.
@@ -92,12 +87,6 @@ Cuando termine, recorre las tarjetas del resumen.
 > por fuera, y el viejo se queda sin trabajo hasta que se puede apagar. Y lo puede ordenar así
 > porque conoce el grafo real.»
 
-> **Sobre el nombre en inglés:** no hace falta decirlo. La diapositiva ya escribe *strangler
-> fig* entre paréntesis, así que el tribunal ve que conoces el término, y explicar el mecanismo
-> en español demuestra más que pronunciar la etiqueta. Si aun así lo quieres decir, suena
-> «STRÁN-gler fig» y no pasa nada por decirlo con acento español; lo que sí se nota en cámara
-> es tropezar y repetirlo dos veces.
-
 **Pestaña Grafo.** Cambia entre las dos vistas.
 
 > «El color es el riesgo. Y estas aristas no son una opinión del modelo: salen del árbol de
@@ -105,13 +94,11 @@ Cuando termine, recorre las tarjetas del resumen.
 > texto, leo la gramática del lenguaje: una tabla nombrada en un comentario no genera
 > dependencia, y una lectura escondida en un `JOIN` anidado sí aparece.»
 
-> **Si alguien pregunta qué es el árbol de sintaxis**, en una frase: cuando SQL Server recibe
+> **Y qué es el árbol de sintaxis**, en una frase: cuando SQL Server recibe
 > un script, antes de ejecutarlo lo convierte en un árbol donde cada sentencia, cada tabla y
 > cada columna es un nodo, y así deja de ser texto y pasa a tener estructura. Legacy Lens usa
 > ese mismo analizador —`ScriptDom`, el que publica Microsoft—, así que ve el script igual que
-> lo ve el motor. La diferencia práctica con buscar texto es la que acabas de decir: los
-> comentarios y las cadenas no engañan al analizador. **No digas «AST» en voz alta** sin
-> haberlo explicado antes; la sigla no añade nada y deja fuera a media sala.
+> lo ve el motor.
 
 ## 3:15 – 4:35 · El momento fuerte: riesgo explicable
 
@@ -253,12 +240,6 @@ Abre `Deploy/infra/`.
 > Eso último costó más de lo que parece: hubo que pasar a una identidad asignada por el
 > usuario para romper una dependencia circular entre el Container App y el registro. Está
 > contado en el ADR 0005.»
-
-> **Recortado a propósito.** La versión larga de esta anécdota —por qué el ciclo se cierra y
-> por qué Azure se queda esperando sin dar ningún error— duraba veinticinco segundos y son los
-> que ahora se gastan en la verificación contra el catálogo. Es un buen cambio: la anécdota es
-> una incidencia de infraestructura, y la verificación es evidencia sobre la tesis del
-> proyecto. Si te sobra tiempo al montar, esta es la primera que puedes recuperar.
 
 Abre `variables.tf` en los dos modelos.
 
