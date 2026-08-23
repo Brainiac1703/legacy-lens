@@ -16,6 +16,9 @@ opcional.
       Lo que se lee bien en tu monitor no se lee en un vídeo comprimido.
 - [ ] Silencia notificaciones de Teams, Slack y correo.
 - [ ] Ten una terminal lista con `dotnet test` sin ejecutar.
+- [ ] Nada que preparar para la verificación contra el catálogo: se cuenta de viva voz sobre
+      la pantalla que ya estés enseñando. La consulta queda en `docs/verificacion-grafo.sql`
+      para quien quiera reproducirla.
 
 ---
 
@@ -189,6 +192,25 @@ Abre `docs/evals/informe.md`.
 > Dicho con honestidad: es una ejecución por modelo y la medida es por presencia de términos.
 > No demuestro una ley universal. Pero he convertido una corazonada en un dato.»
 
+Sin cambiar de pantalla: esto se dice, no se enseña. La consulta que lo comprueba está en
+`docs/verificacion-grafo.sql` y cualquiera puede ejecutarla contra el compose, así que el
+comprobante vive en el repositorio y no te cuesta ni una toma.
+
+> «Y una última comprobación, la más incómoda para mí. SQL Server ya trae su propio grafo de
+> dependencias, en `sys.sql_expression_dependencies`. Si mi analizador sobra, se nota aquí. Lo
+> he medido contra el mismo esquema: el catálogo da veintiuna dependencias reales, y mi
+> analizador da las mismas veintiuna.
+>
+> Y eso es lo que quería demostrar, no lo contrario: esa parte es un hecho, así que se calcula
+> y se puede verificar contra el propio motor. Si la hubiera pedido a un modelo, no podría
+> deciros si son veintiuna o diecinueve.
+>
+> Con una diferencia que sí importa. Estos dos procedimientos construyen SQL dinámico, y el
+> catálogo devuelve cero dependencias para ellos: indistinguible de «no depende de nada». En un
+> plan de migración los pondrías en la primera fase por autocontenidos, cuando en realidad
+> tocan cuatro tablas. Legacy Lens tampoco puede verlas, pero puntúa esa ceguera con cuarenta
+> puntos y la escribe. El catálogo calla; la herramienta avisa de lo que no sabe.»
+
 ## 6:05 – 6:55 · El análisis dentro del agente
 
 Cambia a tu cliente de agente, con el servidor MCP ya dado de alta.
@@ -232,11 +254,15 @@ Abre `Deploy/infra/`.
 > aplicación llama a OpenAI, lee el registro y entra en la base de datos con su identidad
 > administrada.
 >
-> Eso último costó más de lo que parece. La identidad tuvo que pasar a ser asignada por el
-> usuario, y no por el sistema, porque una identidad de sistema no existe hasta que el
-> recurso está creado — y Azure no termina de crear el Container App hasta poder autenticarse
-> contra el registro, que necesita ese permiso. El ciclo se cierra y el despliegue se queda
-> esperando sin dar ningún error. Está contado en el ADR 0005.»
+> Eso último costó más de lo que parece: hubo que pasar a una identidad asignada por el
+> usuario para romper una dependencia circular entre el Container App y el registro. Está
+> contado en el ADR 0005.»
+
+> **Recortado a propósito.** La versión larga de esta anécdota —por qué el ciclo se cierra y
+> por qué Azure se queda esperando sin dar ningún error— duraba veinticinco segundos y son los
+> que ahora se gastan en la verificación contra el catálogo. Es un buen cambio: la anécdota es
+> una incidencia de infraestructura, y la verificación es evidencia sobre la tesis del
+> proyecto. Si te sobra tiempo al montar, esta es la primera que puedes recuperar.
 
 Abre `variables.tf` en los dos modelos.
 
