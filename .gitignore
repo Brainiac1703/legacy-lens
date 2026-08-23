@@ -515,3 +515,6 @@ terraform.rc
 
 # Configuración del backend de Terraform: contiene nombres de recursos propios.
 backend.hcl
+
+# Configuración MCP de la demo: contiene la contraseña de SQL Server.
+samples/demo-mcp/.mcp.json

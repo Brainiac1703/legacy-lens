@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "legacy-lens": {
+      "command": "../../src/LegacyLens.Mcp/bin/Release/net10.0/legacy-lens-mcp.exe",
+      "env": {
+        "ConnectionStrings__DefaultConnection": "Server=localhost,14330;Database=LegacyLens;User Id=sa;Password=LA-DE-TU-.env;TrustServerCertificate=True;Encrypt=True",
+        "Mcp__OwnerEmail": "demo@legacylens.dev"
+      }
+    }
+  }
+}
