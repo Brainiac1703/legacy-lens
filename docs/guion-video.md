@@ -19,20 +19,40 @@ opcional.
 
 ---
 
-## 0:00 – 0:45 · El problema (sin tocar la aplicación todavía)
+## 0:00 – 0:20 · Apertura (diapositivas 1 y 2)
+
+> «Hola, muy buenas. Soy Nacho Tovar, arquitecto de software en Pronet-ISE, y os presento
+> Legacy Lens, mi trabajo de fin de máster.
+>
+> Diseño y evoluciono productos de gestión empresarial con .NET y Azure, y digo esto porque
+> Legacy Lens no es un ejercicio de clase: resuelve una parte de mi trabajo. Decidir cómo se
+> migra un sistema con la lógica de negocio enterrada en procedimientos almacenados es
+> exactamente lo que se le pide a un arquitecto, y hoy se hace leyendo código a mano durante
+> semanas.
+>
+> Quería un TFM que usara lo que sé hacer y que además me obligara a lo que vine a aprender:
+> dónde encaja un modelo de lenguaje y, sobre todo, dónde no.»
+
+**No des las gracias por el tiempo aquí.** Suena a disculpa por ocuparlo y gasta cuatro
+segundos del arranque, que es donde se decide si te siguen escuchando. El agradecimiento ya
+está en el cierre, que es donde se ha ganado.
+
+## 0:20 – 0:45 · El problema (sin tocar la aplicación todavía)
 
 Abre `samples/legacy-erp.sql` y baja hasta `usp_CerrarPedido`.
 
-> «Esto es un procedimiento almacenado de un ERP. Ochenta y nueve líneas. Cierra un pedido:
-> valida crédito, genera la factura, descuenta el stock. La lógica de negocio de la empresa
-> está aquí dentro, no en el código de la aplicación.
+> «Esto es uno de esos procedimientos. Ochenta y nueve líneas. Cierra un pedido: valida
+> crédito, genera la factura, descuenta el stock. La lógica de negocio de la empresa está aquí
+> dentro, no en el código de la aplicación.
 >
-> Ahora imagina cuarenta procedimientos como este, escritos hace quince años, sin
-> documentación, y que te piden migrarlos a .NET. El primer problema no es técnico: es que
-> nadie sabe qué hace este código ni por dónde se puede empezar sin romper producción.
->
-> Eso hoy se resuelve con un consultor leyendo procedimientos a mano durante semanas. Legacy
-> Lens automatiza ese primer paso.»
+> Ahora imagina cuarenta como este, escritos hace quince años por gente que ya no está, y que
+> te piden migrarlos a .NET. El primer problema no es técnico: es que nadie sabe qué hace este
+> código ni por dónde empezar sin romper producción. Legacy Lens automatiza ese primer paso.»
+
+> **Por qué está recortado respecto a la versión anterior:** la apertura ya dice que esto se
+> resuelve leyendo código a mano durante semanas, y la diapositiva 2 lo dice por escrito.
+> Repetirlo treinta segundos después es el error más común en una presentación corta. El
+> tramo total sigue siendo de 45 segundos.
 
 ## 0:45 – 1:40 · La decisión de diseño
 
@@ -69,11 +89,30 @@ Cuando termine, recorre las tarjetas del resumen.
 **Pestaña Plan.** Lee el diagnóstico general y una fase.
 
 > «Fíjate en el orden: primero lo autocontenido, al final los nudos de los que depende medio
-> sistema. Es el patrón strangler fig, y lo puede aplicar porque conoce el grafo real.»
+> sistema. Es una migración por estrangulamiento: se va sustituyendo el sistema por partes,
+> por fuera, y el viejo se queda sin trabajo hasta que se puede apagar. Y lo puede ordenar así
+> porque conoce el grafo real.»
+
+> **Sobre el nombre en inglés:** no hace falta decirlo. La diapositiva ya escribe *strangler
+> fig* entre paréntesis, así que el tribunal ve que conoces el término, y explicar el mecanismo
+> en español demuestra más que pronunciar la etiqueta. Si aun así lo quieres decir, suena
+> «STRÁN-gler fig» y no pasa nada por decirlo con acento español; lo que sí se nota en cámara
+> es tropezar y repetirlo dos veces.
 
 **Pestaña Grafo.** Cambia entre las dos vistas.
 
-> «El color es el riesgo. Y estas aristas no son una opinión del modelo: salen del AST.»
+> «El color es el riesgo. Y estas aristas no son una opinión del modelo: salen del árbol de
+> sintaxis que construye el propio analizador de SQL Server antes de ejecutar nada. No busco
+> texto, leo la gramática del lenguaje: una tabla nombrada en un comentario no genera
+> dependencia, y una lectura escondida en un `JOIN` anidado sí aparece.»
+
+> **Si alguien pregunta qué es el árbol de sintaxis**, en una frase: cuando SQL Server recibe
+> un script, antes de ejecutarlo lo convierte en un árbol donde cada sentencia, cada tabla y
+> cada columna es un nodo, y así deja de ser texto y pasa a tener estructura. Legacy Lens usa
+> ese mismo analizador —`ScriptDom`, el que publica Microsoft—, así que ve el script igual que
+> lo ve el motor. La diferencia práctica con buscar texto es la que acabas de decir: los
+> comentarios y las cadenas no engañan al analizador. **No digas «AST» en voz alta** sin
+> haberlo explicado antes; la sigla no añade nada y deja fuera a media sala.
 
 ## 3:15 – 4:35 · El momento fuerte: riesgo explicable
 
