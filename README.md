@@ -104,130 +104,157 @@ al 88 % de `gpt-4o`, que fue más lacónico y omitió detalles relevantes. Ver
 
 ## 3. Instalación y ejecución
 
-### Requisitos
+Hay tres formas de tener esto funcionando, en orden de menos a más trabajo:
 
-- **SDK de .NET 10** (fijado en `global.json`)
-- Opcional: Docker, Terraform 1.7+, Azure CLI (solo para desplegar)
+| | Qué necesitas | Para qué |
+| --- | --- | --- |
+| **Docker Compose** | Docker Desktop | probarlo entero, con base de datos, en un comando |
+| `dotnet run` | SDK de .NET 10 | trabajar en el código |
+| Despliegue en Azure | una suscripción | ponerlo en producción, **desde los pipelines** |
 
-**Si vas a abrirlo en Visual Studio, necesitas Visual Studio 2026.** Visual Studio 2022 trae
-el SDK 9 y no reconoce `net10.0`: el síntoma no es un error claro, sino avisos
-desconcertantes en los nodos `Microsoft.AspNetCore.App` y `Microsoft.NETCore.App` del árbol
-de dependencias, y ficheros que no se abren. El `global.json` está precisamente para que el
-diagnóstico sea explícito en lugar de ese síntoma indirecto.
+Si solo quieres verlo, no hace falta nada: está desplegado y las credenciales de prueba
+están en la tabla del principio.
 
-Con VS Code, Rider o la línea de comandos no hay ninguna restricción.
+### 3.1 La forma recomendada: Docker Compose
 
-`docker-compose.dcproj` forma parte de la solución para que el entorno de contenedores
-aparezca en Visual Studio y arranque con F5. Su SDK solo existe dentro de Visual Studio, así
-que `dotnet restore`, `build` y `test` lo ignoran sin problema — pero `dotnet list package`
-intenta evaluarlo y falla. Por eso el *workflow* de seguridad recorre los proyectos uno a
-uno en lugar de la solución.
-
-### En local, sin IA
-
-El análisis estático no necesita ninguna credencial:
+Levanta la aplicación y un **SQL Server con un ERP de ejemplo ya cargado**, del que puedes
+generar scripts reales para analizar.
 
 ```bash
-git clone https://github.com/<usuario>/legacy-lens.git
+git clone https://github.com/Brainiac1703/legacy-lens.git
 cd legacy-lens
-dotnet run --project src/LegacyLens.Web
+cp .env.example .env       # y pon MSSQL_SA_PASSWORD
+docker compose up --build
 ```
 
-La aplicación avisa en pantalla de que la IA no está configurada y entrega el inventario,
-el grafo, las métricas y el riesgo. El usuario de prueba se siembra en el arranque.
+| | |
+| --- | --- |
+| Aplicación | http://localhost:8081 |
+| SQL Server | `localhost,14330`, usuario `sa`, base de datos `LegacyERP` |
+| Usuario | `demo@legacylens.dev` / `Demo.1234!` |
 
-### En local, con IA
+**No hace falta ninguna credencial de Azure.** El análisis estático funciona solo; la
+aplicación avisa en pantalla de que la IA no está configurada y entrega el inventario, el
+grafo, las métricas y el riesgo. Si quieres además la parte de IA, añade `Ai__Endpoint` al
+`.env` — ver [3.3](#33-con-ia).
 
-Aprovisiona Azure OpenAI y configura el endpoint. Sin clave se usa la identidad de tu
-sesión de `az login`:
+Cuatro detalles que conviene conocer:
+
+- **El puerto de SQL Server no es el 1433 a propósito**, para no chocar con una instancia
+  local ni con el contenedor de otro proyecto. Se cambia con `SQLSERVER_PORT` en `.env`.
+- **La aplicación no se conecta a ese SQL Server, y no debe hacerlo nunca.** El SQL que
+  analiza se parsea, jamás se ejecuta. El servidor está ahí como fuente de la que generar
+  scripts con *Generate Scripts* y probar el flujo completo sin depender de ningún servidor
+  de la empresa. Por eso el servicio `web` no declara `depends_on` sobre él: sería una
+  dependencia falsa.
+- **Los datos sobreviven a un `docker compose down`**, porque viven en un volumen. Para
+  empezar de cero, `docker compose down -v`.
+- `docker-compose.dcproj` existe para que el entorno aparezca como proyecto en la solución de
+  Visual Studio y arranque con F5. Fuera de Visual Studio no hace falta.
+
+  Ese proyecto fija `DockerComposeProjectName` al mismo nombre que declara
+  `docker-compose.yml`, y no es cosmético: sin ello Visual Studio deriva un nombre de la ruta
+  y F5 levanta **un segundo juego de contenedores** en paralelo al que hubiera creado
+  `docker compose` desde la terminal. Los dos intentan publicar el mismo puerto y el segundo
+  falla con `port is already allocated`.
+
+### 3.2 Sin Docker, para trabajar en el código
+
+Necesitas el **SDK de .NET 10**, fijado en `global.json`, y el SQL Server del compose
+levantado: la aplicación aplica las migraciones al arrancar, así que sin base de datos no
+llega a servir.
 
 ```bash
-cd Deploy/infra
-cp terraform.tfvars.example terraform.tfvars   # y pon tu subscription_id
-terraform init
-terraform apply
-
-cd ..
-dotnet user-secrets --project src/LegacyLens.Web \
-  set "Ai:Endpoint" "$(cd Deploy/infra && terraform output -raw openai_endpoint)"
+docker compose up -d sqlserver          # solo la base de datos
 dotnet run --project src/LegacyLens.Web
 ```
 
-Necesitarás el rol *Cognitive Services OpenAI User* sobre el recurso.
+La cadena de conexión de `appsettings.Development.json` ya apunta a ese contenedor, en
+`localhost,14330`. Si prefieres tu propia instancia, cámbiala ahí.
 
-### Ejecutar los tests
+**Si vas a abrirlo en Visual Studio, necesitas Visual Studio 2026.** El 2022 trae el SDK 9 y
+no reconoce `net10.0`: el síntoma no es un error claro, sino avisos desconcertantes en los
+nodos `Microsoft.AspNetCore.App` y `Microsoft.NETCore.App` del árbol de dependencias, y
+ficheros que no se abren. El `global.json` está precisamente para que el diagnóstico sea
+explícito en lugar de ese síntoma indirecto. Con VS Code, Rider o la línea de comandos no hay
+ninguna restricción.
+
+Un aviso si vas a comprobar algo de la interfaz: **ejecutar desde `bin/Release` devuelve 500
+en todos los recursos estáticos**, `blazor.web.js` incluido, porque el manejador de desarrollo
+busca los `.razor.js` con ámbito en una ruta que solo existe en el árbol de fuentes. Usa
+`dotnet run` o `dotnet publish`, nunca el ejecutable de `bin`.
+
+### 3.3 Con IA
+
+Hace falta un recurso de **Azure OpenAI** con dos despliegues de modelo. Lo normal es que ya
+lo tengas o que lo cree el pipeline (ver [3.6](#36-desplegar-en-azure)); una vez existe,
+basta apuntar la aplicación a su endpoint:
+
+```bash
+dotnet user-secrets --project src/LegacyLens.Web set "Ai:Endpoint" "https://<tu-recurso>.openai.azure.com/"
+dotnet run --project src/LegacyLens.Web
+```
+
+O, con Docker Compose, poniendo `Ai__Endpoint` en el `.env`.
+
+**No se configura ninguna clave.** Sin `Ai:ApiKey` la aplicación usa `DefaultAzureCredential`,
+que en tu máquina es la sesión de `az login` y en Azure es la identidad administrada del
+Container App. Necesitas el rol *Cognitive Services OpenAI User* sobre el recurso.
+
+### 3.4 Los tests
 
 ```bash
 dotnet test LegacyLens.slnx
 ```
 
-### Ejecutar el arnés de evaluación
+33 tests sobre las partes deterministas: el analizador, la puntuación de riesgo y los
+recorridos del grafo. Es exactamente lo que ejecuta el CI.
 
-Mide la calidad de la parte no determinista contra un conjunto dorado de reglas de negocio,
-y compara modelos:
+### 3.5 El arnés de evaluación
+
+Mide la calidad de la parte **no** determinista contra un conjunto dorado de reglas de
+negocio, y compara modelos:
 
 ```bash
-export Ai__Endpoint=$(cd Deploy/infra && terraform output -raw openai_endpoint)
+export Ai__Endpoint="https://<tu-recurso>.openai.azure.com/"
 dotnet run --project tools/LegacyLens.Evals -- \
   --models gpt-4.1-mini,gpt-4o \
   --out docs/evals/informe.md
 ```
 
-El informe incluye las métricas **y la salida generada íntegra**: una cobertura del cien por
-cien no significa nada si nadie lee el texto.
+Gasta cuota del modelo, así que no corre en el CI. El informe incluye las métricas **y la
+salida generada íntegra**: una cobertura del cien por cien no significa nada si nadie lee el
+texto.
 
-### Entorno completo con Docker Compose
+### 3.6 Desplegar en Azure
 
-Es la forma recomendada de desarrollar: levanta la aplicación y un **SQL Server con el ERP
-de ejemplo ya cargado**, del que puedes generar scripts reales para analizar.
+**Se despliega desde GitHub Actions, no a mano.** El pipeline `deploy.yml` hace el camino
+completo en un solo recorrido: compila y prueba, planifica la infraestructura, **espera tu
+aprobación**, aplica el plan que aprobaste —no uno nuevo—, actualiza el esquema de la base de
+datos y publica la revisión de la aplicación, comprobando al final que responde 200.
 
-```bash
-cp .env.example .env       # y pon MSSQL_SA_PASSWORD y, si quieres IA, Ai__Endpoint
-docker compose up --build
-```
+La puesta en marcha son tres scripts que se ejecutan **una sola vez**, y está detallada en
+[§9 · Despliegue continuo desde GitHub](#despliegue-continuo-desde-github).
 
-- Aplicación: http://localhost:8081
-- SQL Server: `localhost,14330` con usuario `sa` y la base de datos `LegacyERP`
+> **Se puede aplicar Terraform a mano, y no es lo que deberías hacer.**
+>
+> ```bash
+> cd Deploy/infra && terraform apply -var deploy_app=true
+> ```
+>
+> Funciona, y sirve para depurar un cambio de infraestructura antes de subirlo. Pero se salta
+> la aprobación, aplica un plan que nadie ha revisado, y deja el estado remoto tocado desde
+> una máquina que no es la del pipeline. En este proyecto ya provocó dos incidencias: un plan
+> aprobado que quedó obsoleto porque otra ejecución movió el estado, y un *lease* del blob de
+> estado abandonado que hubo que romper a mano.
+>
+> Si lo usas, que sea a sabiendas y sobre una suscripción tuya.
 
-El puerto de SQL Server **no es el 1433** a propósito, para no chocar con una instancia
-local ni con el contenedor de otro proyecto. Se cambia con `SQLSERVER_PORT` en `.env`.
-
-Un detalle del diseño que conviene entender: **la aplicación no se conecta a ese SQL
-Server, y no debe hacerlo nunca.** El SQL que analiza se parsea, jamás se ejecuta. El
-servidor está ahí como fuente de la que generar scripts con *Generate Scripts* y probar el
-flujo completo sin depender de ningún servidor de la empresa. Por eso el servicio `web` no
-declara `depends_on` sobre él: sería una dependencia falsa.
-
-Los datos de la aplicación viven en un volumen, así que los análisis y los usuarios
-sobreviven a un `docker compose down`. Para empezar de cero, `docker compose down -v`.
-
-`docker-compose.dcproj` existe para que el entorno aparezca como proyecto en la solución de
-Visual Studio y se pueda arrancar con F5. Fuera de Visual Studio no hace falta.
-
-Ese proyecto fija `DockerComposeProjectName` al mismo nombre que declara
-`docker-compose.yml`, y no es un detalle cosmético: sin ello Visual Studio deriva un nombre
-de proyecto de la ruta y F5 levanta **un segundo juego de contenedores** en paralelo al que
-hubiera creado `docker compose` desde la terminal. Los dos intentan publicar el mismo puerto
-y el segundo falla con `port is already allocated`. Con el nombre fijado, terminal y Visual
-Studio operan sobre el mismo proyecto.
-
-### Desplegar a mano
-
-```bash
-cd Deploy/infra
-terraform apply -var deploy_app=true
-cd ..
-./scripts/deploy.ps1
-```
-
-`deploy.ps1` construye la imagen **dentro de Azure** con `az acr build`, así que no hace
-falta autenticarse contra el registro ni subir la imagen desde casa.
-
-### 3.4 Servidor MCP: consultar el sistema heredado desde tu agente
+### 3.7 El servidor MCP: el análisis dentro de tu agente
 
 El análisis también se expone como servidor de **Model Context Protocol**, para que un agente
-—Claude Code, por ejemplo— pueda consultar el sistema heredado mientras escribe el código de
-la migración, sin abrir la aplicación web.
+—Claude Code, por ejemplo— consulte el sistema heredado mientras escribes el código de la
+migración, sin abrir la aplicación web.
 
 ```bash
 dotnet build src/LegacyLens.Mcp --configuration Release
@@ -259,9 +286,13 @@ sistema heredado:
 | `where_used` | quién toca esta tabla, y si la lee o la escribe |
 | `change_risk` | qué se rompe si lo cambio, y qué habría que migrar antes |
 
+Las respuestas separan lo calculado de lo interpretado igual que la web, porque un agente
+necesita saber en qué puede confiar sin verificar.
+
 El servidor **se ejecuta en local y no autentica a nadie**: lo lanza tu propio agente con las
 credenciales que le das, y está acotado a los análisis del correo configurado. No es un
-servicio desplegado, y la razón está en el [ADR 0008](docs/adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md).
+servicio desplegado, y la razón está en el
+[ADR 0008](docs/adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md).
 
 ---
 
@@ -524,14 +555,30 @@ midiendo.
 
 ### Despliegue continuo desde GitHub
 
-La infraestructura y la aplicación se gestionan desde el repositorio, con dos pipelines
-separados y **sin ningún secreto almacenado**: la autenticación es con OIDC, así que GitHub
-presenta un token firmado que Azure valida contra este repositorio y esta rama.
+La infraestructura y la aplicación se gestionan desde el repositorio, con **un único camino a
+producción** y sin ningún secreto de cliente almacenado: la autenticación es con OIDC, así que
+GitHub presenta un token firmado que Azure valida contra este repositorio, esta rama y este
+entorno.
 
-| Pipeline | Se dispara con | Qué hace |
+| Workflow | Se dispara con | Qué hace |
 | --- | --- | --- |
-| `infra.yml` | Cambios en `Deploy/infra/` | En un *pull request* planifica y **publica el plan como comentario**. Al integrar, aplica **el plan guardado**, no uno nuevo. |
-| `deploy.yml` | Cambios en `src/` o el `Dockerfile` | Verifica con los tests, construye la imagen con `az acr build`, publica la revisión y **comprueba que la aplicación responde 200** antes de darlo por bueno. |
+| `ci.yml` | *pull request* y `main` | Compila, ejecuta los 33 tests, construye la imagen y **comprueba que arranca, migra y sirve el runtime de Blazor**. Valida el Terraform. |
+| `deploy.yml` | `main`, o a mano | El camino completo a producción. Detalle abajo. |
+| `security.yml` | *pull request*, `main` y semanalmente | CodeQL y búsqueda de paquetes vulnerables, que **falla la ejecución** si aparece alguno. |
+
+**Hubo dos pipelines, uno de infraestructura y otro de aplicación, y se unieron en uno.**
+Separados podían pisarse: el de aplicación desplegaba una revisión contra una infraestructura
+que el otro estaba cambiando, y el orden entre aplicar el esquema de base de datos y publicar
+la revisión no estaba garantizado. Ese orden no es negociable —el esquema tiene que estar listo
+antes de que arranque el código que lo usa— así que ahora es un solo recorrido de cinco pasos:
+
+1. **Compilar y probar.** Si los tests fallan, no se toca nada.
+2. **Planificar** la infraestructura, con el plan completo en el resumen de la ejecución.
+3. **Esperar aprobación** del entorno `production`. Es la parada de revisión.
+4. **Aplicar el plan aprobado**, no uno nuevo: no hay ventana para que algo cambie entre que
+   lo lees y se ejecuta.
+5. **Actualizar la base de datos** y después **publicar la revisión**, comprobando que la
+   aplicación responde 200 antes de dar el despliegue por bueno.
 
 Hay **dos identidades con permisos distintos**, y es deliberado: la de despliegue —la que se
 ejecuta en cada *commit*— está limitada a un grupo de recursos y **no puede tocar la
