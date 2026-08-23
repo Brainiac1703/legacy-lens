@@ -44,17 +44,19 @@ Trabajo de Fin de Máster — Máster de Desarrollo con IA
 
 ## Quién presenta esto
 
-**Nacho Tovar** — desarrollador senior en **Pronet-ISE**
+**Nacho Tovar** — arquitecto de software en **Pronet-ISE**
 
-Trabajo a diario con **.NET, Azure, Terraform y Azure DevOps**, manteniendo y evolucionando
-productos propietarios de gestión empresarial.
+Diseño y evoluciono productos propietarios de gestión empresarial con **.NET, Azure,
+Terraform y Azure DevOps**.
 
 <br>
 
 ### Por qué este proyecto y no otro
 
-Legacy Lens **no es un ejercicio**. Resuelve un problema que tengo delante: sistemas con la
-lógica de negocio enterrada en procedimientos almacenados que alguien va a pedir migrar.
+Legacy Lens **no es un ejercicio**: resuelve una parte de mi trabajo. Decidir cómo se migra
+un sistema con la lógica de negocio enterrada en procedimientos almacenados es exactamente lo
+que se le pide a un arquitecto, y hoy esa decisión se toma leyendo código a mano durante
+semanas antes de poder dibujar nada.
 
 Quería un TFM que usara lo que sé hacer —arquitectura, cloud, infraestructura como código— y
 que además me obligara a lo que vine a aprender: **dónde encaja un modelo de lenguaje y,
