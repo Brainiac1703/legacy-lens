@@ -33,10 +33,6 @@ opcional.
 > Quería un TFM que usara lo que sé hacer y que además me obligara a lo que vine a aprender:
 > dónde encaja un modelo de lenguaje y, sobre todo, dónde no.»
 
-**No des las gracias por el tiempo aquí.** Suena a disculpa por ocuparlo y gasta cuatro
-segundos del arranque, que es donde se decide si te siguen escuchando. El agradecimiento ya
-está en el cierre, que es donde se ha ganado.
-
 ## 0:20 – 0:45 · El problema (sin tocar la aplicación todavía)
 
 Abre `samples/legacy-erp.sql` y baja hasta `usp_CerrarPedido`.
