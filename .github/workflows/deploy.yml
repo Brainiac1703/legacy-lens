@@ -408,6 +408,32 @@ jobs:
 
           echo "reference=$registry/$IMAGE_REPOSITORY:$tag" >> "$GITHUB_OUTPUT"
 
+      # El token del servidor MCP se escribe aquí y no en Terraform: el plan se
+      # sube como artefacto de la ejecución y en un repositorio público sería
+      # descargable con el valor en claro dentro.
+      #
+      # Va antes de publicar la revisión para que la actualización de imagen sea
+      # el último cambio y no queden dos revisiones seguidas.
+      - name: Set the MCP token
+        id: mcp
+        env:
+          MCP_API_KEY: ${{ secrets.MCP_API_KEY }}
+        run: |
+          if [ -z "$MCP_API_KEY" ]; then
+            echo "::warning::MCP_API_KEY no está configurado. El endpoint /mcp no se publicará."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${#MCP_API_KEY}" -lt 32 ]; then
+            echo "::error::MCP_API_KEY tiene ${#MCP_API_KEY} caracteres y la aplicación exige 32."
+            exit 1
+          fi
+
+          az containerapp secret set             --name "$CONTAINER_APP"             --resource-group "$RESOURCE_GROUP"             --secrets "mcp-api-key=$MCP_API_KEY"             --output none
+
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
       - name: Publish the revision
         run: |
           az containerapp update \
@@ -435,6 +461,25 @@ jobs:
           done
 
           echo "::error::La aplicación no respondió 200 tras 20 intentos."
+          exit 1
+
+      # Que la portada dé 200 no dice nada del servidor MCP. Un 401 confirma que
+      # el endpoint existe y que exige el token; un 404 significa que la
+      # aplicación arrancó sin publicarlo, y eso se descubriría cuando alguien
+      # intentara usarlo.
+      - name: Check the MCP endpoint is published
+        if: steps.mcp.outputs.configured == 'true'
+        run: |
+          url='${{ needs.apply-infrastructure.outputs.app_url }}/mcp'
+
+          http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10             -X POST "$url"             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' || echo 000)
+
+          if [ "$http_code" = '401' ]; then
+            echo "El endpoint MCP está publicado y rechaza peticiones sin token."
+            exit 0
+          fi
+
+          echo "::error::POST $url devolvió $http_code y se esperaba 401."
           exit 1
 
       - name: Summary

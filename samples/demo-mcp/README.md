@@ -8,23 +8,69 @@ responda sobre el sistema heredado tiene que haber salido de las cuatro herramie
 Esa es la demostración. Si el agente pudiera leer `legacy-erp.sql` no se estaría probando
 nada.
 
-## Puesta en marcha
+## La forma recomendada: contra el entorno desplegado
+
+No hay nada que instalar. El servidor está hospedado dentro de la aplicación desplegada, así
+que basta con la configuración:
 
 ```bash
-cp .mcp.json.example .mcp.json     # y pon la ruta real y la contraseña de tu .env
+cp .mcp.json.example .mcp.json     # y pega el token
 ```
 
-Antes de abrir el agente hacen falta tres cosas, y las tres se olvidan:
+O, equivalente, sin editar ficheros:
 
-1. **El ejecutable compilado**, porque la configuración apunta a un binario, no al proyecto:
+```bash
+claude mcp add --transport http legacy-lens \
+  https://ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io/mcp \
+  --header "Authorization: Bearer <token>"
+```
+
+**El token no está en este repositorio**, y no es un descuido: publicarlo aquí equivaldría a
+no tener ninguno. Se entrega junto al enlace del vídeo.
+
+Ni SDK de .NET, ni Docker, ni base de datos, ni credenciales de Azure. La credencial que abre
+la base de datos es la identidad administrada del contenedor y no sale de Azure; quien
+consulta solo presenta un token.
+
+## La alternativa: en local, contra tu propia base de datos
+
+Solo tiene sentido si vas a trabajar sobre el código. Aquí sí hay tres pasos, y los tres se
+olvidan:
+
+1. **Compilar el ejecutable**, porque la configuración apunta a un binario y no al proyecto:
    `dotnet build src/LegacyLens.Mcp --configuration Release`
-2. **La base de datos en marcha**, con `docker compose up -d` desde la raíz.
-3. **Al menos un análisis guardado** por el usuario de `Mcp__OwnerEmail`. Entra en
-   http://localhost:8081 con `demo@legacylens.dev`, analiza `legacy-erp.sql` y
-   `legacy-almacen.sql`, y comprueba que aparecen en el listado.
+2. **Levantar la base de datos**, con `docker compose up -d` desde la raíz.
+3. **Hacer al menos un análisis** con el usuario de `Mcp__OwnerEmail`: entra en
+   http://localhost:8081 con `demo@legacylens.dev` y analiza los dos ejemplos.
 
-Sin el tercer paso el servidor arranca, conecta y responde `[]` a todo. No da ningún error,
-que es lo que lo hace desconcertante.
+```json
+{
+  "mcpServers": {
+    "legacy-lens": {
+      "command": "C:/ruta/al/repositorio/src/LegacyLens.Mcp/bin/Release/net10.0/legacy-lens-mcp.exe",
+      "env": {
+        "ConnectionStrings__DefaultConnection": "Server=localhost,14330;Database=LegacyLens;User Id=sa;Password=LA-DE-TU-.env;TrustServerCertificate=True;Encrypt=True",
+        "Mcp__OwnerEmail": "demo@legacylens.dev"
+      }
+    }
+  }
+}
+```
+
+Dos confusiones fáciles en esa cadena: la base es **`LegacyLens`**, la de la aplicación, y no
+`LegacyERP`, que es el sistema heredado de ejemplo; y el puerto es el **14330**, no el 1433.
+Con cualquiera de las dos mal, el servidor arranca, conecta y responde vacío.
+
+> También puedes probar el hospedaje HTTP en local, que es lo más parecido al despliegue
+> porque usa la misma imagen: pon `Mcp__ApiKey` en el `.env` con 32 caracteres o más, levanta
+> el compose y apunta a `http://localhost:8081/mcp`. Con menos de 32 caracteres el endpoint no
+> se publica, a propósito.
+
+## El fallo que no da ningún error
+
+Si no hay análisis del usuario configurado, las herramientas responden **vacío a todo**. El
+servidor arranca, conecta, se da de alta y no se queja. Es lo más desconcertante de los dos
+montajes, así que la primera pregunta al agente conviene que sea siempre «¿qué análisis hay?».
 
 ## Preguntas que enseñan algo
 

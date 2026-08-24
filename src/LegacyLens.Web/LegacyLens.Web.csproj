@@ -33,6 +33,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +42,7 @@
     <ProjectReference Include="..\LegacyLens.Ai\LegacyLens.Ai.csproj" />
     <ProjectReference Include="..\LegacyLens.Application\LegacyLens.Application.csproj" />
     <ProjectReference Include="..\LegacyLens.Persistence.EF\LegacyLens.Persistence.EF.csproj" />
+    <ProjectReference Include="..\LegacyLens.Mcp.Tools\LegacyLens.Mcp.Tools.csproj" />
   </ItemGroup>
 
 </Project>

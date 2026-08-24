@@ -2,7 +2,7 @@ using LegacyLens.Persistence.EF;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace LegacyLens.Mcp;
+namespace LegacyLens.Mcp.Tools;
 
 /// <summary>Configuración del servidor MCP.</summary>
 public sealed class McpOptions
@@ -17,6 +17,14 @@ public sealed class McpOptions
     /// identificador del propietario y no hay forma de pedirles «todos».
     /// </summary>
     public string OwnerEmail { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Token que exige el hospedaje HTTP en la cabecera Authorization. Lo usa
+    /// solo ese hospedaje: el ejecutable stdio no autentica porque lo lanza el
+    /// propio agente de quien lo instala, con las credenciales que esa persona
+    /// le da. Vacío significa que el endpoint HTTP no se publica.
+    /// </summary>
+    public string ApiKey { get; set; } = string.Empty;
 }
 
 /// <summary>
