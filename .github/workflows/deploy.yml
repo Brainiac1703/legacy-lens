@@ -430,7 +430,11 @@ jobs:
             exit 1
           fi
 
-          az containerapp secret set             --name "$CONTAINER_APP"             --resource-group "$RESOURCE_GROUP"             --secrets "mcp-api-key=$MCP_API_KEY"             --output none
+          az containerapp secret set \
+            --name "$CONTAINER_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --secrets "mcp-api-key=$MCP_API_KEY" \
+            --output none
 
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
@@ -441,6 +445,41 @@ jobs:
             --resource-group "$RESOURCE_GROUP" \
             --image '${{ steps.image.outputs.reference }}' \
             --output none
+
+      # Sin esperar a que la revisión nueva esté lista, las comprobaciones de
+      # abajo se hacen contra la ANTERIOR, que sigue sirviendo tráfico mientras
+      # la nueva arranca. Pasó de verdad: la portada devolvió 200 y el endpoint
+      # MCP devolvió 400 en la misma ejecución, porque respondían dos
+      # revisiones distintas.
+      - name: Wait for the new revision
+        run: |
+          for attempt in $(seq 1 40); do
+            revisions=$(az containerapp show \
+              --name "$CONTAINER_APP" \
+              --resource-group "$RESOURCE_GROUP" \
+              --query '[properties.latestRevisionName, properties.latestReadyRevisionName]' \
+              -o tsv)
+
+            latest=$(echo "$revisions" | cut -f1)
+            ready=$(echo "$revisions" | cut -f2)
+
+            if [ "$latest" = "$ready" ]; then
+              echo "La revisión $latest está lista y es la última."
+              break
+            fi
+
+            if [ "$attempt" -eq 40 ]; then
+              echo "::error::La revisión nueva no llegó a estar lista."
+              az containerapp revision list \
+                --name "$CONTAINER_APP" \
+                --resource-group "$RESOURCE_GROUP" \
+                --query '[].{nombre:name, estado:properties.runningState}' -o table
+              exit 1
+            fi
+
+            echo "Intento $attempt: la última es $latest y la lista es $ready. Esperando..."
+            sleep 10
+          done
 
       # No basta con que az devuelva éxito: la revisión puede fallar al arrancar,
       # por ejemplo si no puede conectarse a la base de datos.
@@ -472,12 +511,21 @@ jobs:
         run: |
           url='${{ needs.apply-infrastructure.outputs.app_url }}/mcp'
 
-          http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10             -X POST "$url"             -H 'Content-Type: application/json'             -H 'Accept: application/json, text/event-stream'             -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' || echo 000)
+          for attempt in $(seq 1 10); do
+            http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+              -X POST "$url" \
+              -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' || echo 000)
 
-          if [ "$http_code" = '401' ]; then
-            echo "El endpoint MCP está publicado y rechaza peticiones sin token."
-            exit 0
-          fi
+            if [ "$http_code" = '401' ]; then
+              echo "El endpoint MCP está publicado y rechaza peticiones sin token."
+              exit 0
+            fi
+
+            echo "Intento $attempt: $http_code. Esperando el enrutado del tráfico..."
+            sleep 10
+          done
 
           echo "::error::POST $url devolvió $http_code y se esperaba 401."
           exit 1
