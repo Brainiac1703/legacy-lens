@@ -87,6 +87,13 @@ resource "azurerm_container_app" "main" {
   # caracteres y con menos no publica el endpoint. Así, si el pipeline no llega
   # a poner el valor real, la superficie no queda abierta con una credencial que
   # está escrita en el repositorio.
+  #
+  # Terraform sí gestiona este bloque, y hubo que aprenderlo: con el valor
+  # dentro de ignore_changes, el secreto no se creaba nunca —ignorar un bloque
+  # lo ignora también la primera vez— mientras la variable de entorno sí se
+  # enviaba, y Azure rechazaba la actualización con SecretRefNotFound. El orden
+  # del pipeline hace que no importe: el paso que escribe el valor real va
+  # después de aplicar la infraestructura, así que cada ejecución lo reasienta.
   secret {
     name  = "mcp-api-key"
     value = "sin-token"
@@ -192,10 +199,7 @@ resource "azurerm_container_app" "main" {
     # despliegue, y no se le pasa de vuelta a Terraform. Sin ignorarla, el
     # siguiente apply de infraestructura devolveria la aplicacion a la imagen
     # de arranque publica y tumbaria lo desplegado.
-    # El valor del secreto lo pone el pipeline, no Terraform. Se ignora solo
-    # el bloque secret: las variables de entorno siguen gestionadas aquí, que
-    # es donde tienen que estar.
-    ignore_changes = [template[0].container[0].image, secret]
+    ignore_changes = [template[0].container[0].image]
   }
 }
 
