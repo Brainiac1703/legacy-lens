@@ -35,6 +35,9 @@ cualquier SQL Server Management Studio con *Generate Scripts* — y devuelve:
   una propuesta de a qué debería convertirse en .NET.
 - Un **plan de migración por fases** siguiendo el patrón *strangler fig*.
 - Todo ello **exportable como paquete de documentación en Markdown**.
+- Y todo ello **consultable desde tu agente por MCP**, sin abrir la aplicación: el
+  análisis pasa a ser contexto que el agente ya tiene mientras escribes el código de la
+  migración, en lugar de una herramienta que hay que ir a consultar.
 
 ### La decisión que sostiene el proyecto
 
