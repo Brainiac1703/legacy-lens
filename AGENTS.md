@@ -32,7 +32,8 @@ src/LegacyLens.Persistence.EF  Adaptador de datos. Implementa el repositorio.
 src/LegacyLens.Analysis        ScriptDom. Determinista → testeable con asserts.
 src/LegacyLens.Ai              Modelo de lenguaje. No determinista → se mide con el arnés.
 src/LegacyLens.Web             Blazor Web App (InteractiveServer).
-src/LegacyLens.Mcp             Servidor MCP. Traduce a MediatR, sin lógica propia.
+src/LegacyLens.Mcp.Tools       Herramientas MCP. Las comparten el stdio y la web.
+src/LegacyLens.Mcp             Hospedaje stdio del servidor MCP, para uso local.
 tests/                         Tests del analizador y del grafo.
 tools/LegacyLens.Evals         Arnés de evaluación del modelo.
 Deploy/infra/                  Terraform.
@@ -40,6 +41,7 @@ Deploy/actions/                Composite action de Terraform para los pipelines.
 ```
 
 Las dependencias apuntan **siempre hacia dentro**. `Web` y `Mcp` solo conocen `ISender`.
+La web hospeda además el servidor MCP por HTTP en `/mcp`, con las mismas herramientas.
 
 ## Comandos
 

@@ -43,6 +43,11 @@ services:
         Server=sqlserver,1433;Database=LegacyLens;User Id=sa;
         Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=True
 
+      # Servidor MCP por HTTP en /mcp. Sin un token de 32 caracteres o más el
+      # endpoint no se publica, así que por omisión no existe.
+      Mcp__OwnerEmail: 'demo@legacylens.dev'
+      Mcp__ApiKey: '${Mcp__ApiKey:-}'
+
       # Sin endpoint la aplicación arranca igual y entrega el análisis estático.
       Ai__Endpoint: '${Ai__Endpoint:-}'
       Ai__ApiKey: '${Ai__ApiKey:-}'

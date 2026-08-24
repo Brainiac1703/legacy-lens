@@ -1,5 +1,5 @@
 using LegacyLens.Application;
-using LegacyLens.Mcp;
+using LegacyLens.Mcp.Tools;
 using LegacyLens.Persistence.EF;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

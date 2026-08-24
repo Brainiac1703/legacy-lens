@@ -70,10 +70,10 @@ consultas de la capa de aplicación exigen su identificador, sin ninguna forma d
 - Es otro artefacto que hay que construir y configurar a mano, y su configuración vive fuera
   del repositorio, en el fichero del cliente MCP. No hay forma de probar en CI que la
   configuración de una máquina concreta sea correcta.
-- El servidor lee la base de datos directamente. Si algún día hubiera que usarlo contra el
-  despliegue en Azure, habría que abrirle el cortafuegos y darle una identidad, y la decisión
-  de «sin autenticación porque es local» dejaría de valer. Está acotado a uso local a
-  propósito.
+- El servidor lee la base de datos directamente, así que no sirve contra el despliegue en
+  Azure: esa base solo admite identidades de Entra y su cortafuegos solo deja pasar servicios
+  de Azure. **Esto era una limitación, no una decisión**, y la primera versión de este
+  documento la presentó como si fuera deliberada. Está resuelto: ver la revisión al final.
 - Las descripciones de las herramientas son, en la práctica, prompts. Son el único contexto
   que el modelo tiene para elegir herramienta y argumentos, así que un cambio descuidado ahí
   degrada el comportamiento sin que falle ningún test. Tienen el mismo cuidado que
@@ -119,3 +119,35 @@ la web.
 Más cómodo de llamar, pero obliga a cargar el histórico completo para responder y hace
 ambigua cualquier respuesta: dos sistemas heredados distintos pueden tener un `dbo.Facturas`
 cada uno, y mezclarlos daría un radio de impacto falso.
+
+## Revisión · 24 de agosto de 2026
+
+La versión original de este documento decía que el servidor estaba «acotado a uso local a
+propósito». No era cierto: era un atajo, y presentarlo como una decisión de diseño lo
+disfrazaba. Un servidor MCP que se despliega en la nube y que solo puede usar quien tenga el
+repositorio y una base de datos local no está terminado.
+
+Lo que se ha cambiado:
+
+- Las herramientas se han movido a `src/LegacyLens.Mcp.Tools`, una biblioteca que consumen
+  dos hospedadores. No se referencia el ejecutable desde la web porque su `appsettings.json`
+  se copia al directorio de salida y sobrescribiría el de la aplicación.
+- La aplicación web expone las mismas cuatro herramientas en `/mcp` con transporte HTTP
+  (`ModelContextProtocol.AspNetCore`). La credencial que abre la base de datos sigue siendo
+  la identidad administrada del contenedor y no sale de Azure: quien consulta solo presenta
+  un token.
+- El ejecutable stdio se mantiene sin cambios para uso local, que es lo que enseña el vídeo.
+
+Y dos cosas que solo aparecieron al probarlo, otra vez:
+
+- **El token no puede entrar por una variable de Terraform.** El plan se sube como artefacto
+  de la ejecución, y en un repositorio público eso es descargable con el valor en claro
+  dentro. Lo escribe el pipeline con `az containerapp secret set`, y Terraform deja de
+  gestionar el valor del secreto —solo ese, no las variables de entorno—. El relleno que crea
+  Terraform es inerte por construcción: la aplicación exige 32 caracteres y con menos no
+  publica el endpoint, así que un fallo del pipeline no deja la puerta abierta con una
+  credencial escrita en el repositorio.
+- **`UseStatusCodePagesWithReExecute` se comía el 401.** Intercepta cualquier respuesta de
+  error sin cuerpo y reejecuta la petición contra `/not-found`; ese POST con
+  `application/json` contra una página Razor lo rechazaba antiforgery, y el cliente recibía
+  «400 The request has an incorrect Content-type». El rechazo lleva cuerpo a propósito.

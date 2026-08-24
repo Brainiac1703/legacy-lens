@@ -5,6 +5,7 @@
     <Project Path="src/LegacyLens.Application/LegacyLens.Application.csproj" />
     <Project Path="src/LegacyLens.Domain/LegacyLens.Domain.csproj" />
     <Project Path="src/LegacyLens.Persistence.EF/LegacyLens.Persistence.EF.csproj" />
+    <Project Path="src/LegacyLens.Mcp.Tools/LegacyLens.Mcp.Tools.csproj" />
     <Project Path="src/LegacyLens.Mcp/LegacyLens.Mcp.csproj" />
     <Project Path="src/LegacyLens.Web/LegacyLens.Web.csproj" />
   </Folder>

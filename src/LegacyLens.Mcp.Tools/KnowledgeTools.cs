@@ -6,7 +6,7 @@ using LegacyLens.Application.Knowledge;
 using MediatR;
 using ModelContextProtocol.Server;
 
-namespace LegacyLens.Mcp;
+namespace LegacyLens.Mcp.Tools;
 
 /// <summary>
 /// Las herramientas que ve el agente.

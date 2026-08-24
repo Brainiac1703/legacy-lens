@@ -59,6 +59,7 @@ builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddAnalysis();
 builder.Services.AddAi(builder.Configuration);
+builder.Services.AddMcpHttpServer(builder.Configuration);
 
 // ---------------------------------------------------------------------------
 // Identidad y presentación
@@ -136,6 +137,8 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapAdditionalIdentityEndpoints();
+
+app.MapMcpHttpServer();
 
 // Cambio de idioma. Va como endpoint y no como componente porque cambiar la
 // cultura exige recargar: el circuito de Blazor ya se creó con la anterior.

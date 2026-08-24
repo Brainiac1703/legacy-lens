@@ -18,6 +18,7 @@ COPY src/LegacyLens.Application/LegacyLens.Application.csproj       src/LegacyLe
 COPY src/LegacyLens.Persistence.EF/LegacyLens.Persistence.EF.csproj src/LegacyLens.Persistence.EF/
 COPY src/LegacyLens.Analysis/LegacyLens.Analysis.csproj             src/LegacyLens.Analysis/
 COPY src/LegacyLens.Ai/LegacyLens.Ai.csproj                         src/LegacyLens.Ai/
+COPY src/LegacyLens.Mcp.Tools/LegacyLens.Mcp.Tools.csproj           src/LegacyLens.Mcp.Tools/
 COPY src/LegacyLens.Web/LegacyLens.Web.csproj                       src/LegacyLens.Web/
 
 RUN dotnet restore src/LegacyLens.Web/LegacyLens.Web.csproj

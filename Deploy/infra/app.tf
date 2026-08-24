@@ -78,6 +78,20 @@ resource "azurerm_container_app" "main" {
     identity = azurerm_user_assigned_identity.app[0].id
   }
 
+  # El valor real lo escribe el pipeline con az containerapp secret set, leyendo
+  # un secreto de GitHub. No entra por una variable de Terraform a propósito: el
+  # plan se sube como artefacto de la ejecución y en un repositorio público eso
+  # es descargable por cualquiera, con el valor en claro dentro del fichero.
+  #
+  # El relleno no es un token que funcione: la aplicación exige al menos 32
+  # caracteres y con menos no publica el endpoint. Así, si el pipeline no llega
+  # a poner el valor real, la superficie no queda abierta con una credencial que
+  # está escrita en el repositorio.
+  secret {
+    name  = "mcp-api-key"
+    value = "sin-token"
+  }
+
   template {
     # Una sola réplica: el circuito de Blazor Server mantiene estado en memoria
     # y este proyecto no necesita escalar. La afinidad de sesión de abajo es lo
@@ -130,6 +144,19 @@ resource "azurerm_container_app" "main" {
         value = azurerm_user_assigned_identity.app[0].client_id
       }
 
+      # Servidor MCP por HTTP. El correo determina de quién son los análisis
+      # que el endpoint puede leer: las consultas de la capa de aplicación
+      # exigen un propietario y no admiten «todos».
+      env {
+        name  = "Mcp__OwnerEmail"
+        value = var.mcp_owner_email
+      }
+
+      env {
+        name        = "Mcp__ApiKey"
+        secret_name = "mcp-api-key"
+      }
+
       # Tampoco hay clave de OpenAI: al no configurarse Ai__ApiKey, la
       # aplicación usa esa misma identidad administrada.
     }
@@ -165,7 +192,10 @@ resource "azurerm_container_app" "main" {
     # despliegue, y no se le pasa de vuelta a Terraform. Sin ignorarla, el
     # siguiente apply de infraestructura devolveria la aplicacion a la imagen
     # de arranque publica y tumbaria lo desplegado.
-    ignore_changes = [template[0].container[0].image]
+    # El valor del secreto lo pone el pipeline, no Terraform. Se ignora solo
+    # el bloque secret: las variables de entorno siguen gestionadas aquí, que
+    # es donde tienen que estar.
+    ignore_changes = [template[0].container[0].image, secret]
   }
 }
 

@@ -1,27 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    Las herramientas MCP viven aquí y no en el ejecutable stdio porque las
+    consumen dos hospedadores: ese ejecutable, para uso local, y la aplicación
+    web, que las expone por HTTP. Son la misma traducción de MCP a MediatR y
+    duplicarlas garantizaría que se separen.
+
+    No se referencia el proyecto ejecutable directamente desde la web por una
+    razón concreta: su appsettings.json se copia al directorio de salida y
+    sobrescribiría el de la web, con el resultado de una aplicación desplegada
+    sin su propia configuración.
+  -->
+
   <ItemGroup>
     <ProjectReference Include="..\LegacyLens.Domain\LegacyLens.Domain.csproj" />
     <ProjectReference Include="..\LegacyLens.Application\LegacyLens.Application.csproj" />
     <ProjectReference Include="..\LegacyLens.Persistence.EF\LegacyLens.Persistence.EF.csproj" />
-    <ProjectReference Include="..\LegacyLens.Mcp.Tools\LegacyLens.Mcp.Tools.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>legacy-lens-mcp</AssemblyName>
   </PropertyGroup>
 
 </Project>

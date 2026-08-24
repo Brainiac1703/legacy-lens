@@ -108,3 +108,13 @@ variable "tags" {
     managed-by = "terraform"
   }
 }
+
+variable "mcp_owner_email" {
+  description = <<-EOT
+    Correo del usuario cuyos análisis expone el servidor MCP por HTTP. Es el
+    usuario de demostración que siembra la aplicación al arrancar, y coincide
+    con Demo:Email en appsettings.json.
+  EOT
+  type        = string
+  default     = "demo@legacylens.dev"
+}

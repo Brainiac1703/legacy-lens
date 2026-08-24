@@ -254,28 +254,8 @@ El análisis también se expone como servidor de **Model Context Protocol**, par
 —Claude Code, por ejemplo— consulte el sistema heredado mientras escribes el código de la
 migración, sin abrir la aplicación web.
 
-```bash
-dotnet build src/LegacyLens.Mcp --configuration Release
-```
-
-Y en la configuración MCP del cliente:
-
-```json
-{
-  "mcpServers": {
-    "legacy-lens": {
-      "command": "ruta/al/repositorio/src/LegacyLens.Mcp/bin/Release/net10.0/legacy-lens-mcp.exe",
-      "env": {
-        "ConnectionStrings__DefaultConnection": "Server=localhost,14330;Database=LegacyLens;User Id=sa;Password=...;TrustServerCertificate=True",
-        "Mcp__OwnerEmail": "demo@legacylens.dev"
-      }
-    }
-  }
-}
-```
-
 Cuatro herramientas, que son las cuatro preguntas que uno se hace de verdad antes de tocar un
-sistema heredado:
+sistema que no conoce:
 
 | Herramienta | Responde a |
 | --- | --- |
@@ -287,10 +267,65 @@ sistema heredado:
 Las respuestas separan lo calculado de lo interpretado igual que la web, porque un agente
 necesita saber en qué puede confiar sin verificar.
 
-El servidor **se ejecuta en local y no autentica a nadie**: lo lanza tu propio agente con las
-credenciales que le das, y está acotado a los análisis del correo configurado. No es un
-servicio desplegado, y la razón está en el
-[ADR 0008](docs/adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md).
+#### Contra el entorno desplegado, sin instalar nada
+
+Es la forma recomendada de probarlo. El servidor está hospedado dentro de la propia aplicación
+y solo hace falta darlo de alta en el cliente:
+
+```bash
+claude mcp add --transport http legacy-lens   https://ca-legacylens-tfm.bluedesert-728dc156.francecentral.azurecontainerapps.io/mcp   --header "Authorization: Bearer <token>"
+```
+
+**El token no está en este repositorio.** Se entrega junto al enlace del vídeo, porque
+publicarlo aquí equivaldría a no tener ninguno.
+
+Ni base de datos, ni SDK de .NET, ni Docker, ni credenciales de Azure. La credencial que abre
+la base de datos es la identidad administrada del contenedor y **nunca sale de Azure**: quien
+consulta solo presenta un token. Eso no es un detalle de comodidad, es lo que evita la
+alternativa: para que una herramienta instalada en otra máquina llegara a esa base habría que
+desactivar la autenticación solo-Entra, crear un usuario con contraseña, publicarla y abrir el
+cortafuegos a internet.
+
+#### En local, con el ejecutable
+
+Para trabajar sobre tu propia base de datos, por ejemplo la que levanta Docker Compose:
+
+```bash
+dotnet build src/LegacyLens.Mcp --configuration Release
+```
+
+```json
+{
+  "mcpServers": {
+    "legacy-lens": {
+      "command": "ruta/al/repositorio/src/LegacyLens.Mcp/bin/Release/net10.0/legacy-lens-mcp.exe",
+      "env": {
+        "ConnectionStrings__DefaultConnection": "Server=localhost,14330;Database=LegacyLens;User Id=sa;Password=...;TrustServerCertificate=True;Encrypt=True",
+        "Mcp__OwnerEmail": "demo@legacylens.dev"
+      }
+    }
+  }
+}
+```
+
+La base es **`LegacyLens`**, la de la aplicación, y no `LegacyERP`, que es el sistema heredado
+de ejemplo. Las dos viven en el mismo servidor y es una confusión fácil: apuntando a la
+segunda el servidor arranca, conecta y responde vacío a todo.
+
+Este hospedaje **no autentica a nadie**, y no le hace falta: lo lanza tu propio agente con las
+credenciales que tú le das. El de HTTP sí, porque está expuesto.
+
+> **Los dos hospedajes comparten las herramientas**, en `src/LegacyLens.Mcp.Tools`. Duplicar
+> esa traducción de MCP a MediatR habría garantizado que las dos copias se separaran. El
+> ejecutable no se referencia desde la web por una razón concreta: su `appsettings.json` se
+> copia al directorio de salida y sobrescribiría el de la aplicación desplegada.
+
+Si no hay ningún análisis del usuario configurado, las herramientas responden vacío sin dar
+ningún error. Es el fallo más desconcertante de los dos montajes, así que la primera pregunta
+al agente conviene que sea siempre «¿qué análisis hay?».
+
+El recorrido de la decisión, y la corrección de haberla presentado antes como deliberada, está
+en el [ADR 0008](docs/adr/0008-servidor-mcp-sobre-la-capa-de-aplicacion.md).
 
 ---
 
@@ -318,7 +353,8 @@ legacy-lens/
 │   │
 │   ├── LegacyLens.Analysis/       Adaptador de parseo. Implementa ITSqlAnalyzer.
 │   ├── LegacyLens.Ai/             Adaptador de IA. Implementa IAiEnrichmentService.
-│   ├── LegacyLens.Mcp/            Servidor MCP. Solo traduce a MediatR, sin lógica.
+│   ├── LegacyLens.Mcp.Tools/      Las cuatro herramientas MCP. Compartidas.
+│   ├── LegacyLens.Mcp/            Hospedaje stdio, para uso local.
 │   └── LegacyLens.Web/            Presentación. Solo ISender y composición de DI.
 │
 ├── tests/LegacyLens.Analysis.Tests/  33 tests sobre el analizador y el grafo
