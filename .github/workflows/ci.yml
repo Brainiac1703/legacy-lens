@@ -114,6 +114,51 @@ jobs:
           echo 'Arranque, migración, runtime de Blazor y activos de marca verificados.'
           docker rm -f humo
 
+          # El contenedor de arriba arranca SIN configuración de MCP a
+          # propósito: comprueba que una función opcional no impide arrancar.
+          # Una validación al arrancar rompió exactamente eso, y este paso lo
+          # descubrió por casualidad. Ahora se prueba a propósito.
+          #
+          # Este segundo contenedor sí la lleva, y verifica lo contrario: que
+          # con un token el endpoint existe y exige autenticación.
+          docker run -d --name humo-mcp --network host \
+            -e 'ASPNETCORE_HTTP_PORTS=8080' \
+            -e 'ConnectionStrings__DefaultConnection=Server=localhost,1433;Database=LegacyLensCi;User Id=sa;Password=Integracion.2026!;TrustServerCertificate=True;Encrypt=True' \
+            -e 'Mcp__OwnerEmail=demo@legacylens.dev' \
+            -e 'Mcp__ApiKey=0123456789abcdef0123456789abcdef' \
+            legacylens:ci
+
+          for attempt in $(seq 1 40); do
+            if curl -sf -o /dev/null http://localhost:8080/; then
+              break
+            fi
+            if [ "$attempt" -eq 40 ]; then
+              echo '::error::La imagen no arrancó con la configuración de MCP.'
+              docker logs humo-mcp | tail -40
+              docker rm -f humo-mcp
+              exit 1
+            fi
+            sleep 3
+          done
+
+          # Un 401 confirma que el endpoint está publicado y protegido. Un 404
+          # —o el 400 que devuelve la reejecución de la página de error—
+          # significaría que la aplicación arrancó sin publicarlo.
+          http_code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}')
+
+          if [ "$http_code" != '401' ]; then
+            echo "::error::POST /mcp devolvió $http_code y se esperaba 401."
+            docker logs humo-mcp | tail -40
+            docker rm -f humo-mcp
+            exit 1
+          fi
+
+          echo 'El endpoint MCP se publica y exige token.'
+          docker rm -f humo-mcp
+
   terraform:
     name: Validate infrastructure
     runs-on: ubuntu-latest

@@ -22,11 +22,16 @@ public static class McpHosting
     public static IServiceCollection AddMcpHttpServer(
         this IServiceCollection services, IConfiguration configuration)
     {
+        // Sin validación al arrancar, a diferencia del hospedaje stdio. Ahí el
+        // servidor no tiene otro propósito y sin el correo debe negarse a
+        // arrancar; aquí es una función opcional de una aplicación web, y
+        // exigirla impedía que la imagen arrancara sin ella. Lo detectó el CI
+        // al levantar el contenedor solo con la cadena de conexión.
+        //
+        // La configuración se comprueba al publicar el endpoint, que es donde
+        // se sabe si alguien pretendía activarlo.
         services.AddOptions<McpOptions>()
-            .Bind(configuration.GetSection("Mcp"))
-            .Validate(o => !string.IsNullOrWhiteSpace(o.OwnerEmail),
-                "Falta Mcp:OwnerEmail. El servidor necesita saber de quién son los análisis que puede leer.")
-            .ValidateOnStart();
+            .Bind(configuration.GetSection("Mcp"));
 
         services.AddScoped<OwnerResolver>();
 
@@ -57,6 +62,17 @@ public static class McpHosting
                 "Mcp:ApiKey ausente o de menos de {Minimum} caracteres, así que {Path} no se publica.",
                 minimumKeyLength, Path);
             return app;
+        }
+
+        // Con un token válido y sin correo sí se falla, y pronto: alguien
+        // configuró el token, así que pretendía publicar el endpoint. Arrancar
+        // igual lo dejaría respondiendo a todo con una lista vacía, que es
+        // indistinguible de «no hay nada analizado».
+        if (string.IsNullOrWhiteSpace(options.OwnerEmail))
+        {
+            throw new InvalidOperationException(
+                "Mcp:ApiKey está configurado pero falta Mcp:OwnerEmail. El servidor necesita "
+                + "saber de quién son los análisis que puede leer.");
         }
 
         var expected = Encoding.UTF8.GetBytes(options.ApiKey.Trim());
