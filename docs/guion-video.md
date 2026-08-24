@@ -5,20 +5,13 @@ opcional.
 
 ## Antes de grabar (10 minutos de preparación que ahorran tres tomas)
 
-- [ ] Ejecuta el análisis de **los dos ejemplos una vez antes de grabar**. Así la caché está
-      caliente y en la toma real no esperas a las llamadas al modelo. Deja los dos análisis
-      hechos en «Mis análisis» como red de seguridad por si la demo en vivo falla.
-- [ ] Ten abiertas y ordenadas estas pestañas: la app desplegada, el repositorio en GitHub,
+- [ ] Ejecutar el análisis de **los dos ejemplos una vez antes de grabar**.
+- [ ] Abiertas y ordenadas estas pestañas: la app desplegada, el repositorio en GitHub,
       `samples/legacy-erp.sql`, `samples/legacy-almacen.sql` y `TSqlAnalyzerTests.cs`.
-- [ ] Deja el servidor MCP construido y dado de alta en tu cliente, con una sesión de agente
-      abierta y probada. Es la parte más frágil de la demo porque depende de otro programa.
-- [ ] Sube el zoom del navegador al 125 % y el del editor a un tamaño legible en vídeo.
-      Lo que se lee bien en tu monitor no se lee en un vídeo comprimido.
-- [ ] Silencia notificaciones de Teams, Slack y correo.
-- [ ] Ten una terminal lista con `dotnet test` sin ejecutar.
-- [ ] Nada que preparar para la verificación contra el catálogo: se cuenta de viva voz sobre
-      la pantalla que ya estés enseñando. La consulta queda en `docs/verificacion-grafo.sql`
-      para quien quiera reproducirla.
+- [ ] Dejar el servidor MCP construido y dado de alta en cliente, con una sesión de agente
+      abierta y probada.
+- [ ] Silencia notificaciones.
+- [ ] Terminal lista con `dotnet test` sin ejecutar.
 
 ---
 
@@ -287,17 +280,3 @@ Abre `docs/hoja-de-ruta.md`.
 > Gracias.»
 
 ---
-
-## Errores que evitar
-
-- **No leas esto palabra por palabra.** Ten los puntos delante y habla.
-- **Si la demo en vivo falla, no la repares en cámara.** Di «tengo un análisis ya hecho» y
-  abre el de «Mis análisis». Se ve profesional, no lo contrario.
-- **El tramo del MCP es el más frágil**, porque depende de otro programa y de una
-  configuración que vive fuera del repositorio. Si el agente no responde, no lo depures en
-  cámara: enseña la tabla de herramientas en las diapositivas y sigue.
-- **No prometas lo que no hace.** La sección de limitaciones del README es un punto a favor,
-  no algo que esconder. Si mencionas el SQL dinámico como límite reconocido, ganas
-  credibilidad.
-- **Comprueba el audio en los primeros diez segundos** de la primera toma antes de grabar
-  nueve minutos sin sonido.
