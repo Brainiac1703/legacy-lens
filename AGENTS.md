@@ -47,7 +47,7 @@ La web hospeda además el servidor MCP por HTTP en `/mcp`, con las mismas herram
 
 ```bash
 dotnet build LegacyLens.slnx                  # compila la solución (LegacyLens.slnx)
-dotnet test LegacyLens.slnx                   # 33 tests: analizador y grafo
+dotnet test LegacyLens.slnx                   # 51 tests: analizador, grafo y casos de uso
 dotnet run --project src/LegacyLens.Web       # arranca en local
 docker build -t legacylens .                  # valida el contenedor
 cd Deploy/infra && terraform validate && terraform fmt -check -recursive

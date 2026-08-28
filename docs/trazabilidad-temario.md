@@ -82,7 +82,7 @@ Leyenda: **✔** implementado · **◐** parcial · **○** planificado, ver hoj
 
 | Contenido | | Dónde |
 | --- | --- | --- |
-| Testing y mapa de pruebas | ◐ | 33 tests sobre la capa determinista —analizador, riesgo y grafo—, pero **`Application`, `Persistence`, `Ai`, `Mcp` y `Web` no tienen ninguno**. La cobertura está donde es barata y valiosa, no donde haría falta para hablar de cobertura sin matices |
+| Testing y mapa de pruebas | ◐ | 51 tests: 33 sobre la capa determinista —analizador, riesgo y grafo— y 18 sobre los casos de uso que expone el servidor MCP, incluido el aislamiento entre usuarios. **`Persistence`, `Ai` y `Web` siguen sin ninguno**, así que la cobertura está donde es barata y valiosa, no donde haría falta para hablar de cobertura sin matices |
 | Estrategia de qué testear | ✔ | Se testea lo determinista con asserts; lo no determinista se **evalúa con métricas** en `tools/LegacyLens.Evals` |
 | **ADR: documentar el porqué** | ✔ | `docs/adr/` |
 | Docs as code | ✔ | Toda la documentación en Markdown en el repositorio; el producto **genera** docs-as-code |

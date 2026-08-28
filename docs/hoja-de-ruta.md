@@ -188,7 +188,7 @@ pasó a ser una migración: quitar `xunit.runner.visualstudio` y `Microsoft.NET.
 activar la nueva experiencia de `dotnet test`. Hasta hacerla, el mayor de `xunit.v3` está
 bloqueado en `dependabot.yml` para no arrastrar una propuesta en rojo permanente.
 
-*Criterio de aceptación:* los 33 tests siguen pasando y el CI no necesita `--no-build` ni
+*Criterio de aceptación:* los 51 tests siguen pasando y el CI no necesita `--no-build` ni
 banderas de compatibilidad.
 
 ### 3.3 Pruebas de extremo a extremo

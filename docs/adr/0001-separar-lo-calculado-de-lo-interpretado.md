@@ -38,7 +38,7 @@ La frontera se refleja en la estructura del código: `LegacyLens.Analysis` **no 
 
 - Las dependencias del grafo no pueden ser falsas. Salen del AST.
 - La mitad del sistema se vuelve **testeable con asserts**, porque es determinista. De ahí
-  salen los 33 tests.
+  salen los 51 tests.
 - La aplicación sigue siendo útil sin IA: si Azure OpenAI falla o no está configurado, se
   entrega el análisis estático completo.
 - El modelo trabaja mejor: recibe contexto verificado en lugar de tener que deducir
