@@ -286,15 +286,16 @@ se cierra y el despliegue se queda esperando sin error. ADR 0005.
 
 ## Que no es una demo con truco
 
-### 33 tests sobre las partes deterministas
+### 51 tests sobre las partes deterministas
 
 - Distingue lecturas de escrituras
 - Detecta SQL dinámico en sus dos formas
 - No confunde `sp_executesql` con una llamada a procedimiento
-- Detecta funciones escalares usadas dentro de expresiones
 - La suma de los factores de riesgo siempre cuadra con el total
 - El recorrido del grafo aguanta **ciclos**: dos procedimientos que se llaman
   mutuamente colgarían un recorrido ingenuo
+- Un usuario **nunca** recibe los análisis de otro, la regla que sostiene el
+  servidor MCP
 
 <br>
 
