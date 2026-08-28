@@ -53,7 +53,7 @@ public void Upstream_transitive_closure_is_the_impact_radius()
   lenguaje **no** se prueba así: se mide con el arnés de `tools/LegacyLens.Evals`. Un test que
   afirme algo sobre el texto que genera el modelo va a fallar de forma intermitente y hará que
   se ignore la suite entera.
-- **Estado real de la cobertura, para que nadie se lleve una sorpresa:** los 33 tests cubren
+- **Estado real de la cobertura, para que nadie se lleve una sorpresa:** los 51 tests cubren
   `Domain` y `Analysis`. `Application`, `Persistence.EF`, `Ai`, `Mcp` y `Web` no tienen
   ninguno. Está reconocido en `docs/trazabilidad-temario.md` con un ◐, no escondido. Si añades
   lógica a `Application`, hará falta un proyecto de pruebas nuevo.

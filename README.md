@@ -208,7 +208,7 @@ Container App. Necesitas el rol *Cognitive Services OpenAI User* sobre el recurs
 dotnet test LegacyLens.slnx
 ```
 
-33 tests sobre las partes deterministas: el analizador, la puntuación de riesgo y los
+51 tests: las partes deterministas —el analizador, la puntuación de riesgo y los
 recorridos del grafo. Es exactamente lo que ejecuta el CI.
 
 ### 3.5 El arnés de evaluación
@@ -360,7 +360,8 @@ legacy-lens/
 │   ├── LegacyLens.Mcp/            Hospedaje stdio, para uso local.
 │   └── LegacyLens.Web/            Presentación. Solo ISender y composición de DI.
 │
-├── tests/LegacyLens.Analysis.Tests/  33 tests sobre el analizador y el grafo
+├── tests/LegacyLens.Analysis.Tests/     33 tests del analizador y el grafo
+├── tests/LegacyLens.Application.Tests/  18 tests de los casos de uso del MCP
 ├── tools/LegacyLens.Evals/          Arnés de evaluación del modelo
 │
 ├── Deploy/
@@ -599,7 +600,7 @@ entorno.
 
 | Workflow | Se dispara con | Qué hace |
 | --- | --- | --- |
-| `ci.yml` | *pull request* y `main` | Compila, ejecuta los 33 tests, construye la imagen y **comprueba que arranca, migra y sirve el runtime de Blazor**. Valida el Terraform. |
+| `ci.yml` | *pull request* y `main` | Compila, ejecuta los 51 tests, construye la imagen y **comprueba que arranca, migra y sirve el runtime de Blazor**. Valida el Terraform. |
 | `deploy.yml` | `main`, o a mano | El camino completo a producción. Detalle abajo. |
 | `security.yml` | *pull request*, `main` y semanalmente | CodeQL y búsqueda de paquetes vulnerables, que **falla la ejecución** si aparece alguno. |
 
