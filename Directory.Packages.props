@@ -22,26 +22,26 @@
     <PackageVersion Include="FluentValidation" Version="12.2.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
     <PackageVersion Include="MediatR" Version="12.5.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.9.0" />
-    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.9.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.AI" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.AI.OpenAI" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
     <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-    <PackageVersion Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="180.102.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Localization.Abstractions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="180.140.0" />
     <!-- Solo se fija, no se referencia: Microsoft.Data.SqlClient arrastra la 9.0.11,
          afectada por CVE-2026-84008 y CVE-2026-70162. -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
