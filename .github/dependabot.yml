@@ -1,5 +1,10 @@
 version: 2
 
+# Proyecto en pausa: 'open-pull-requests-limit: 0' en cada ecosistema impide que
+# Dependabot abra PRs de actualización de versión sin perder la configuración.
+# Para reactivarlo, volver a poner 5 en NuGet y quitar la línea en los demás.
+# Las alertas de seguridad siguen activas en la pestaña Security.
+
 updates:
   # Las dependencias de NuGet son la vía por la que entró la única vulnerabilidad
   # detectada durante el desarrollo: SQLitePCLRaw con un CVE conocido, que llegó
@@ -8,7 +13,7 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 0
     groups:
       # Los paquetes de Microsoft se versionan juntos: actualizarlos por separado
       # genera conflictos de versión sin aportar nada.
@@ -43,13 +48,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
 
   - package-ecosystem: terraform
     directory: /Deploy/infra
     schedule:
       interval: monthly
+    open-pull-requests-limit: 0
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 0
